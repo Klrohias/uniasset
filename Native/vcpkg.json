@@ -1,0 +1,25 @@
+{
+  "name" : "native",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "0e47c1985273129e4d0ee52ff73bed9125555de8",
+  "dependencies" : [ {
+    "name" : "drlibs",
+    "version>=" : "2022-09-26"
+  }, {
+    "name" : "libjpeg-turbo",
+    "version>=" : "2.1.5.1#1"
+  }, {
+    "name" : "libwebp",
+    "version>=" : "1.3.0"
+  }, {
+    "name" : "miniaudio",
+    "version>=" : "0.11.14"
+  }, {
+    "name" : "stb",
+    "version>=" : "2023-04-11#1"
+  }, {
+    "name": "oboe",
+    "version>=": "1.8.0",
+    "platform": "android"
+  } ]
+}
