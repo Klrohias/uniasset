@@ -2,6 +2,7 @@
 // Created by Twiiz on 2024/1/14.
 //
 
+#pragma once
 #ifndef UNIASSET_IMAGEASSET_HPP
 #define UNIASSET_IMAGEASSET_HPP
 
@@ -51,19 +52,33 @@ namespace Uniasset {
 
         ~ImageAsset();
 
+        ImageAsset(const ImageAsset&) = delete;
+
+        ImageAsset& operator=(const ImageAsset&) = delete;
+
         bool Load(const std::string_view& path);
 
         bool Load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
 
         bool Load(uint8_t* fileData, size_t size);
 
+        bool Unload();
+
         const std::string& GetError();
 
-        int32_t GetWidth() const;
+        int32_t GetWidth();
 
-        int32_t GetHeight() const;
+        int32_t GetHeight();
 
-        int32_t GetChannelCount() const;
+        int32_t GetChannelCount();
+
+        bool Clip(int32_t x, int32_t y, int32_t width, int32_t height);
+
+        bool Resize(int32_t width, int32_t height);
+
+        bool CopyTo(void* buffer);
+
+        ImageAsset* Clone() const;
     };
 
 } // Uniasset

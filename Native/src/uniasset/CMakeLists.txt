@@ -27,10 +27,6 @@ find_path(DRLIBS_INCLUDE_DIRS "dr_flac.h")
 # Targets
 add_library(uniasset
         Foundation.hpp
-        common/IAudioDecoder.cpp
-        common/IAudioDecoder.hpp
-        common/IAudioPlayer.cpp
-        common/IAudioPlayer.hpp
         CBinding.h
         CBinding.cpp
         image/ImageAsset.cpp
@@ -41,10 +37,17 @@ add_library(uniasset
         common/ErrorHandler.hpp
         audio/AudioAsset.cpp
         audio/AudioAsset.hpp
-        audio/MiniAudioPlayer.cpp
-        audio/MiniAudioPlayer.hpp
-        audio/OboeAudioPlayer.cpp
-        audio/OboeAudioPlayer.hpp)
+        audio/AudioPlayer.cpp
+        audio/AudioPlayer.hpp
+        audio/IAudioDecoder.cpp
+        audio/IAudioDecoder.hpp
+        thirdparty/stb_image.c
+        thirdparty/miniaudio.c
+        audio/SampleFormat.hpp
+        thirdparty/drlibs.c
+        audio/Mp3Decoder.cpp
+        audio/Mp3Decoder.hpp
+)
 
 # Link
 target_include_directories(uniasset PRIVATE ${Stb_INCLUDE_DIR})

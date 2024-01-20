@@ -11,7 +11,35 @@
 #include "ImageAsset.hpp"
 #include "../common/Utils.hpp"
 
+using namespace Uniasset::Utils;
+
 namespace Uniasset {
+
+    const char* ERROR_STR_IMAGE_NOT_LOADED = "image asset is not loaded";
+    const char* ERROR_STR_IMAGE_SIZE_OVERFLOW = "range exceeds image size";
+
+    template<int PixelSize = 3>
+    void
+    ScaleImage(const uint8_t* srcBuffer, uint8_t* destBuffer, uint32_t srcWidth, uint32_t srcHeight, uint32_t destWidth,
+               uint32_t destHeight) {
+        float scaleX, scaleY;
+        scaleX = (float) srcWidth / (float) destWidth;
+        scaleY = (float) srcHeight / (float) destHeight;
+
+        for (int ix = 0; ix < destWidth; ix++) {
+            for (int iy = 0; iy < destHeight; iy++) {
+                int px, py;
+                px = (int) (ix * scaleX);
+                py = (int) (iy * scaleY);
+                uint32_t destPixelBegin = destWidth * iy + ix;
+                uint32_t srcPixelBegin = srcWidth * py + px;
+                static_for<0, PixelSize>()([&](int i) {
+                    destBuffer[destPixelBegin * PixelSize + i] = srcBuffer[srcPixelBegin * PixelSize + i];
+                });
+            }
+        }
+    }
+
     void TurboJpegHandleDeleter(tjhandle obj) {
         if (!obj) return;
         tjDestroy(obj);
@@ -53,7 +81,7 @@ namespace Uniasset {
     }
 
     bool ImageAsset::Load(const std::string_view& path) {
-        // Open
+        // open
         FILE* fileRaw = fopen(path.data(), "rb");
         if (!fileRaw) {
             errorHandler_.SetError(strerror(errno));
@@ -61,7 +89,7 @@ namespace Uniasset {
         }
         CFilePtr file(fileRaw, Utils::CFileDeleter);
 
-        // Detect
+        // detect
         if (fseek(file.get(), 0L, SEEK_END) != 0) {
             ERROR_HANDLER_ERRNO(errorHandler_, "Failed to detect format (seek to end)");
             return false;
@@ -87,7 +115,7 @@ namespace Uniasset {
 
         file.reset(nullptr);
 
-        // Load
+        // load
         if (Utils::IsWebPFileData(magicNumberBuffer, readSize)) {
             return LoadWebPFromFile(path.data());
         }
@@ -104,6 +132,7 @@ namespace Uniasset {
     }
 
     bool ImageAsset::Load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount) {
+        ReleaseBuffer(buffer_);
         buffer_ = AllocateBuffer(size);
         memcpy(buffer_.buffer, pixelData, size);
         width_ = width;
@@ -114,7 +143,7 @@ namespace Uniasset {
     }
 
     bool ImageAsset::Load(uint8_t* fileData, size_t size) {
-        // Load
+        // load
         if (Utils::IsWebPFileData(fileData, size)) {
             return LoadWebP(fileData, size);
         }
@@ -200,7 +229,7 @@ namespace Uniasset {
     }
 
     bool ImageAsset::LoadWebPFromFile(const char* path) {
-        // Open
+        // open
         FILE* fileRaw = fopen(path, "rb");
         if (!fileRaw) {
             errorHandler_.SetError(strerror(errno));
@@ -208,7 +237,7 @@ namespace Uniasset {
         }
         CFilePtr file(fileRaw, Utils::CFileDeleter);
 
-        // Read
+        // read
         if (fseek(file.get(), 0L, SEEK_END) != 0) {
             ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load webp (seek to end)");
             return false;
@@ -235,7 +264,7 @@ namespace Uniasset {
     }
 
     bool ImageAsset::LoadJpegFromFile(const char* path) {
-        // Open
+        // open
         FILE* fileRaw = fopen(path, "rb");
         if (!fileRaw) {
             errorHandler_.SetError(strerror(errno));
@@ -243,7 +272,7 @@ namespace Uniasset {
         }
         CFilePtr file(fileRaw, Utils::CFileDeleter);
 
-        // Read
+        // read
         if (fseek(file.get(), 0L, SEEK_END) != 0) {
             ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load jpeg (seek to end)");
             return false;
@@ -276,7 +305,7 @@ namespace Uniasset {
         MemoryPtr transformedData(nullptr, TurboJpegMemoryDeleter);
         size_t transformedSize = 0;
 
-        // Transform
+        // transform
         {
             auto processorRaw = tjInitTransform();
             if (!processorRaw) {
@@ -301,7 +330,7 @@ namespace Uniasset {
             transformedData.reset(transformedDataRaw);
         }
 
-        // Decode
+        // decode
         {
             auto processorRaw = tjInitDecompress();
             if (!processorRaw) {
@@ -341,17 +370,128 @@ namespace Uniasset {
         return true;
     }
 
-    int32_t ImageAsset::GetWidth() const {
+    int32_t ImageAsset::GetWidth() {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return -1;
+        }
         return width_;
     }
 
-    int32_t ImageAsset::GetHeight() const {
+    int32_t ImageAsset::GetHeight() {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return -1;
+        }
         return height_;
     }
 
-    int32_t ImageAsset::GetChannelCount() const {
+    int32_t ImageAsset::GetChannelCount() {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return -1;
+        }
         return channelCount_;
     }
 
+    bool ImageAsset::Clip(int32_t x, int32_t y, int32_t width, int32_t height) {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return false;
+        }
+
+        int32_t srcStrideSize = width_ * channelCount_;
+        int32_t newStrideSize = width * channelCount_;
+
+        int32_t startLine = height_ - y - height;
+        int32_t endLine = height_ - y;
+        int32_t startPixel = x;
+        int32_t endPixel = x + width;
+
+
+        if (startLine < 0 || startLine > height_ ||
+            endLine < 0 || endLine > height_ ||
+            startPixel < 0 || startPixel > width_ ||
+            endPixel < 0 || endPixel > width_) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_SIZE_OVERFLOW);
+            return false;
+        }
+
+
+        auto newBuffer = AllocateBuffer(width * height * channelCount_);
+
+        for (int iy = 0; iy < height; iy++) {
+            memcpy(newBuffer.buffer + newStrideSize * iy,
+                   buffer_.buffer + srcStrideSize * (iy + startLine) + x * channelCount_, newStrideSize);
+        }
+
+        ReleaseBuffer(buffer_);
+
+        buffer_ = newBuffer;
+        width_ = width;
+        height_ = height;
+
+        return true;
+    }
+
+    bool ImageAsset::Resize(int32_t width, int32_t height) {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return false;
+        }
+
+        auto newBuffer = AllocateBuffer(width * height * channelCount_);
+
+        switch (channelCount_) {
+            case 3: {
+                ScaleImage<3>(buffer_.buffer, newBuffer.buffer, width_, height_, width, height);
+                break;
+            }
+            case 4: {
+                ScaleImage<4>(buffer_.buffer, newBuffer.buffer, width_, height_, width, height);
+                break;
+            }
+            default:
+                break;
+        }
+
+        ReleaseBuffer(buffer_);
+        buffer_ = newBuffer;
+
+        return true;
+    }
+
+    bool ImageAsset::Unload() {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return false;
+        }
+
+        ReleaseBuffer(buffer_);
+        width_ = 0;
+        height_ = 0;
+        channelCount_ = 0;
+
+        return true;
+    }
+
+    bool ImageAsset::CopyTo(void* buffer) {
+        if (!buffer_.buffer) {
+            errorHandler_.SetError(ERROR_STR_IMAGE_NOT_LOADED);
+            return false;
+        }
+
+        memcpy(buffer, buffer_.buffer, width_ * height_ * channelCount_);
+
+        return true;
+    }
+
+    ImageAsset* ImageAsset::Clone() const {
+        auto result = new ImageAsset;
+
+        result->Load(buffer_.buffer, width_ * height_ * channelCount_, width_, height_, channelCount_);
+
+        return result;
+    }
 
 } // Uniasset
