@@ -27,29 +27,35 @@ namespace Uniasset {
         return ma_format_u8;
     }
 
-    void AudioPlayer::MaDataCallback(ma_device* device, void* buffer, __attribute__((unused)) const void* unused1, unsigned int count) {
+    void AudioPlayer::MaDataCallback(ma_device* device, void* buffer, __attribute__((unused)) const void* unused1,
+                                     unsigned int count) {
         auto player = reinterpret_cast<AudioPlayer*>(device->pUserData);
-        if (player->paused_) {
-            auto bufferLength = device->playback.channels * count;
-            switch (device->playback.format) {
-                case ma_format_u8:
-                    memset(buffer, 0, sizeof(uint8_t) * bufferLength);
-                    break;
-                case ma_format_s16:
-                    memset(buffer, 0, sizeof(int16_t) * bufferLength);
-                    break;
-                case ma_format_s32:
-                case ma_format_f32:
-                    memset(buffer, 0, sizeof(int32_t) * bufferLength);
-                    break;
-                default:
-                    break;
+
+        do {
+            if (player->state_ == Paused) {
+                break;
             }
-
+            if (!player->audioDecoder_->Read(buffer, count)) {
+                break;
+            }
             return;
-        }
+        } while (false);
 
-        player->audioDecoder_->Read(buffer, count);
+        auto bufferLength = device->playback.channels * count;
+        switch (device->playback.format) {
+            case ma_format_u8:
+                memset(buffer, 0, sizeof(uint8_t) * bufferLength);
+                break;
+            case ma_format_s16:
+                memset(buffer, 0, sizeof(int16_t) * bufferLength);
+                break;
+            case ma_format_s32:
+            case ma_format_f32:
+                memset(buffer, 0, sizeof(int32_t) * bufferLength);
+                break;
+            default:
+                break;
+        }
     }
 
     AudioPlayer::AudioPlayer()
@@ -61,24 +67,24 @@ namespace Uniasset {
     }
 
     bool AudioPlayer::Open(AudioAsset* audioAsset) {
-        if (audioAsset_) {
+        if (state_ != Closed) {
             Close();
         }
 
         // get decoder
-        auto audioDecoder = audioAsset_->GetAudioDecoder();
+        auto audioDecoder = audioAsset->GetAudioDecoder();
 
-        if (!audioDecoder_) {
+        if (!audioDecoder) {
             errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
             return false;
         }
 
         // init device
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
-        deviceConfig.playback.format = ToMaFormat(audioDecoder_->GetSampleFormat());
-        deviceConfig.playback.channels = audioDecoder_->GetChannelCount();
-        deviceConfig.sampleRate = audioDecoder_->GetSampleRate();
-        deviceConfig.pUserData = audioDecoder_;
+        deviceConfig.playback.format = ToMaFormat(audioDecoder->GetSampleFormat());
+        deviceConfig.playback.channels = audioDecoder->GetChannelCount();
+        deviceConfig.sampleRate = audioDecoder->GetSampleRate();
+        deviceConfig.pUserData = this;
         deviceConfig.dataCallback = &MaDataCallback;
 
         if (ma_device_init(nullptr, &deviceConfig, device_) != MA_SUCCESS) {
@@ -86,38 +92,43 @@ namespace Uniasset {
             return false;
         }
 
-        ma_device_start(device_);
+        ma_device_set_master_volume(device_, volume_);
 
         // attach asset
         audioAsset->AttachPlayer(this);
 
         audioAsset_ = audioAsset;
         audioDecoder_ = audioDecoder.release();
-        paused_ = true;
+        state_ = Opened;
 
         return true;
     }
 
-    bool AudioPlayer::Close() {
-        if (!audioAsset_) {
-            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_OPENED);
-            return false;
+    void AudioPlayer::Close() {
+        if (state_ == Closed) {
+            return;
         }
 
-        paused_ = true;
+        audioAsset_->DetachPlayer(this);
+        CloseInternal();
+    }
+
+    void AudioPlayer::CloseInternal() {
+        if (state_ == Closed) {
+            return;
+        }
+
+        state_ = Closed;
 
         // dispose device
         ma_device_uninit(device_);
-
-        // detach asset
-        audioAsset_->DetachPlayer(this);
-        audioAsset_ = nullptr;
 
         // dispose audio decoder
         delete audioDecoder_;
         audioDecoder_ = nullptr;
 
-        return true;
+        // detach asset
+        audioAsset_ = nullptr;
     }
 
     AudioPlayer::~AudioPlayer() {
@@ -126,60 +137,44 @@ namespace Uniasset {
         delete device_;
     }
 
-    bool AudioPlayer::Pause() {
-        if (!audioAsset_) {
-            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_OPENED);
-            return false;
+    void AudioPlayer::Pause() {
+        if (state_ == Resumed) {
+            state_ = Paused;
         }
-
-        if (paused_) return true;
-
-        paused_ = true;
-
-        return true;
     }
 
-    bool AudioPlayer::Resume() {
-        if (!audioAsset_) {
-            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_OPENED);
-            return false;
+    void AudioPlayer::Resume() {
+        if (state_ == Opened) {
+            ma_device_start(device_);
+            state_ = Paused;
         }
 
-        if (!paused_) return true;
-
-        paused_ = false;
-
-        return true;
+        if (state_ == Paused) {
+            state_ = Resumed;
+        }
     }
 
     bool AudioPlayer::IsPaused() {
-        if (!audioAsset_) {
-            return true;
-        }
-
-        return paused_;
+        return state_ != Resumed;
     }
 
     float AudioPlayer::GetVolume() {
-        if (!audioAsset_) {
-            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_OPENED);
-            return -1;
+        if (state_ == Closed) {
+            return volume_;
         }
 
-        float result {1};
-        ma_device_get_master_volume(device_, &result);
+        ma_device_get_master_volume(device_, &volume_);
 
-        return result;
+        return volume_;
     }
 
-    bool AudioPlayer::SetVolume(float val) {
-        if (!audioAsset_) {
-            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_OPENED);
-            return false;
+    void AudioPlayer::SetVolume(float val) {
+        volume_ = val;
+
+        if (state_ == Closed) {
+            return;
         }
 
         ma_device_set_master_volume(device_, val);
-
-        return true;
     }
 } // Uniasset

@@ -7,6 +7,7 @@
 #define UNIASSET_IAUDIODECODER_HPP
 
 #include <cstdint>
+#include <cstdio>
 
 #include "uniasset/Foundation.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
@@ -18,13 +19,13 @@ namespace Uniasset {
 
         virtual SampleFormat GetSampleFormat() = 0;
 
-        virtual int32_t GetChannelCount() = 0;
+        virtual uint32_t GetChannelCount() = 0;
 
-        virtual int32_t GetSampleCount() = 0;
+        virtual size_t GetSampleCount() = 0;
 
-        virtual int32_t GetSampleRate() = 0;
+        virtual uint32_t GetSampleRate() = 0;
 
-        virtual void Read(void* buffer, uint32_t count) = 0;
+        virtual bool Read(void* buffer, uint32_t count) = 0;
     };
 
 } // Uniasset

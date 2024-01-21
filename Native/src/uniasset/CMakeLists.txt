@@ -47,6 +47,12 @@ add_library(uniasset
         thirdparty/drlibs.c
         audio/Mp3Decoder.cpp
         audio/Mp3Decoder.hpp
+        audio/FlacDecoder.cpp
+        audio/FlacDecoder.hpp
+        audio/WavDecoder.cpp
+        audio/WavDecoder.hpp
+        audio/OggDecoder.cpp
+        audio/OggDecoder.hpp
 )
 
 # Link

@@ -1,10 +1,10 @@
 //
-// Created by Twiiz on 2024/1/20.
+// Created by Twiiz on 2024/1/21.
 //
 
 #pragma once
-#ifndef UNIASSET_MP3DECODER_HPP
-#define UNIASSET_MP3DECODER_HPP
+#ifndef UNIASSET_WAVDECODER_HPP
+#define UNIASSET_WAVDECODER_HPP
 
 #include <cstdlib>
 #include <string_view>
@@ -13,19 +13,19 @@
 
 namespace Uniasset {
 
-    class Mp3Decoder : public IAudioDecoder {
+    class WavDecoder : public IAudioDecoder {
         void* decoder_{nullptr};
 
     public:
-        explicit Mp3Decoder(uint8_t* data, size_t len);
+        explicit WavDecoder(uint8_t* data, size_t len);
 
-        explicit Mp3Decoder(const std::string_view& path);
+        explicit WavDecoder(const std::string_view& path);
 
-        ~Mp3Decoder() override;
+        ~WavDecoder() override;
 
-        Mp3Decoder(const Mp3Decoder&) = delete;
+        WavDecoder(const WavDecoder&) = delete;
 
-        Mp3Decoder& operator=(const Mp3Decoder&) = delete;
+        WavDecoder& operator=(const WavDecoder&) = delete;
 
         uint32_t GetChannelCount() override;
 
@@ -40,4 +40,4 @@ namespace Uniasset {
 
 } // Uniasset
 
-#endif //UNIASSET_MP3DECODER_HPP
+#endif //UNIASSET_WAVDECODER_HPP

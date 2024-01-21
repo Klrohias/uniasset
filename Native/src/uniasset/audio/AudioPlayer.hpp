@@ -20,11 +20,21 @@ namespace Uniasset {
 
     class UNIASSET_API AudioPlayer {
     private:
+        enum State {
+            Closed,
+            Resumed,
+            Opened,
+            Paused
+        };
         ma_device* device_{nullptr};
         ErrorHandler errorHandler_{};
+
         AudioAsset* audioAsset_{nullptr};
         IAudioDecoder* audioDecoder_{nullptr};
-        bool paused_{true};
+
+        State state_{Closed};
+
+        float volume_{1};
 
         static void MaDataCallback(ma_device* device, void* buffer, __attribute__((unused)) const void* unused, unsigned int count);
 
@@ -41,17 +51,19 @@ namespace Uniasset {
 
         bool Open(AudioAsset* audioAsset);
 
-        bool Pause();
+        void Pause();
 
-        bool Resume();
+        void Resume();
 
         bool IsPaused();
 
-        bool Close();
+        void Close();
+
+        void CloseInternal();
 
         float GetVolume();
 
-        bool SetVolume(float val);
+        void SetVolume(float val);
 
     };
 

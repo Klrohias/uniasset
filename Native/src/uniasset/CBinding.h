@@ -43,19 +43,22 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Clone, CBINDING_TYPE
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioPlayer), AudioPlayer, Create);
 CBINDING_METHOD(void, AudioPlayer, Free, CBINDING_TYPED_PTR(AudioPlayer) obj);
 CBINDING_METHOD(CBINDING_CSTRING, AudioPlayer, GetError, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Pause, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self);
+CBINDING_METHOD(void, AudioPlayer, Pause, CBINDING_TYPED_PTR(AudioPlayer) self);
+CBINDING_METHOD(void, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self);
+CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self);
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
                 CBINDING_TYPED_PTR(AudioAsset) audioAsset);
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val);
+CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val);
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self);
 
 // AudioAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create);
 CBINDING_METHOD(void, AudioAsset, Free, CBINDING_TYPED_PTR(AudioAsset) obj);
 CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetError, CBINDING_TYPED_PTR(AudioAsset) self);
+CBINDING_METHOD(CBINDING_BOOLEAN, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path);
+CBINDING_METHOD(CBINDING_BOOLEAN, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size);
+CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self);
 
 #ifdef __cplusplus
 }

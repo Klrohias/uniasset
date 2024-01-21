@@ -11,6 +11,7 @@
 
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/ErrorHandler.hpp"
+#include "uniasset/audio/SampleFormat.hpp"
 
 namespace Uniasset {
     class IAudioDecoder;
@@ -25,18 +26,27 @@ namespace Uniasset {
             Memory,
         };
 
+        enum DataFormat {
+            Pcm,
+            Mp3,
+            Ogg,
+            Wav,
+            Flac
+        };
+
         struct AudioAssetLoadInfo {
             LoadType type{None};
             std::string path{};
             uint8_t* data{nullptr};
+            size_t dataLength{0};
+            DataFormat format{Pcm};
         };
 
         std::vector<AudioPlayer*> playingAudioPlayer_{};
-        bool disposing_{false};
         ErrorHandler errorHandler_{};
         AudioAssetLoadInfo loadInfo_{};
 
-        void CleanupLoadInfo();
+        void Cleanup();
 
     public:
 
@@ -52,7 +62,7 @@ namespace Uniasset {
 
         bool Load(const std::string_view& path);
 
-        bool Unload();
+        void Unload();
 
         void AttachPlayer(AudioPlayer* player);
 

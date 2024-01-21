@@ -455,6 +455,9 @@ namespace Uniasset {
                 break;
         }
 
+        width_ = width;
+        height_ = height;
+
         ReleaseBuffer(buffer_);
         buffer_ = newBuffer;
 

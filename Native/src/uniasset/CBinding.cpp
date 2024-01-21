@@ -86,16 +86,16 @@ CBINDING_METHOD(CBINDING_CSTRING, AudioPlayer, GetError, CBINDING_TYPED_PTR(Audi
     return reinterpret_cast<AudioPlayer*>(self)->GetError().c_str();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Pause, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return reinterpret_cast<AudioPlayer*>(self)->Pause();
+CBINDING_METHOD(void, AudioPlayer, Pause, CBINDING_TYPED_PTR(AudioPlayer) self) {
+    reinterpret_cast<AudioPlayer*>(self)->Pause();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return reinterpret_cast<AudioPlayer*>(self)->Resume();
+CBINDING_METHOD(void, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self) {
+    reinterpret_cast<AudioPlayer*>(self)->Resume();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return reinterpret_cast<AudioPlayer*>(self)->Close();
+CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self) {
+    reinterpret_cast<AudioPlayer*>(self)->Close();
 }
 
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
@@ -107,8 +107,8 @@ CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(Audi
     return reinterpret_cast<AudioPlayer*>(self)->IsPaused();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val) {
-    return reinterpret_cast<AudioPlayer*>(self)->SetVolume(val);
+CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val) {
+    reinterpret_cast<AudioPlayer*>(self)->SetVolume(val);
 }
 
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self) {
@@ -128,3 +128,14 @@ CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetError, CBINDING_TYPED_PTR(Audio
     return reinterpret_cast<AudioAsset*>(self)->GetError().c_str();
 }
 
+CBINDING_METHOD(CBINDING_BOOLEAN, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path) {
+    return reinterpret_cast<AudioAsset*>(self)->Load(path);
+}
+
+CBINDING_METHOD(CBINDING_BOOLEAN, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
+    return reinterpret_cast<AudioAsset*>(self)->Load(data, size);
+}
+
+CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self) {
+    reinterpret_cast<AudioAsset*>(self)->Unload();
+}
