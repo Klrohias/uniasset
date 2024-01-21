@@ -303,7 +303,7 @@ namespace Uniasset {
         using MemoryPtr = std::unique_ptr<uint8_t, decltype(TurboJpegMemoryDeleter)*>;
         ProcessorPtr processor(nullptr, TurboJpegHandleDeleter);
         MemoryPtr transformedData(nullptr, TurboJpegMemoryDeleter);
-        size_t transformedSize = 0;
+        uint64_t transformedSize = 0;
 
         // transform
         {
@@ -322,7 +322,7 @@ namespace Uniasset {
 
             uint8_t* transformedDataRaw = nullptr;
             if (tjTransform(processor.get(), fileData, size, 1, &transformedDataRaw,
-                            &transformedSize, &transform, 0) != 0) {
+                            reinterpret_cast<unsigned long*>(&transformedSize), &transform, 0) != 0) {
                 errorHandler_.SetError(tjGetErrorStr2(processor.get()));
                 return false;
             }

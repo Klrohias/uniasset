@@ -7,6 +7,7 @@
 #define UNIASSET_ERRORHANDLER_HPP
 
 #include <string>
+#include <functional>
 
 namespace Uniasset {
 

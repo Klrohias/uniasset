@@ -1,6 +1,6 @@
 
 # C++ Options
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # Config
 if (BUILD_SHARED_LIBS AND WIN32)
@@ -54,6 +54,8 @@ add_library(uniasset
         audio/OggDecoder.cpp
         audio/OggDecoder.hpp
 )
+
+target_compile_features(uniasset PRIVATE cxx_std_17)
 
 # Link
 target_include_directories(uniasset PRIVATE ${Stb_INCLUDE_DIR})
