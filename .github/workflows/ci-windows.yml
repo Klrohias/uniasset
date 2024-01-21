@@ -1,0 +1,41 @@
+name: ci-win
+
+on: workflow_dispatch
+
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build x64-windows
+      run: |
+        cd "${{github.workspace}}/Native"
+        $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
+        cmake -B $BUILD_ROOT -A x64 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x64-windows)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: uniasset-x64-windows.dll
+        path: ${{github.workspace}}/Native/build-x64-windows/Release/uniasset.dll
+
+    - name: Build x86-windows
+      run: |
+        cd "${{github.workspace}}/Native"
+        $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
+        cmake -B $BUILD_ROOT -A Win32 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x86-windows)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: uniasset-x86-windows.dll
+        path: ${{github.workspace}}/Native/build-x86-windows/Release/uniasset.dll
+
+

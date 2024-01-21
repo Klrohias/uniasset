@@ -1,0 +1,41 @@
+name: ci-darwin
+
+on: workflow_dispatch
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-darwin:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install vcpkg and dependencies
+      run: |
+        cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
+        
+    - name: Configure and build
+      run: |
+        cd "${{github.workspace}}/Native"
+        
+        TRIPLET='x64-osx'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+        TRIPLET='arm64-ios-bitcode'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64
+        cmake --build ${{github.workspace}}/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x64-osx)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-x64-osx.dylib
+        path: ${{github.workspace}}/build-x64-osx/libuniasset.dylib
+
+    - name: Upload Artifact (arm64-ios-bitcode)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-arm64-ios-bitcode.a
+        path: ${{github.workspace}}/build-arm64-ios-bitcode/libuniasset.a
+        

@@ -1,0 +1,32 @@
+name: ci-linux
+
+on: workflow_dispatch
+
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure environment
+      run: |
+        sudo apt install -y git build-essential
+
+    - name: Configure and build
+      run: |
+        cd "${{github.workspace}}/Native"
+        
+        TRIPLET="x64-linux"
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x64-linux)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-x64-linux.so
+        path: ${{github.workspace}}/build-x64-linux/libuniasset.so
