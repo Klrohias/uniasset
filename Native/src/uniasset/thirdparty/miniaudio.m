@@ -1,14 +1,14 @@
 //
-// Created by Twiiz on 2024/1/20.
+// Created by Twiiz on 2024/1/22.
 //
-
-#if defined(__APPLE__)
+#ifdef __APPLE__
 #include <TargetConditionals.h>
-#endif
 
-#if !defined(TARGET_OS_IPHONE)
+#ifdef TARGET_OS_IPHONE
 #define MA_NO_DECODING
 #define MA_NO_ENCODING
 #define MINIAUDIO_IMPLEMENTATION
 #include <miniaudio.h>
+#endif
+
 #endif

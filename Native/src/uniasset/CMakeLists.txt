@@ -50,10 +50,17 @@ add_library(uniasset
         audio/WavDecoder.hpp
         audio/OggDecoder.cpp
         audio/OggDecoder.hpp
+        thirdparty/miniaudio.m
 )
 
 target_compile_features(uniasset PRIVATE cxx_std_17)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    # enable bitcode
+    target_compile_options(uniasset PRIVATE -fembed-bitcode)
+    target_compile_options(uniasset PRIVATE -fembed-bitcode)
+endif()
 
 # Link
 target_include_directories(uniasset PRIVATE ${Stb_INCLUDE_DIR})
@@ -67,6 +74,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     add_custom_command(
             TARGET uniasset
             POST_BUILD
-            COMMAND sh ${CMAKE_SOURCE_DIR}/scripts/ios-link-library.sh ${VCPKG_INSTALLED_DIR}/../
+            COMMAND sh ${CMAKE_SOURCE_DIR}/scripts/ios-link-library.sh ${CMAKE_BINARY_DIR}
     )
 endif()
