@@ -5,7 +5,9 @@ namespace Uniasset
 {
     public static class Interop
     {
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX || UNITY_ANDROID
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+        const string LibraryName = "uniasset";
+#elif UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX || UNITY_ANDROID
         const string LibraryName = "libuniasset";
 #elif UNITY_IOS || UNITY_WEBGL
 		const string LibraryName = "__Internal";
@@ -75,16 +77,16 @@ namespace Uniasset
 
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioAsset_Unload(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern uint Uniasset_AudioAsset_GetChannelCount(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern uint Uniasset_AudioAsset_GetSampleRate(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern ulong Uniasset_AudioAsset_GetSampleCount(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern float Uniasset_AudioAsset_GetLength(IntPtr self);
 
@@ -102,22 +104,22 @@ namespace Uniasset
 
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioPlayer_Resume(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioPlayer_Pause(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioPlayer_Close(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern byte Uniasset_AudioPlayer_IsPaused(IntPtr self);
 
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioPlayer_SetVolume(IntPtr self, float val);
-        
+
         [DllImport(LibraryName)]
         public static extern float Uniasset_AudioPlayer_GetVolume(IntPtr self);
-        
+
         [DllImport(LibraryName)]
         public static extern float Uniasset_AudioPlayer_GetTime(IntPtr self);
     }
