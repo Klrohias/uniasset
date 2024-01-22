@@ -44,13 +44,14 @@ namespace Uniasset {
 
     size_t OggDecoder::GetSampleCount() {
         if (!decoder_) return 0;
-        return stb_vorbis_stream_length_in_samples(reinterpret_cast<stb_vorbis*>(decoder_));
+        return stb_vorbis_stream_length_in_samples(reinterpret_cast<stb_vorbis*>(decoder_)) * GetChannelCount();
     }
 
     bool OggDecoder::Read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
-        stb_vorbis_get_samples_short_interleaved(reinterpret_cast<stb_vorbis*>(decoder_), GetChannelCount(),
-                                     reinterpret_cast<int16*>(buffer), count);
+        auto channels = reinterpret_cast<stb_vorbis*>(decoder_)->channels;
+        stb_vorbis_get_samples_short_interleaved(reinterpret_cast<stb_vorbis*>(decoder_), channels,
+                                                 reinterpret_cast<int16*>(buffer), count * channels);
         return true;
     }
 } // Uniasset

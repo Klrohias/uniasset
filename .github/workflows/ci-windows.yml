@@ -19,7 +19,7 @@ jobs:
         
         cd "${{github.workspace}}/Native"
         $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
-        cmake -B $BUILD_ROOT -A x64 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        cmake -B $BUILD_ROOT -A x64 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
         cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
 
     - name: Upload Artifact (x64-windows)
@@ -35,7 +35,7 @@ jobs:
         
         cd "${{github.workspace}}/Native"
         $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
-        cmake -B $BUILD_ROOT -A Win32 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        cmake -B $BUILD_ROOT -A Win32 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
         cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
 
     - name: Upload Artifact (x86-windows)

@@ -5,12 +5,50 @@ namespace Uniasset
 {
     public class AudioAsset : IDisposable
     {
-        private readonly IntPtr _handle = Interop.Uniasset_AudioAsset_Create();
-        internal IntPtr Handle => _handle;
+        public IntPtr Handle { get; } = Interop.Uniasset_AudioAsset_Create();
+        public int ChannelCount
+        {
+            get
+            {
+                var result = (int)Interop.Uniasset_AudioAsset_GetChannelCount(Handle);
+                ThrowException();
+                return result;
+            }
+        }
+
+        public int SampleRate
+        {
+            get
+            {
+                var result = (int)Interop.Uniasset_AudioAsset_GetSampleRate(Handle);
+                ThrowException();
+                return result;
+            }
+        }
+
+        public long SampleCount
+        {
+            get
+            {
+                var result = (long)Interop.Uniasset_AudioAsset_GetSampleCount(Handle);
+                ThrowException();
+                return result;
+            }
+        }
+        
+        public float Length
+        {
+            get
+            {
+                var result = Interop.Uniasset_AudioAsset_GetLength(Handle);
+                ThrowException();
+                return result;
+            }
+        }
 
         public AudioAsset()
         {
-            if (_handle == IntPtr.Zero)
+            if (Handle == IntPtr.Zero)
             {
                 throw new Exception("Failed to create AudioAsset instance");
             }
@@ -18,7 +56,7 @@ namespace Uniasset
         
         public void Dispose()
         {
-            Interop.Uniasset_AudioAsset_Free(_handle);
+            Interop.Uniasset_AudioAsset_Free(Handle);
         }
 
         public void Load(string path)
@@ -26,8 +64,8 @@ namespace Uniasset
             var pathPtr = Marshal.StringToHGlobalAnsi(path);
             try
             {
-                if (Interop.Uniasset_AudioAsset_LoadFile(_handle, pathPtr) == 0)
-                    ThrowException();
+                Interop.Uniasset_AudioAsset_LoadFile(Handle, pathPtr);
+                ThrowException();
             }
             finally
             {
@@ -39,20 +77,19 @@ namespace Uniasset
         {
             fixed (byte* imageData = &data.GetPinnableReference())
             {
-                if (Interop.Uniasset_AudioAsset_Load(_handle,
-                        new IntPtr(imageData), Convert.ToUInt64(data.Length)) == 0)
-                    ThrowException();
+                Interop.Uniasset_AudioAsset_Load(Handle, new IntPtr(imageData), Convert.ToUInt64(data.Length));
+                ThrowException();
             }
         }
 
         public void Unload()
         {
-            Interop.Uniasset_AudioAsset_Unload(_handle);
+            Interop.Uniasset_AudioAsset_Unload(Handle);
         }
-        
+
         private void ThrowException()
         {
-            var errorMessage = Marshal.PtrToStringAuto(Interop.Uniasset_AudioAsset_GetError(_handle));
+            var errorMessage = Marshal.PtrToStringAuto(Interop.Uniasset_AudioAsset_GetError(Handle));
             if (string.IsNullOrWhiteSpace(errorMessage)) return;
             throw new UniassetNativeException(errorMessage);
         }

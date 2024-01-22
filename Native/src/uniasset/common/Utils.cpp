@@ -3,6 +3,7 @@
 //
 
 #include <stdexcept>
+#include <cstring>
 #include "Utils.hpp"
 
 namespace Uniasset {

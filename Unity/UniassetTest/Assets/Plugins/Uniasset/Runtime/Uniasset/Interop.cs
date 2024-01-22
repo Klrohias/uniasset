@@ -18,16 +18,16 @@ namespace Uniasset
         public static extern void Uniasset_ImageAsset_Free(IntPtr obj);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_LoadFile(IntPtr self, IntPtr path);
+        public static extern void Uniasset_ImageAsset_LoadFile(IntPtr self, IntPtr path);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_Load(IntPtr self, IntPtr data, ulong size);
+        public static extern void Uniasset_ImageAsset_Load(IntPtr self, IntPtr data, ulong size);
 
         [DllImport(LibraryName)]
         public static extern IntPtr Uniasset_ImageAsset_GetError(IntPtr self);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_LoadPixels(IntPtr self,
+        public static extern void Uniasset_ImageAsset_LoadPixels(IntPtr self,
             IntPtr pixels,
             ulong size,
             int width,
@@ -44,16 +44,16 @@ namespace Uniasset
         public static extern int Uniasset_ImageAsset_GetChannelCount(IntPtr self);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_Clip(IntPtr self, int x, int y, int width, int height);
+        public static extern void Uniasset_ImageAsset_Clip(IntPtr self, int x, int y, int width, int height);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_Resize(IntPtr self, int width, int height);
+        public static extern void Uniasset_ImageAsset_Resize(IntPtr self, int width, int height);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_CopyTo(IntPtr self, IntPtr dest);
+        public static extern void Uniasset_ImageAsset_CopyTo(IntPtr self, IntPtr dest);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_ImageAsset_Unload(IntPtr self);
+        public static extern void Uniasset_ImageAsset_Unload(IntPtr self);
 
         [DllImport(LibraryName)]
         public static extern IntPtr Uniasset_ImageAsset_Clone(IntPtr self);
@@ -68,13 +68,25 @@ namespace Uniasset
         public static extern IntPtr Uniasset_AudioAsset_GetError(IntPtr self);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_AudioAsset_LoadFile(IntPtr self, IntPtr path);
+        public static extern void Uniasset_AudioAsset_LoadFile(IntPtr self, IntPtr path);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_AudioAsset_Load(IntPtr self, IntPtr data, ulong size);
+        public static extern void Uniasset_AudioAsset_Load(IntPtr self, IntPtr data, ulong size);
 
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioAsset_Unload(IntPtr self);
+        
+        [DllImport(LibraryName)]
+        public static extern uint Uniasset_AudioAsset_GetChannelCount(IntPtr self);
+        
+        [DllImport(LibraryName)]
+        public static extern uint Uniasset_AudioAsset_GetSampleRate(IntPtr self);
+        
+        [DllImport(LibraryName)]
+        public static extern ulong Uniasset_AudioAsset_GetSampleCount(IntPtr self);
+        
+        [DllImport(LibraryName)]
+        public static extern float Uniasset_AudioAsset_GetLength(IntPtr self);
 
         [DllImport(LibraryName)]
         public static extern IntPtr Uniasset_AudioPlayer_Create();
@@ -86,7 +98,7 @@ namespace Uniasset
         public static extern IntPtr Uniasset_AudioPlayer_GetError(IntPtr self);
 
         [DllImport(LibraryName)]
-        public static extern byte Uniasset_AudioPlayer_Open(IntPtr self, IntPtr audioAsset);
+        public static extern void Uniasset_AudioPlayer_Open(IntPtr self, IntPtr audioAsset);
 
         [DllImport(LibraryName)]
         public static extern void Uniasset_AudioPlayer_Resume(IntPtr self);
@@ -105,5 +117,8 @@ namespace Uniasset
         
         [DllImport(LibraryName)]
         public static extern float Uniasset_AudioPlayer_GetVolume(IntPtr self);
+        
+        [DllImport(LibraryName)]
+        public static extern float Uniasset_AudioPlayer_GetTime(IntPtr self);
     }
 }

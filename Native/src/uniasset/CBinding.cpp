@@ -155,3 +155,7 @@ CBINDING_METHOD(uint64_t, AudioAsset, GetSampleCount, CBINDING_TYPED_PTR(AudioAs
 CBINDING_METHOD(uint32_t, AudioAsset, GetSampleRate, CBINDING_TYPED_PTR(AudioAsset) self) {
     return reinterpret_cast<AudioAsset*>(self)->GetSampleRate();
 }
+
+CBINDING_METHOD(float, AudioAsset, GetLength, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return reinterpret_cast<AudioAsset*>(self)->GetLength();
+}

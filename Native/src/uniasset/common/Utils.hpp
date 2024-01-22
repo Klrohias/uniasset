@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 
 namespace Uniasset {
     namespace Utils {

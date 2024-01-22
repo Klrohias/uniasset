@@ -215,4 +215,15 @@ namespace Uniasset {
 
         return channelCount_;
     }
+
+    float AudioAsset::GetLength() {
+        errorHandler_.Clear();
+
+        if (loadInfo_.type == None) {
+            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
+            return 0;
+        }
+
+        return static_cast<float>(sampleCount_) / static_cast<float>(channelCount_) / static_cast<float>(sampleRate_);
+    }
 } // Uniasset

@@ -83,6 +83,8 @@ namespace Uniasset {
         uint32_t GetSampleRate();
 
         uint32_t GetChannelCount();
+
+        float GetLength();
     };
 
 } // Uniasset

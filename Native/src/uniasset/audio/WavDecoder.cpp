@@ -39,7 +39,7 @@ namespace Uniasset {
         if (!decoder_) return 0;
         size_t result;
         drwav_get_length_in_pcm_frames(reinterpret_cast<drwav*>(decoder_), reinterpret_cast<drwav_uint64*>(&result));
-        return result;
+        return result * GetChannelCount();
     }
 
     SampleFormat WavDecoder::GetSampleFormat() {

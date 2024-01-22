@@ -28,7 +28,7 @@ namespace Uniasset {
 
     size_t FlacDecoder::GetSampleCount() {
         if (!decoder_) return 0;
-        return reinterpret_cast<drflac*>(decoder_)->totalPCMFrameCount;
+        return reinterpret_cast<drflac*>(decoder_)->totalPCMFrameCount * GetChannelCount();
     }
 
     SampleFormat FlacDecoder::GetSampleFormat() {

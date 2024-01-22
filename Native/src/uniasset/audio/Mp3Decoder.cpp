@@ -37,7 +37,10 @@ namespace Uniasset {
 
     size_t Mp3Decoder::GetSampleCount() {
         if (!decoder_) return 0;
-        return drmp3_get_mp3_frame_count(reinterpret_cast<drmp3*>(decoder_));
+        uint64_t mp3FrameCount;
+        uint64_t mp3PcmCount;
+        drmp3_get_mp3_and_pcm_frame_count(reinterpret_cast<drmp3*>(decoder_), &mp3FrameCount, &mp3PcmCount);
+        return mp3PcmCount * GetChannelCount();
     }
 
     SampleFormat Mp3Decoder::GetSampleFormat() {

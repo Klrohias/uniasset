@@ -10,17 +10,16 @@ namespace Uniasset
 {
     public class ImageAsset : IDisposable, ICloneable
     {
-        private readonly IntPtr _handle;
+        public IntPtr Handle { get; }
+
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         public int Width
         {
             get
             {
-                var result = Interop.Uniasset_ImageAsset_GetWidth(_handle);
-                
-                if (result == -1) 
-                    ThrowException();
+                var result = Interop.Uniasset_ImageAsset_GetWidth(Handle);
+                ThrowException();
                 
                 return result;
             }
@@ -30,10 +29,8 @@ namespace Uniasset
         {
             get
             {
-                var result = Interop.Uniasset_ImageAsset_GetHeight(_handle);
-                
-                if (result == -1) 
-                    ThrowException();
+                var result = Interop.Uniasset_ImageAsset_GetHeight(Handle);
+                ThrowException();
                 
                 return result;
             }
@@ -43,10 +40,8 @@ namespace Uniasset
         {
             get
             {
-                var result = Interop.Uniasset_ImageAsset_GetChannelCount(_handle);
-                
-                if (result == -1) 
-                    ThrowException();
+                var result = Interop.Uniasset_ImageAsset_GetChannelCount(Handle);
+                ThrowException();
                 
                 return result;
             }
@@ -54,8 +49,8 @@ namespace Uniasset
         
         public ImageAsset()
         {
-            _handle = Interop.Uniasset_ImageAsset_Create();
-            if (_handle == IntPtr.Zero)
+            Handle = Interop.Uniasset_ImageAsset_Create();
+            if (Handle == IntPtr.Zero)
             {
                 throw new Exception("Failed to create ImageAsset instance");
             }
@@ -63,13 +58,13 @@ namespace Uniasset
 
         private ImageAsset(IntPtr handle)
         {
-            _handle = handle;
+            Handle = handle;
         }
         
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();
-            Interop.Uniasset_ImageAsset_Free(_handle);
+            Interop.Uniasset_ImageAsset_Free(Handle);
         }
 
         public void Load(string path)
@@ -77,8 +72,8 @@ namespace Uniasset
             var pathPtr = Marshal.StringToHGlobalAnsi(path);
             try
             {
-                if (Interop.Uniasset_ImageAsset_LoadFile(_handle, pathPtr) == 0)
-                    ThrowException();
+                Interop.Uniasset_ImageAsset_LoadFile(Handle, pathPtr);
+                ThrowException();
             }
             finally
             {
@@ -101,9 +96,8 @@ namespace Uniasset
         {
             fixed (byte* imageData = &data.GetPinnableReference())
             {
-                if (Interop.Uniasset_ImageAsset_Load(_handle,
-                        new IntPtr(imageData), Convert.ToUInt64(data.Length)) == 0)
-                    ThrowException();
+                Interop.Uniasset_ImageAsset_Load(Handle, new IntPtr(imageData), Convert.ToUInt64(data.Length));
+                ThrowException();
             }
         }
 
@@ -122,9 +116,9 @@ namespace Uniasset
         {
             fixed (byte* imageData = &data.GetPinnableReference())
             {
-                if (Interop.Uniasset_ImageAsset_LoadPixels(_handle,
-                        new IntPtr(imageData), Convert.ToUInt64(data.Length), width, height, channelCount) == 0)
-                    ThrowException();
+                Interop.Uniasset_ImageAsset_LoadPixels(Handle, new IntPtr(imageData), Convert.ToUInt64(data.Length),
+                    width, height, channelCount);
+                ThrowException();
             }
         }
         
@@ -141,14 +135,14 @@ namespace Uniasset
         
         public void Unload()
         {
-            if (Interop.Uniasset_ImageAsset_Unload(_handle) == 0)
-                ThrowException();
+            Interop.Uniasset_ImageAsset_Unload(Handle);
+            ThrowException();
         }
 
         public void Clip(int x, int y, int width, int height)
         {
-            if (Interop.Uniasset_ImageAsset_Clip(_handle, x, y, width, height) == 0)
-                ThrowException();
+            Interop.Uniasset_ImageAsset_Clip(Handle, x, y, width, height);
+            ThrowException();
         }
 
         public Task ClipAsync(int x, int y, int width, int height)
@@ -164,8 +158,8 @@ namespace Uniasset
 
         public void Resize(int width, int height)
         {
-            if (Interop.Uniasset_ImageAsset_Resize(_handle, width, height) == 0)
-                ThrowException();
+            Interop.Uniasset_ImageAsset_Resize(Handle, width, height);
+            ThrowException();
         }
 
 
@@ -205,8 +199,8 @@ namespace Uniasset
         private unsafe void UnsafeToTexture2DInternal(NativeArray<byte> dest)
         {
             var arrayPtr = dest.GetUnsafePtr();
-            if (Interop.Uniasset_ImageAsset_CopyTo(_handle, new IntPtr(arrayPtr)) == 0)
-                ThrowException();
+            Interop.Uniasset_ImageAsset_CopyTo(Handle, new IntPtr(arrayPtr));
+            ThrowException();
         }
         
         public async Task<Texture2D> ToTexture2DAsync(bool mipmap = false, bool linear = true, bool noLongerReadable = true)
@@ -219,7 +213,8 @@ namespace Uniasset
             var texture = new Texture2D(Width, Height, ChannelCount switch
             {
                 3 => TextureFormat.RGB24,
-                4 => TextureFormat.RGBA32
+                4 => TextureFormat.RGBA32,
+                _ => throw new ArgumentOutOfRangeException()
             }, mipmap, linear);
 
             var array = texture.GetRawTextureData<byte>();
@@ -239,14 +234,14 @@ namespace Uniasset
 
         private void ThrowException()
         {
-            var errorMessage = Marshal.PtrToStringAuto(Interop.Uniasset_ImageAsset_GetError(_handle));
+            var errorMessage = Marshal.PtrToStringAuto(Interop.Uniasset_ImageAsset_GetError(Handle));
             if (string.IsNullOrWhiteSpace(errorMessage)) return;
             throw new UniassetNativeException(errorMessage);
         }
         
         public ImageAsset Clone()
         {
-            return new ImageAsset(Interop.Uniasset_ImageAsset_Clone(_handle));
+            return new ImageAsset(Interop.Uniasset_ImageAsset_Clone(Handle));
         }
         
         object ICloneable.Clone()
