@@ -4,6 +4,8 @@
 
 #include "AudioAsset.hpp"
 
+#include <cstring>
+
 #include "AudioPlayer.hpp"
 #include "IAudioDecoder.hpp"
 #include "../common/Utils.hpp"

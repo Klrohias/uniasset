@@ -30,15 +30,22 @@ public class TestScene : MonoBehaviour
         if (GUILayout.Button("Pause Audio")) PauseAudio();
         if (GUILayout.Button("Resume Audio")) ResumeAudio();
         if (GUILayout.Button("Close Audio")) CloseAudio();
+        if (GUILayout.Button("Get Player Time")) GetPlayerTime();
+        
         if (GUILayout.Button("Lower volume"))
         {
             _audioPlayer.Volume = .4f;
         }
-
+        
         if (GUILayout.Button("Normal volume"))
         {
             _audioPlayer.Volume = 1f;
         }
+    }
+
+    private void GetPlayerTime()
+    {
+        Debug.Log($"Time = {_audioPlayer.Time}");
     }
 
     private void CloseAudio()
@@ -71,6 +78,8 @@ public class TestScene : MonoBehaviour
         _audioAsset = new AudioAsset();
         
         _audioAsset.Load(_audioData);
+        Debug.Log(
+            $"ChannelCount = {_audioAsset.ChannelCount}, SampleCount = {_audioAsset.SampleCount}, SampleRate = {_audioAsset.SampleRate}, Length = {_audioAsset.Length}");
     }
 
     private void LoadImageSync()
@@ -145,5 +154,6 @@ public class TestScene : MonoBehaviour
     private void OnDestroy()
     {
         _audioAsset?.Dispose();
+        _audioPlayer?.Dispose();
     }
 }

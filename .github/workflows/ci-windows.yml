@@ -26,7 +26,7 @@ jobs:
       uses: actions/upload-artifact@v3.1.2
       with:
         name: uniasset-x64-windows.dll
-        path: ${{github.workspace}}/Native/build-x64-windows/Release/uniasset.dll
+        path: ${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/uniasset.dll
 
     - name: Build x86-windows
       run: |
@@ -42,6 +42,6 @@ jobs:
       uses: actions/upload-artifact@v3.1.2
       with:
         name: uniasset-x86-windows.dll
-        path: ${{github.workspace}}/Native/build-x86-windows/Release/uniasset.dll
+        path: ${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/uniasset.dll
 
 
