@@ -16,9 +16,11 @@ namespace Uniasset {
     public:
         void SetError(const std::string& message);
 
-        const std::string& GetError() const;
+        [[nodiscard]] const std::string& GetError() const;
 
         bool Run(const std::function<void()>& callfunc);
+
+        void Clear();
     };
 
 } // Uniasset

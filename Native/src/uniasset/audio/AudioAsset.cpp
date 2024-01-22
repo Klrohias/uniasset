@@ -17,6 +17,8 @@ using namespace Uniasset::Utils;
 namespace Uniasset {
 
     const char* ERROR_STR_AUDIO_NOT_SUPPORTED = "audio format is not supported";
+    const char* ERROR_STR_AUDIO_METADATA = "failed to read audio metadata";
+    extern const char* ERROR_STR_AUDIO_NOT_LOADED;
 
     AudioAsset::AudioAsset() = default;
 
@@ -64,7 +66,9 @@ namespace Uniasset {
         return errorHandler_.GetError();
     }
 
-    bool AudioAsset::Load(uint8_t* data, size_t len) {
+    void AudioAsset::Load(uint8_t* data, size_t len) {
+        errorHandler_.Clear();
+
         Cleanup();
 
         loadInfo_.type = Memory;
@@ -74,27 +78,22 @@ namespace Uniasset {
 
         if (IsMp3FileData(data, len)) {
             loadInfo_.format = Mp3;
-        }
-
-        if (IsFlacFileData(data, len)) {
+        } else if (IsFlacFileData(data, len)) {
             loadInfo_.format = Flac;
-        }
-
-        if (IsOggFileData(data, len)) {
+        } else if (IsOggFileData(data, len)) {
             loadInfo_.format = Ogg;
-        }
-
-        if (IsWavFileData(data, len)) {
+        } else if (IsWavFileData(data, len)) {
             loadInfo_.format = Wav;
-        }
-
-        if (loadInfo_.format == Pcm) {
+        } else {
             Cleanup();
             errorHandler_.SetError(ERROR_STR_AUDIO_NOT_SUPPORTED);
-            return false;
+            return;
         }
 
-        return true;
+        if (!LoadMetadata()) {
+            errorHandler_.SetError(ERROR_STR_AUDIO_METADATA);
+            Cleanup();
+        }
     }
 
     void AudioAsset::Cleanup() {
@@ -112,22 +111,108 @@ namespace Uniasset {
         loadInfo_.path.clear();
         loadInfo_.dataLength = 0;
         loadInfo_.format = Pcm;
+
+        sampleRate_ = 0;
+        sampleCount_ = 0;
+        channelCount_ = 0;
     }
 
     void AudioAsset::Unload() {
+        errorHandler_.Clear();
+
         Cleanup();
     }
 
-    bool AudioAsset::Load(const std::string_view& path) {
-        if (FILE *file = fopen(path.data(), "r")) {
-            fclose(file);
+    void AudioAsset::Load(const std::string_view& path) {
+        errorHandler_.Clear();
 
-            loadInfo_.type = File;
-            loadInfo_.path = path;
+        // Read
+        FILE* file = fopen(path.data(), "rb");
 
-            return true;
+        if (!file) {
+            ERROR_HANDLER_ERRNO(errorHandler_, "failed to open audio file");
+            return;
+        }
+
+        uint8_t buffer[32] = {0};
+        size_t readSize = fread(buffer, 32, 1, file);
+
+        if (readSize == 0) {
+            ERROR_HANDLER_ERRNO(errorHandler_, "failed to read audio file");
+            return;
+        }
+
+        if (fclose(file) != 0) {
+            ERROR_HANDLER_ERRNO(errorHandler_, "failed to close audio file");
+            return;
+        }
+
+        // Check magic number
+        if (IsMp3FileData(buffer, readSize)) {
+            loadInfo_.format = Mp3;
+        } else if (IsFlacFileData(buffer, readSize)) {
+            loadInfo_.format = Flac;
+        } else if (IsOggFileData(buffer, readSize)) {
+            loadInfo_.format = Ogg;
+        } else if (IsWavFileData(buffer, readSize)) {
+            loadInfo_.format = Wav;
         } else {
+            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_SUPPORTED);
+            return;
+        }
+
+        loadInfo_.type = File;
+        loadInfo_.path = path;
+
+        if (!LoadMetadata()) {
+            errorHandler_.SetError(ERROR_STR_AUDIO_METADATA);
+            Cleanup();
+        }
+    }
+
+    bool AudioAsset::LoadMetadata() {
+        auto decoder = GetAudioDecoder();
+        if (!decoder) {
             return false;
         }
+
+        channelCount_ = decoder->GetChannelCount();
+        sampleCount_ = decoder->GetSampleCount();
+        sampleRate_ = decoder->GetSampleRate();
+
+        return true;
+    }
+
+    size_t AudioAsset::GetSampleCount() {
+        errorHandler_.Clear();
+
+        if (loadInfo_.type == None) {
+            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
+            return 0;
+        }
+
+        return sampleCount_;
+    }
+
+    uint32_t AudioAsset::GetSampleRate() {
+        errorHandler_.Clear();
+
+        if (loadInfo_.type == None) {
+            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
+            return 0;
+        }
+
+        return sampleRate_;
+    }
+
+    uint32_t AudioAsset::GetChannelCount() {
+        errorHandler_.Clear();
+
+        if (loadInfo_.type == None) {
+            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
+            return 0;
+        }
+
+        return channelCount_;
     }
 } // Uniasset

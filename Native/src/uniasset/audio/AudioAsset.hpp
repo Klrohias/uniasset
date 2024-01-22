@@ -46,7 +46,13 @@ namespace Uniasset {
         ErrorHandler errorHandler_{};
         AudioAssetLoadInfo loadInfo_{};
 
+        size_t sampleCount_{0};
+        uint32_t sampleRate_{0};
+        uint32_t channelCount_{0};
+
         void Cleanup();
+
+        bool LoadMetadata();
 
     public:
 
@@ -58,9 +64,9 @@ namespace Uniasset {
 
         AudioAsset& operator=(const AudioAsset&) = delete;
 
-        bool Load(uint8_t* data, size_t len);
+        void Load(uint8_t* data, size_t len);
 
-        bool Load(const std::string_view& path);
+        void Load(const std::string_view& path);
 
         void Unload();
 
@@ -71,6 +77,12 @@ namespace Uniasset {
         std::unique_ptr<IAudioDecoder> GetAudioDecoder();
 
         const std::string& GetError();
+
+        size_t GetSampleCount();
+
+        uint32_t GetSampleRate();
+
+        uint32_t GetChannelCount();
     };
 
 } // Uniasset

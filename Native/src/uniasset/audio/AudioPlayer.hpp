@@ -33,8 +33,10 @@ namespace Uniasset {
         IAudioDecoder* audioDecoder_{nullptr};
 
         State state_{Closed};
-
         float volume_{1};
+        size_t decodedSampleCount_{0};
+        uint32_t sampleRate_{0};
+        uint32_t channelCount_{0};
 
         static void MaDataCallback(ma_device* device, void* buffer, __attribute__((unused)) const void* unused, unsigned int count);
 
@@ -49,7 +51,7 @@ namespace Uniasset {
 
         const std::string& GetError();
 
-        bool Open(AudioAsset* audioAsset);
+        void Open(AudioAsset* audioAsset);
 
         void Pause();
 
@@ -64,6 +66,8 @@ namespace Uniasset {
         float GetVolume();
 
         void SetVolume(float val);
+
+        float GetTime() const;
 
     };
 

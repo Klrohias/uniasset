@@ -22,4 +22,8 @@ namespace Uniasset {
             return false;
         }
     }
+
+    void ErrorHandler::Clear() {
+        message_.clear();
+    }
 } // Uniasset

@@ -35,9 +35,12 @@ namespace Uniasset {
             if (player->state_ == Paused) {
                 break;
             }
+
             if (!player->audioDecoder_->Read(buffer, count)) {
                 break;
             }
+
+            player->decodedSampleCount_ += count;
             return;
         } while (false);
 
@@ -66,7 +69,9 @@ namespace Uniasset {
         return errorHandler_.GetError();
     }
 
-    bool AudioPlayer::Open(AudioAsset* audioAsset) {
+    void AudioPlayer::Open(AudioAsset* audioAsset) {
+        errorHandler_.Clear();
+
         if (state_ != Closed) {
             Close();
         }
@@ -76,7 +81,7 @@ namespace Uniasset {
 
         if (!audioDecoder) {
             errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
-            return false;
+            return;
         }
 
         // init device
@@ -89,7 +94,7 @@ namespace Uniasset {
 
         if (ma_device_init(nullptr, &deviceConfig, device_) != MA_SUCCESS) {
             ERROR_HANDLER_ERRNO(errorHandler_, "Failed to create playback device");
-            return false;
+            return;
         }
 
         ma_device_set_master_volume(device_, volume_);
@@ -99,9 +104,11 @@ namespace Uniasset {
 
         audioAsset_ = audioAsset;
         audioDecoder_ = audioDecoder.release();
-        state_ = Opened;
 
-        return true;
+        // set state
+        state_ = Opened;
+        channelCount_ = audioDecoder_->GetChannelCount();
+        sampleRate_ = audioDecoder_->GetSampleRate();
     }
 
     void AudioPlayer::Close() {
@@ -118,7 +125,11 @@ namespace Uniasset {
             return;
         }
 
+        // reset states
         state_ = Closed;
+        decodedSampleCount_ = 0;
+        sampleRate_ = 0;
+        channelCount_ = 0;
 
         // dispose device
         ma_device_uninit(device_);
@@ -176,5 +187,11 @@ namespace Uniasset {
         }
 
         ma_device_set_master_volume(device_, val);
+    }
+
+    float AudioPlayer::GetTime() const {
+        return static_cast<float>(decodedSampleCount_) /
+               static_cast<float>(sampleRate_) /
+               static_cast<float>(channelCount_);
     }
 } // Uniasset

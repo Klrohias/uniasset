@@ -35,17 +35,17 @@ namespace Uniasset {
 
         static Buffer AllocateBuffer(size_t size);
 
-        bool LoadWebPFromFile(const char* path);
+        void LoadWebPFromFile(const char* path);
 
-        bool LoadJpegFromFile(const char* path);
+        void LoadJpegFromFile(const char* path);
 
-        bool LoadFromFile(const char* path);
+        void LoadFromFile(const char* path);
 
-        bool LoadWebP(uint8_t* fileData, size_t size);
+        void LoadWebP(uint8_t* fileData, size_t size);
 
-        bool LoadJpeg(uint8_t* fileData, size_t size);
+        void LoadJpeg(uint8_t* fileData, size_t size);
 
-        bool LoadFile(uint8_t* fileData, size_t size);
+        void LoadFile(uint8_t* fileData, size_t size);
 
     public:
         explicit ImageAsset();
@@ -56,13 +56,13 @@ namespace Uniasset {
 
         ImageAsset& operator=(const ImageAsset&) = delete;
 
-        bool Load(const std::string_view& path);
+        void Load(const std::string_view& path);
 
-        bool Load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
+        void Load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
 
-        bool Load(uint8_t* fileData, size_t size);
+        void Load(uint8_t* fileData, size_t size);
 
-        bool Unload();
+        void Unload();
 
         const std::string& GetError();
 
@@ -72,13 +72,13 @@ namespace Uniasset {
 
         int32_t GetChannelCount();
 
-        bool Clip(int32_t x, int32_t y, int32_t width, int32_t height);
+        void Clip(int32_t x, int32_t y, int32_t width, int32_t height);
 
-        bool Resize(int32_t width, int32_t height);
+        void Resize(int32_t width, int32_t height);
 
-        bool CopyTo(void* buffer);
+        void CopyTo(void* buffer);
 
-        ImageAsset* Clone() const;
+        [[nodiscard]] ImageAsset* Clone() const;
     };
 
 } // Uniasset

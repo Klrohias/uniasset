@@ -20,18 +20,18 @@ CBINDING_METHOD(void, ImageAsset, Free, CBINDING_TYPED_PTR(ImageAsset) obj) {
     delete reinterpret_cast<ImageAsset*>(obj);
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, LoadFile, CBINDING_TYPED_PTR(ImageAsset) self, CBINDING_CSTRING path) {
-    return reinterpret_cast<ImageAsset*>(self)->Load(path);
+CBINDING_METHOD(void, ImageAsset, LoadFile, CBINDING_TYPED_PTR(ImageAsset) self, CBINDING_CSTRING path) {
+    reinterpret_cast<ImageAsset*>(self)->Load(path);
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, LoadPixels, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* pixels,
+CBINDING_METHOD(void, ImageAsset, LoadPixels, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* pixels,
                 uint64_t size, int32_t width, int32_t height, int32_t channelCount) {
-    return reinterpret_cast<ImageAsset*>(self)->Load(pixels, size, width, height, channelCount);
+    reinterpret_cast<ImageAsset*>(self)->Load(pixels, size, width, height, channelCount);
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, Load, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* data,
+CBINDING_METHOD(void, ImageAsset, Load, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* data,
                 uint64_t size) {
-    return reinterpret_cast<ImageAsset*>(self)->Load(data, size);
+    reinterpret_cast<ImageAsset*>(self)->Load(data, size);
 }
 
 CBINDING_METHOD(CBINDING_CSTRING, ImageAsset, GetError, CBINDING_TYPED_PTR(ImageAsset) self) {
@@ -50,22 +50,22 @@ CBINDING_METHOD(int32_t, ImageAsset, GetChannelCount, CBINDING_TYPED_PTR(ImageAs
     return reinterpret_cast<ImageAsset*>(self)->GetChannelCount();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, Clip, CBINDING_TYPED_PTR(ImageAsset) self, int32_t x, int32_t y,
+CBINDING_METHOD(void, ImageAsset, Clip, CBINDING_TYPED_PTR(ImageAsset) self, int32_t x, int32_t y,
                 int32_t width, int32_t height) {
-    return reinterpret_cast<ImageAsset*>(self)->Clip(x, y, width, height);
+    reinterpret_cast<ImageAsset*>(self)->Clip(x, y, width, height);
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, Resize, CBINDING_TYPED_PTR(ImageAsset) self, int32_t width,
+CBINDING_METHOD(void, ImageAsset, Resize, CBINDING_TYPED_PTR(ImageAsset) self, int32_t width,
                 int32_t height) {
-    return reinterpret_cast<ImageAsset*>(self)->Resize(width, height);
+    reinterpret_cast<ImageAsset*>(self)->Resize(width, height);
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, Unload, CBINDING_TYPED_PTR(ImageAsset) self) {
-    return reinterpret_cast<ImageAsset*>(self)->Unload();
+CBINDING_METHOD(void, ImageAsset, Unload, CBINDING_TYPED_PTR(ImageAsset) self) {
+    reinterpret_cast<ImageAsset*>(self)->Unload();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, ImageAsset, CopyTo, CBINDING_TYPED_PTR(ImageAsset) self, void* dest) {
-    return reinterpret_cast<ImageAsset*>(self)->CopyTo(dest);
+CBINDING_METHOD(void, ImageAsset, CopyTo, CBINDING_TYPED_PTR(ImageAsset) self, void* dest) {
+    reinterpret_cast<ImageAsset*>(self)->CopyTo(dest);
 }
 
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Clone, CBINDING_TYPED_PTR(ImageAsset) self) {
@@ -98,9 +98,9 @@ CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self) 
     reinterpret_cast<AudioPlayer*>(self)->Close();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
+CBINDING_METHOD(void, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
                 CBINDING_TYPED_PTR(AudioAsset) audioAsset) {
-    return reinterpret_cast<AudioPlayer*>(self)->Open(reinterpret_cast<AudioAsset*>(audioAsset));
+    reinterpret_cast<AudioPlayer*>(self)->Open(reinterpret_cast<AudioAsset*>(audioAsset));
 }
 
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self) {
@@ -113,6 +113,10 @@ CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) se
 
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self) {
     return reinterpret_cast<AudioPlayer*>(self)->GetVolume();
+}
+
+CBINDING_METHOD(float, AudioPlayer, GetTime, CBINDING_TYPED_PTR(AudioPlayer) self) {
+    return reinterpret_cast<AudioPlayer*>(self)->GetTime();
 }
 
 // AudioAsset
@@ -128,14 +132,26 @@ CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetError, CBINDING_TYPED_PTR(Audio
     return reinterpret_cast<AudioAsset*>(self)->GetError().c_str();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path) {
-    return reinterpret_cast<AudioAsset*>(self)->Load(path);
+CBINDING_METHOD(void, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path) {
+    reinterpret_cast<AudioAsset*>(self)->Load(path);
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
-    return reinterpret_cast<AudioAsset*>(self)->Load(data, size);
+CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
+    reinterpret_cast<AudioAsset*>(self)->Load(data, size);
 }
 
 CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self) {
     reinterpret_cast<AudioAsset*>(self)->Unload();
+}
+
+CBINDING_METHOD(uint32_t, AudioAsset, GetChannelCount, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return reinterpret_cast<AudioAsset*>(self)->GetChannelCount();
+}
+
+CBINDING_METHOD(uint64_t, AudioAsset, GetSampleCount, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return reinterpret_cast<AudioAsset*>(self)->GetSampleCount();
+}
+
+CBINDING_METHOD(uint32_t, AudioAsset, GetSampleRate, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return reinterpret_cast<AudioAsset*>(self)->GetSampleRate();
 }
