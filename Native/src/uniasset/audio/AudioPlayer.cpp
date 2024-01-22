@@ -193,7 +193,6 @@ namespace Uniasset {
 
     float AudioPlayer::GetTime() const {
         return static_cast<float>(decodedSampleCount_) /
-               static_cast<float>(sampleRate_) /
-               static_cast<float>(channelCount_);
+               static_cast<float>(sampleRate_);
     }
 } // Uniasset
