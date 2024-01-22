@@ -15,7 +15,7 @@ jobs:
 
     - name: Configure environment
       run: |
-        sudo apt install -y git build-essential
+        sudo apt install -y git build-essential "gobjc++"
 
     - name: Configure and build
       run: |
@@ -29,4 +29,4 @@ jobs:
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-x64-linux.so
-        path: ${{github.workspace}}/build-x64-linux/libuniasset.so
+        path: ${{github.workspace}}/Native/build-x64-linux/src/uniasset/libuniasset.so

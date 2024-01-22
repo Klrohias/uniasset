@@ -50,22 +50,22 @@ jobs:
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-arm-neon-android.so
-        path: ${{github.workspace}}/Native/build-arm-neon-android/libuniasset.so
+        path: ${{github.workspace}}/Native/build-arm-neon-android/src/uniasset/libuniasset.so
 
     - name: Upload Artifact (arm64-android)
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-arm64-android.so
-        path: ${{github.workspace}}/Native/build-arm64-android/libuniasset.so
+        path: ${{github.workspace}}/Native/build-arm64-android/src/uniasset/libuniasset.so
 
     - name: Upload Artifact (x86-android)
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-x86-android.so
-        path: ${{github.workspace}}/Native/build-x86-android/libuniasset.so
+        path: ${{github.workspace}}/Native/build-x86-android/src/uniasset/libuniasset.so
 
     - name: Upload Artifact (x64-android)
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-x64-android.so
-        path: ${{github.workspace}}/Native/build-x64-android/libuniasset.so
+        path: ${{github.workspace}}/Native/build-x64-android/src/uniasset/libuniasset.so

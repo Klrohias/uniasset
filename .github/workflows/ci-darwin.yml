@@ -21,21 +21,21 @@ jobs:
         
         TRIPLET='x64-osx'
         cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_SHARED_LIBS=YES
-        cmake --build ${{github.workspace}}/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
 
         TRIPLET='arm64-ios-bitcode'
         cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64
-        cmake --build ${{github.workspace}}/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
 
     - name: Upload Artifact (x64-osx)
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-x64-osx.dylib
-        path: ${{github.workspace}}/build-x64-osx/libuniasset.dylib
+        path: ${{github.workspace}}/Native/build-x64-osx/src/uniasset/libuniasset.dylib
 
     - name: Upload Artifact (arm64-ios-bitcode)
       uses: actions/upload-artifact@v3.1.2
       with:
         name: libuniasset-arm64-ios-bitcode.a
-        path: ${{github.workspace}}/build-arm64-ios-bitcode/libuniasset.a
+        path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a
         
