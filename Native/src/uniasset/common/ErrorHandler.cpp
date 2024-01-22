@@ -4,6 +4,8 @@
 
 #include "ErrorHandler.hpp"
 
+#include <stdexcept>
+
 namespace Uniasset {
     void ErrorHandler::SetError(const std::string& message) {
         message_ = message;

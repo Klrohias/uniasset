@@ -7,6 +7,7 @@
 #include <stb_image.h>
 #include <webp/decode.h>
 #include <turbojpeg.h>
+#include <cstring>
 
 #include "ImageAsset.hpp"
 #include "../common/Utils.hpp"

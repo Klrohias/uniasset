@@ -27,8 +27,10 @@ namespace Uniasset {
         return ma_format_u8;
     }
 
-    void AudioPlayer::MaDataCallback(ma_device* device, void* buffer, __attribute__((unused)) const void* unused1,
+    void AudioPlayer::MaDataCallback(ma_device* device, void* buffer, const void* unused1,
                                      unsigned int count) {
+        (void) unused1;
+
         auto player = reinterpret_cast<AudioPlayer*>(device->pUserData);
 
         do {
