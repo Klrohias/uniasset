@@ -33,11 +33,12 @@ pushd _ARCHIVE
 echo "[iOS-build] Extract libraries"
 
 # Extract all archives
-ExtractArchive $OUTPUT_DIR/libuniasset.a
 ExtractVcpkgArchive libturbojpeg.a
 ExtractVcpkgArchive libwebp.a
 ExtractVcpkgArchive libwebpdecoder.a
 ExtractVcpkgArchive libwebpdemux.a
+
+ExtractArchive $OUTPUT_DIR/libuniasset.a
 
 # Link all objects
 echo "[iOS-build] Link objects"
@@ -47,4 +48,4 @@ ar -q $OUTPUT_DIR/libuniasset.a $OUTPUT_DIR/libuniasset.o
 ranlib $OUTPUT_DIR/libuniasset.a
 
 popd
-rm -rf _ARCHIVE
+# rm -rf _ARCHIVE
