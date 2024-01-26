@@ -12,11 +12,12 @@ public class TestScene : MonoBehaviour
     public RawImage display;
     private AudioPlayer _audioPlayer;
     private AudioAsset _audioAsset;
+    private bool isOpened = false;
 
     private async void Start()
     {
-        _azusaImageData = await Utils.LoadStreamingAsset("Azusa.png", this);
-        _audioData = await File.ReadAllBytesAsync("/Users/mac/Documents/TestAudio.mp3");
+        _azusaImageData = await Utils.LoadStreamingAsset("base.jpg", this);
+        _audioData = await File.ReadAllBytesAsync(@"G:\DR3FV-Data\songs\hokkaidou\base.ogg");
     }
     private void OnGUI()
     {
@@ -26,12 +27,18 @@ public class TestScene : MonoBehaviour
         if (GUILayout.Button("ClipAsync (UWR)")) ClipImageAsync();
         if (GUILayout.Button("Create Player")) CreatePlayer();
         if (GUILayout.Button("Create AudioAsset")) CreateAudioAsset();
-        if (GUILayout.Button("Open Audio")) OpenAudio();
+        if (_audioPlayer == null || _audioAsset == null) return;
+        if (!isOpened)
+        {
+            if (GUILayout.Button("Open Audio")) OpenAudio();
+            return;
+        }
+
+        if (GUILayout.Button("Play/Resume Audio")) ResumeAudio();
         if (GUILayout.Button("Pause Audio")) PauseAudio();
-        if (GUILayout.Button("Resume Audio")) ResumeAudio();
         if (GUILayout.Button("Close Audio")) CloseAudio();
         if (GUILayout.Button("Get Player Time")) GetPlayerTime();
-        
+            
         if (GUILayout.Button("Lower volume"))
         {
             _audioPlayer.Volume = .4f;
@@ -51,11 +58,13 @@ public class TestScene : MonoBehaviour
     private void CloseAudio()
     {
         _audioPlayer.Close();
+        isOpened = false;
     }
 
     private void OpenAudio()
     {
         _audioPlayer.Open(_audioAsset);
+        isOpened = true;
     }
     
     private void ResumeAudio()
