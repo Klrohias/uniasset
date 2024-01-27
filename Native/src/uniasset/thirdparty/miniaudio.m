@@ -4,9 +4,8 @@
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 
-#ifdef TARGET_OS_IPHONE
-#define MA_NO_DECODING
-#define MA_NO_ENCODING
+#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE == 1
+
 #define MINIAUDIO_IMPLEMENTATION
 #include <miniaudio.h>
 #endif

@@ -59,14 +59,13 @@ target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # enable bitcode
     target_compile_options(uniasset PRIVATE -fembed-bitcode)
-    target_compile_options(uniasset PRIVATE -fembed-bitcode)
 endif()
 
 # Link
 target_include_directories(uniasset PRIVATE ${Stb_INCLUDE_DIR})
 target_include_directories(uniasset PRIVATE ${MINIAUDIO_INCLUDE_DIRS})
 target_include_directories(uniasset PRIVATE ${DRLIBS_INCLUDE_DIRS})
-target_link_libraries(uniasset PRIVATE WebP::webp WebP::webpdecoder WebP::webpdemux)
+target_link_libraries(uniasset PRIVATE WebP::webpdecoder)
 target_link_libraries(uniasset PRIVATE ${LINK_LIBJPEG_NAME})
 
 # Post build
