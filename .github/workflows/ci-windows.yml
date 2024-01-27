@@ -15,14 +15,14 @@ jobs:
 
     - name: Install vcpkg
       run: |
-        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg-ci"
         pushd ~/vcpkg-ci
         ./bootstrap-vcpkg.sh
         popd
 
     - name: Build x64-windows
       run: |
-        $env:VCPKG_INSTALLATION_ROOT="~/vcpkg-ci";
+        $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
         $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
         $TRIPLET='x64-windows';
         
@@ -39,7 +39,7 @@ jobs:
 
     - name: Build x86-windows
       run: |
-        $env:VCPKG_INSTALLATION_ROOT="~/vcpkg-ci";
+        $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
         $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
         $TRIPLET='x86-windows';
         
