@@ -20,8 +20,16 @@ jobs:
       run: |
         sudo apt install -y git build-essential ninja-build
 
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
+        popd
+
     - name: Build (Android)
       run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
         CFG_FLAGS=('-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}' '-DBUILD_SHARED_LIBS=YES' '-DVCPKG_CMAKE_SYSTEM_NAME=Android' '-DCMAKE_SYSTEM_NAME=Android' "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake")
 
         cd "${{github.workspace}}/Native"

@@ -13,16 +13,18 @@ jobs:
     - uses: actions/checkout@v3
     - name: Install vcpkg and dependencies
       run: |
-        cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
-
-    - name: Update vcpkg
-      run: |
-        pushd $VCPKG_INSTALLATION_ROOT
-        git pull
+        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
         popd
+      
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
 
     - name: Configure and build
       run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        
         cd "${{github.workspace}}/Native"
         
         TRIPLET='x64-osx'
@@ -44,4 +46,4 @@ jobs:
       with:
         name: libuniasset-arm64-ios-bitcode.a
         path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a
-        
+

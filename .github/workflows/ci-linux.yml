@@ -17,8 +17,17 @@ jobs:
       run: |
         sudo apt install -y git build-essential "gobjc++"
 
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
+        popd
+
     - name: Configure and build
       run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        
         cd "${{github.workspace}}/Native"
         
         TRIPLET="x64-linux"
