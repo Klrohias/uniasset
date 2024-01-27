@@ -6,7 +6,7 @@
 #include <TargetConditionals.h>
 #endif
 
-#if !defined(TARGET_OS_IPHONE)
+#if !defined(TARGET_OS_IPHONE) || TARGET_OS_IPHONE == 0
 #define MA_NO_DECODING
 #define MA_NO_ENCODING
 #define MINIAUDIO_IMPLEMENTATION

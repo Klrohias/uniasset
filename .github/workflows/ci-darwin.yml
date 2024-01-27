@@ -14,7 +14,13 @@ jobs:
     - name: Install vcpkg and dependencies
       run: |
         cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
-        
+
+    - name: Update vcpkg
+      run: |
+        pushd $VCPKG_INSTALLATION_ROOT
+        git pull
+        popd
+
     - name: Configure and build
       run: |
         cd "${{github.workspace}}/Native"

@@ -4,7 +4,7 @@
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 
-#ifdef TARGET_OS_IPHONE
+#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE == 1
 
 #define MINIAUDIO_IMPLEMENTATION
 #include <miniaudio.h>
