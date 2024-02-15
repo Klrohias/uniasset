@@ -11,7 +11,7 @@
 
 #include "uniasset/audio/IAudioDecoder.hpp"
 
-namespace Uniasset {
+namespace uniasset {
 
     class Mp3Decoder : public IAudioDecoder {
         void* decoder_{nullptr};

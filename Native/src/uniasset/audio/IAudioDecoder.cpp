@@ -4,5 +4,5 @@
 
 #include "IAudioDecoder.hpp"
 
-namespace Uniasset {
+namespace uniasset {
 } // Uniasset

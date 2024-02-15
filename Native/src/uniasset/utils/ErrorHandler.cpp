@@ -6,26 +6,26 @@
 
 #include <stdexcept>
 
-namespace Uniasset {
-    void ErrorHandler::SetError(const std::string& message) {
+namespace uniasset::utils {
+    void ErrorHandler::setError(const std::string& message) {
         message_ = message;
     }
 
-    const std::string& ErrorHandler::GetError() const {
+    const std::string& ErrorHandler::getError() const {
         return message_;
     }
 
-    bool ErrorHandler::Run(const std::function<void()>& callfunc) {
+    bool ErrorHandler::run(const std::function<void()>& callfunc) {
         try {
             callfunc();
             return true;
         } catch (const std::runtime_error& ex) {
-            SetError(ex.what());
+            setError(ex.what());
             return false;
         }
     }
 
-    void ErrorHandler::Clear() {
+    void ErrorHandler::clear() {
         message_.clear();
     }
 } // Uniasset

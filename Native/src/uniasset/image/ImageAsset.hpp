@@ -8,77 +8,66 @@
 
 #include <cstdint>
 #include <string_view>
+#include <functional>
+#include <memory>
 #include "uniasset/Foundation.hpp"
-#include "uniasset/common/ErrorHandler.hpp"
+#include "uniasset/common/Buffer.hpp"
+#include "uniasset/common/Templates.hpp"
+#include "uniasset/utils/ErrorHandler.hpp"
 
-namespace Uniasset {
+namespace uniasset {
+    using namespace uniasset::utils;
 
-    class UNIASSET_API ImageAsset {
+    inline void stb_deleter(uint8_t* buffer);
+
+    class UNIASSET_API ImageAsset : public std::enable_shared_from_this<ImageAsset> {
     private:
-        enum BufferSource {
-            Self,
-            Stb,
-        };
+        Buffer buffer_{nullptr, default_array_deleter<uint8_t>};
 
-        struct Buffer {
-            uint8_t* buffer{nullptr};
-            BufferSource source{Self};
-        };
+        ErrorHandler errorHandler_{};
 
-        Buffer buffer_{nullptr, Self};
         int32_t width_{-1};
         int32_t height_{-1};
         int32_t channelCount_{0};
-        ErrorHandler errorHandler_{};
 
-        static void ReleaseBuffer(Buffer& buffer);
+        void loadWebP(const std::string_view& path);
 
-        static Buffer AllocateBuffer(size_t size);
+        void loadJpeg(const std::string_view& path);
 
-        void LoadWebPFromFile(const char* path);
+        void loadFile(const std::string_view& path);
 
-        void LoadJpegFromFile(const char* path);
+        void loadWebP(uint8_t* fileData, size_t size);
 
-        void LoadFromFile(const char* path);
+        void loadJpeg(uint8_t* fileData, size_t size);
 
-        void LoadWebP(uint8_t* fileData, size_t size);
-
-        void LoadJpeg(uint8_t* fileData, size_t size);
-
-        void LoadFile(uint8_t* fileData, size_t size);
+        void loadFile(uint8_t* fileData, size_t size);
 
     public:
         explicit ImageAsset();
 
-        ~ImageAsset();
+        void load(const std::string_view& path);
 
-        ImageAsset(const ImageAsset&) = delete;
+        void load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
 
-        ImageAsset& operator=(const ImageAsset&) = delete;
+        void load(uint8_t* fileData, size_t size);
 
-        void Load(const std::string_view& path);
+        void unload();
 
-        void Load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
+        const std::string& getError();
 
-        void Load(uint8_t* fileData, size_t size);
+        int32_t getWidth();
 
-        void Unload();
+        int32_t getHeight();
 
-        const std::string& GetError();
+        int32_t getChannelCount();
 
-        int32_t GetWidth();
+        void clip(int32_t x, int32_t y, int32_t width, int32_t height);
 
-        int32_t GetHeight();
+        void resize(int32_t width, int32_t height);
 
-        int32_t GetChannelCount();
+        void copyTo(void* buffer);
 
-        void Clip(int32_t x, int32_t y, int32_t width, int32_t height);
-
-        void Resize(int32_t width, int32_t height);
-
-        void CopyTo(void* buffer);
-
-        [[nodiscard]] ImageAsset* Clone() const;
+        [[nodiscard]] ImageAsset* clone() const;
     };
 
 } // Uniasset

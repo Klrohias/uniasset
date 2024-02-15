@@ -8,17 +8,22 @@
 
 #include <memory>
 #include <vector>
+#include <span>
 
 #include "uniasset/Foundation.hpp"
-#include "uniasset/common/ErrorHandler.hpp"
+#include "uniasset/common/Buffer.hpp"
+#include "uniasset/common/Templates.hpp"
+#include "uniasset/utils/ErrorHandler.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
 
-namespace Uniasset {
+namespace uniasset {
+    using namespace uniasset::utils;
+
     class IAudioDecoder;
 
     class AudioPlayer;
 
-    class UNIASSET_API AudioAsset {
+    class UNIASSET_API AudioAsset : public std::enable_shared_from_this<AudioAsset> {
     private:
         enum LoadType {
             None,
@@ -34,57 +39,40 @@ namespace Uniasset {
             Flac
         };
 
-        struct AudioAssetLoadInfo {
-            LoadType type{None};
-            std::string path{};
-            uint8_t* data{nullptr};
-            size_t dataLength{0};
-            DataFormat format{Pcm};
-        };
-
-        std::vector<AudioPlayer*> playingAudioPlayer_{};
-        ErrorHandler errorHandler_{};
-        AudioAssetLoadInfo loadInfo_{};
-
+        LoadType type_{None};
+        DataFormat format_{Pcm};
         size_t sampleCount_{0};
         uint32_t sampleRate_{0};
         uint32_t channelCount_{0};
 
-        void Cleanup();
+        std::string path_{};
+        Buffer data_{};
+        size_t dataLength_{0};
 
-        bool LoadMetadata();
+        ErrorHandler errorHandler_{};
+
+        bool loadMetadata();
 
     public:
-
         explicit AudioAsset();
 
-        ~AudioAsset();
+        void load(const std::span<uint8_t>& data);
 
-        AudioAsset(const AudioAsset&) = delete;
+        void load(const std::string_view& path);
 
-        AudioAsset& operator=(const AudioAsset&) = delete;
+        void unload();
 
-        void Load(uint8_t* data, size_t len);
+        std::unique_ptr<IAudioDecoder> getAudioDecoder();
 
-        void Load(const std::string_view& path);
+        const std::string& getError();
 
-        void Unload();
+        size_t getSampleCount();
 
-        void AttachPlayer(AudioPlayer* player);
+        uint32_t getSampleRate();
 
-        void DetachPlayer(AudioPlayer* player);
+        uint32_t getChannelCount();
 
-        std::unique_ptr<IAudioDecoder> GetAudioDecoder();
-
-        const std::string& GetError();
-
-        size_t GetSampleCount();
-
-        uint32_t GetSampleRate();
-
-        uint32_t GetChannelCount();
-
-        float GetLength();
+        float getLength();
     };
 
 } // Uniasset

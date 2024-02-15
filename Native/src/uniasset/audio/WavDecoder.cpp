@@ -6,7 +6,7 @@
 
 #include <dr_wav.h>
 
-namespace Uniasset {
+namespace uniasset {
     WavDecoder::WavDecoder(uint8_t* data, size_t len)
             : decoder_{new drwav} {
         if (!drwav_init_memory(reinterpret_cast<drwav*>(decoder_), data, len, nullptr)) {

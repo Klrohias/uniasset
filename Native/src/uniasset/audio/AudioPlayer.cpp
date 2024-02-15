@@ -10,7 +10,7 @@
 #include "AudioAsset.hpp"
 #include "IAudioDecoder.hpp"
 
-namespace Uniasset {
+namespace uniasset {
 
     const char* ERROR_STR_AUDIO_NOT_LOADED = "audio asset is not loaded";
     const char* ERROR_STR_AUDIO_NOT_OPENED = "audio player has not opened any audio asset";
@@ -70,21 +70,21 @@ namespace Uniasset {
     }
 
     const std::string& AudioPlayer::GetError() {
-        return errorHandler_.GetError();
+        return errorHandler_.getError();
     }
 
     void AudioPlayer::Open(AudioAsset* audioAsset) {
-        errorHandler_.Clear();
+        errorHandler_.clear();
 
         if (state_ != Closed) {
             Close();
         }
 
         // get decoder
-        auto audioDecoder = audioAsset->GetAudioDecoder();
+        auto audioDecoder = audioAsset->getAudioDecoder();
 
         if (!audioDecoder) {
-            errorHandler_.SetError(ERROR_STR_AUDIO_NOT_LOADED);
+            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
             return;
         }
 

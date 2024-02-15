@@ -1,0 +1,15 @@
+--additional
+-I./src
+-std=c++20
+--config
+multi-file
+generate-file-scoped-namespaces
+generate-helper-types 
+--file
+src/uniasset/CBinding.h
+--namespace
+Uniasset.Unsafe
+--methodClassName
+Interop
+--output
+./ClangSharpGenerated/

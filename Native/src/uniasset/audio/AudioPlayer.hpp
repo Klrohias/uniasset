@@ -7,18 +7,20 @@
 #define UNIASSET_MINIAUDIOPLAYER_H
 
 #include <miniaudio.h>
-
-#include <miniaudio.h>
+#include <memory>
 #include "uniasset/Foundation.hpp"
-#include "uniasset/common/ErrorHandler.hpp"
+#include "uniasset/utils/ErrorHandler.hpp"
 
 struct ma_device;
 
-namespace Uniasset {
+namespace uniasset {
+    using namespace uniasset::utils;
+
     class AudioAsset;
+
     class IAudioDecoder;
 
-    class UNIASSET_API AudioPlayer {
+    class UNIASSET_API AudioPlayer : public std::enable_shared_from_this<AudioPlayer> {
     private:
         enum State {
             Closed,

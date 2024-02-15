@@ -6,7 +6,7 @@
 
 #include <dr_flac.h>
 
-namespace Uniasset {
+namespace uniasset {
     FlacDecoder::FlacDecoder(uint8_t* data, size_t len) {
         decoder_ = drflac_open_memory(data, len, nullptr);
     }

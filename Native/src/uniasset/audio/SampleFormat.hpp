@@ -6,7 +6,7 @@
 #ifndef UNIASSET_SAMPLEFORMAT_HPP
 #define UNIASSET_SAMPLEFORMAT_HPP
 
-namespace Uniasset {
+namespace uniasset {
     enum SampleFormat {
         Uint8,
         Int32,

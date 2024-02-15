@@ -24,9 +24,4 @@
 #define CBINDING_ENUM_U8(TYPE) uint8_t
 #define CBINDING_CALLBACK void*
 
-#define ERROR_HANDLER_ERRNO(HANDLER, DESC) { \
-    (HANDLER).SetError(std::string(DESC " (errno: ") + std::to_string(errno) \
-        + " " + strerror(errno) + ")"); \
-}; 0
-
 #endif //UNIASSET_LIBRARY_HPP

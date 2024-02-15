@@ -12,7 +12,7 @@
 #include "uniasset/Foundation.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
 
-namespace Uniasset {
+namespace uniasset {
     class IAudioDecoder {
     public:
         virtual ~IAudioDecoder() = default;

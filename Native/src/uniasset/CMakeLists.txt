@@ -14,6 +14,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     set(BUILD_SHARED_LIBS no)
 endif()
 
+set(OBJC_SUPPORTED 0)
+if (APPLE)
+    set(OBJC_SUPPORTED 1)
+endif ()
+
 # Packages
 find_package(Stb REQUIRED)
 find_package(libjpeg-turbo CONFIG REQUIRED)
@@ -28,10 +33,8 @@ add_library(uniasset
         CBinding.cpp
         image/ImageAsset.cpp
         image/ImageAsset.hpp
-        common/Utils.cpp
-        common/Utils.hpp
-        common/ErrorHandler.cpp
-        common/ErrorHandler.hpp
+        utils/ErrorHandler.cpp
+        utils/ErrorHandler.hpp
         audio/AudioAsset.cpp
         audio/AudioAsset.hpp
         audio/AudioPlayer.cpp
@@ -50,10 +53,16 @@ add_library(uniasset
         audio/WavDecoder.hpp
         audio/OggDecoder.cpp
         audio/OggDecoder.hpp
-        thirdparty/miniaudio.m
+        $<IF:${OBJC_SUPPORTED},thirdparty/miniaudio.m,>
+        common/Buffer.hpp
+        common/MagicNumbers.hpp
+        thirdparty/unique.hpp
+        thirdparty/c_file.hpp
+        common/Templates.hpp
+        thirdparty/turbojpeg.hpp
 )
 
-target_compile_features(uniasset PRIVATE cxx_std_17)
+target_compile_features(uniasset PRIVATE cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")

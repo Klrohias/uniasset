@@ -7,7 +7,7 @@
 #include <iostream>
 #include <stb_vorbis.c>
 
-namespace Uniasset {
+namespace uniasset {
     OggDecoder::OggDecoder(uint8_t* data, size_t len) {
         decoder_ = stb_vorbis_open_memory(data, len, &loadError_, nullptr);
         if (loadError_ != 0) {

@@ -6,7 +6,7 @@
 
 #include <dr_mp3.h>
 
-namespace Uniasset {
+namespace uniasset {
     Mp3Decoder::Mp3Decoder(uint8_t* data, size_t len)
             : decoder_{new drmp3} {
         if (!drmp3_init_memory(reinterpret_cast<drmp3*>(decoder_), data, len, nullptr)) {
