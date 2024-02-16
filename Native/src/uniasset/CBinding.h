@@ -52,6 +52,7 @@ CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(Audi
 CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val);
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self);
 CBINDING_METHOD(float, AudioPlayer, GetTime, CBINDING_TYPED_PTR(AudioPlayer) self);
+CBINDING_METHOD(void, AudioPlayer, SetTime, CBINDING_TYPED_PTR(AudioPlayer) self, float time);
 
 // AudioAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create);
@@ -68,7 +69,8 @@ CBINDING_METHOD(uint8_t, AudioAsset, GetLoadType, CBINDING_TYPED_PTR(AudioAsset)
 CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetPath, CBINDING_TYPED_PTR(AudioAsset) self);
 CBINDING_METHOD(void*, AudioAsset, GetData, CBINDING_TYPED_PTR(AudioAsset) self);
 CBINDING_METHOD(uint64_t, AudioAsset, GetDataLength, CBINDING_TYPED_PTR(AudioAsset) self);
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, CBINDING_TYPED_PTR(AudioAsset) self);
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, CBINDING_TYPED_PTR(AudioAsset) self,
+                uint8_t format);
 
 // IAudioDecoder
 CBINDING_METHOD(void, IAudioDecoder, Destory, CBINDING_TYPED_PTR(IAudioDecoder) obj);
@@ -78,18 +80,24 @@ CBINDING_METHOD(uint64_t, IAudioDecoder, GetSampleCount, CBINDING_TYPED_PTR(IAud
 CBINDING_METHOD(uint32_t, IAudioDecoder, GetSampleRate, CBINDING_TYPED_PTR(IAudioDecoder) self);
 CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
                 uint32_t count);
+CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Seek, CBINDING_TYPED_PTR(IAudioDecoder) self, int64_t pos);
+CBINDING_METHOD(int64_t, IAudioDecoder, Tell, CBINDING_TYPED_PTR(IAudioDecoder) self);
 
 // FlacDecoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset);
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format);
 
 // OggDecoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset);
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+        uint8_t format);
 
 // WavDecoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset);
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format);
 
 // Mp3Decoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset);
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format);
 
 // ExternalAudioDecoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create, void* userData,

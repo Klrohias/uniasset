@@ -69,6 +69,8 @@ namespace uniasset {
 
         float getTime() const;
 
+        void setTime(float time);
+
     };
 
 } // Uniasset

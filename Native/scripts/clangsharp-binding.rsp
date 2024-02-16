@@ -3,7 +3,6 @@
 -std=c++20
 --config
 multi-file
-generate-file-scoped-namespaces
 generate-helper-types 
 --file
 src/uniasset/CBinding.h
@@ -13,3 +12,5 @@ Uniasset.Unsafe
 Interop
 --output
 ./ClangSharpGenerated/
+--libraryPath
+uniasset_platform_dynamic_binding

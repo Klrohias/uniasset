@@ -34,4 +34,12 @@ namespace uniasset {
     bool ExternalAudioDecoder::read(void* buffer, uint32_t count) {
         return readFunc_(userData_, buffer, count);
     }
+
+    bool ExternalAudioDecoder::seek(int64_t position) {
+        return false;
+    }
+
+    int64_t ExternalAudioDecoder::tell() {
+        return 0;
+    }
 } // uniasset

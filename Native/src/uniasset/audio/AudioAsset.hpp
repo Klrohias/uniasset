@@ -62,7 +62,7 @@ namespace uniasset {
 
         void unload();
 
-        std::unique_ptr<IAudioDecoder> getAudioDecoder();
+        std::unique_ptr<IAudioDecoder> getAudioDecoder(SampleFormat sampleFormat);
 
         const std::string& getError();
 

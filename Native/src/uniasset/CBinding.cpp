@@ -19,7 +19,7 @@ using namespace uniasset;
 
 template<typename T>
 std::shared_ptr<T>* createInstance(T* item) {
-    return new std::shared_ptr<T>(item->shared_from_this());
+    return new std::shared_ptr<T>(item);
 }
 
 template<typename T>
@@ -197,8 +197,10 @@ CBINDING_METHOD(uint64_t, AudioAsset, GetDataLength, CBINDING_TYPED_PTR(AudioAss
     return getInstance<AudioAsset>(self)->getDataLength();
 }
 
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, CBINDING_TYPED_PTR(AudioAsset) self) {
-    return createInstance<IAudioDecoder>(getInstance<AudioAsset>(self)->getAudioDecoder().release());
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, CBINDING_TYPED_PTR(AudioAsset) self,
+                uint8_t format) {
+    return createInstance<IAudioDecoder>(getInstance<AudioAsset>(self)->getAudioDecoder(
+            static_cast<SampleFormat>(format)).release());
 }
 
 // IAudioDecoder
@@ -227,24 +229,40 @@ CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudio
     return getInstance<IAudioDecoder>(self)->read(buffer, count);
 }
 
+CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Seek, CBINDING_TYPED_PTR(IAudioDecoder) self, int64_t pos) {
+    return getInstance<IAudioDecoder>(self)->seek(pos);
+}
+
+CBINDING_METHOD(int64_t, IAudioDecoder, Tell, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    return getInstance<IAudioDecoder>(self)->tell();
+}
+
 // FlacDecoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
-    return createInstance<IAudioDecoder>(new FlacDecoder(getInstance<AudioAsset>(asset)));
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format) {
+    return createInstance<IAudioDecoder>(new FlacDecoder(getInstance<AudioAsset>(asset),
+                                                         static_cast<SampleFormat>(format)));
 }
 
 // OggDecoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
-    return createInstance<IAudioDecoder>(new OggDecoder(getInstance<AudioAsset>(asset)));
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format) {
+    return createInstance<IAudioDecoder>(new OggDecoder(getInstance<AudioAsset>(asset),
+                                                        static_cast<SampleFormat>(format)));
 }
 
 // WavDecoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
-    return createInstance<IAudioDecoder>(new WavDecoder(getInstance<AudioAsset>(asset)));
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format) {
+    return createInstance<IAudioDecoder>(new WavDecoder(getInstance<AudioAsset>(asset),
+                                                        static_cast<SampleFormat>(format)));
 }
 
 // Mp3Decoder
-CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
-    return createInstance<IAudioDecoder>(new Mp3Decoder(getInstance<AudioAsset>(asset)));
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
+                uint8_t format) {
+    return createInstance<IAudioDecoder>(new Mp3Decoder(getInstance<AudioAsset>(asset),
+                                                        static_cast<SampleFormat>(format)));
 }
 
 // ExternalAudioDecoder

@@ -5,12 +5,11 @@
 #include "OggDecoder.hpp"
 #include "AudioAsset.hpp"
 
-#include <iostream>
 #include <utility>
 
 namespace uniasset {
-    OggDecoder::OggDecoder(std::shared_ptr<AudioAsset> asset)
-            : asset_{std::move(asset)} {
+    OggDecoder::OggDecoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat)
+            : asset_{std::move(asset)}, sampleFormat_{sampleFormat} {
         auto loadType = asset_->getLoadType();
 
         if (loadType == LoadType_Memory) {
@@ -31,7 +30,7 @@ namespace uniasset {
     }
 
     SampleFormat OggDecoder::getSampleFormat() {
-        return Int16;
+        return SampleFormat_Int16;
     }
 
     uint32_t OggDecoder::getChannelCount() {
@@ -52,12 +51,29 @@ namespace uniasset {
     bool OggDecoder::read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
         auto channels = info_.channels;
-        stb_vorbis_get_samples_short_interleaved(decoder_.get(), channels,
-                                                 reinterpret_cast<int16_t*>(buffer), count * channels);
+
+        if (sampleFormat_ == SampleFormat_Int16) {
+            stb_vorbis_get_samples_short_interleaved(decoder_.get(), channels,
+                                                     reinterpret_cast<int16_t*>(buffer), count * channels);
+        } else {
+            stb_vorbis_get_samples_float_interleaved(decoder_.get(), channels,
+                                                     reinterpret_cast<float_t*>(buffer), count * channels);
+        }
+
         return true;
     }
 
     int OggDecoder::getLoadError() const {
         return loadError_;
+    }
+
+    bool OggDecoder::seek(int64_t position) {
+        if (!decoder_) return false;
+        return stb_vorbis_seek(decoder_.get(), position);
+    }
+
+    int64_t OggDecoder::tell() {
+        if (!decoder_) return 0;
+        return stb_vorbis_get_sample_offset(decoder_.get());
     }
 } // Uniasset

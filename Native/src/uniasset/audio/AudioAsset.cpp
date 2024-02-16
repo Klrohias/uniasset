@@ -21,18 +21,18 @@ namespace uniasset {
     AudioAsset::AudioAsset() = default;
 
 
-    std::unique_ptr<IAudioDecoder> AudioAsset::getAudioDecoder() {
+    std::unique_ptr<IAudioDecoder> AudioAsset::getAudioDecoder(SampleFormat sampleFormat) {
         switch (format_) {
             case DataFormat_Pcm:
                 break;
             case DataFormat_Mp3:
-                return std::unique_ptr<IAudioDecoder>(new Mp3Decoder{shared_from_this()});
+                return std::unique_ptr<IAudioDecoder>(new Mp3Decoder{shared_from_this(), sampleFormat});
             case DataFormat_Ogg:
-                return std::unique_ptr<IAudioDecoder>(new OggDecoder{shared_from_this()});
+                return std::unique_ptr<IAudioDecoder>(new OggDecoder{shared_from_this(), sampleFormat});
             case DataFormat_Wav:
-                return std::unique_ptr<IAudioDecoder>(new WavDecoder{shared_from_this()});
+                return std::unique_ptr<IAudioDecoder>(new WavDecoder{shared_from_this(), sampleFormat});
             case DataFormat_Flac:
-                return std::unique_ptr<IAudioDecoder>(new FlacDecoder{shared_from_this()});
+                return std::unique_ptr<IAudioDecoder>(new FlacDecoder{shared_from_this(), sampleFormat});
         }
         return nullptr;
     }
@@ -86,7 +86,7 @@ namespace uniasset {
         }
 
         uint8_t buffer[32] = {0};
-        size_t readSize = fread(buffer, 32, 1, file);
+        size_t readSize = fread(buffer, 1, 32, file);
 
         if (readSize == 0) {
             ERROR_HANDLER_ERRNO(errorHandler_, "failed to read audio file");
@@ -121,7 +121,7 @@ namespace uniasset {
     }
 
     bool AudioAsset::loadMetadata() {
-        auto decoder = getAudioDecoder();
+        auto decoder = getAudioDecoder(SampleFormat_Int16);
         if (!decoder) {
             return false;
         }

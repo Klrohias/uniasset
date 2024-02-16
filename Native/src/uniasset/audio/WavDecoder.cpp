@@ -30,8 +30,8 @@ namespace uniasset {
         return result;
     }
 
-    WavDecoder::WavDecoder(std::shared_ptr<AudioAsset> asset)
-            : asset_{std::move(asset)} {
+    WavDecoder::WavDecoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat)
+            : asset_{std::move(asset)}, sampleFormat_{sampleFormat} {
         auto loadType = asset_->getLoadType();
 
         if (loadType == LoadType_Memory) {
@@ -57,7 +57,7 @@ namespace uniasset {
     }
 
     SampleFormat WavDecoder::getSampleFormat() {
-        return Int16;
+        return SampleFormat_Int16;
     }
 
     uint32_t WavDecoder::getSampleRate() {
@@ -67,8 +67,25 @@ namespace uniasset {
 
     bool WavDecoder::read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
-        drwav_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
+        if (sampleFormat_ == SampleFormat_Int16) {
+            drwav_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
+        } else {
+            drwav_read_pcm_frames_f32(decoder_.get(), count, reinterpret_cast<float_t*>(buffer));
+        }
         return true;
+    }
+
+    bool WavDecoder::seek(int64_t position) {
+        if (!decoder_) return false;
+        return drwav_seek_to_pcm_frame(decoder_.get(), position);
+    }
+
+    int64_t WavDecoder::tell() {
+        int64_t result{0};
+        if (decoder_) {
+            drwav_get_cursor_in_pcm_frames(decoder_.get(), reinterpret_cast<drwav_uint64*>(&result));
+        }
+        return result;
     }
 
 } // Uniasset

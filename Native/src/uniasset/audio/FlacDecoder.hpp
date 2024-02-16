@@ -24,9 +24,10 @@ namespace uniasset {
     class UNIASSET_API FlacDecoder : public IAudioDecoder {
         std::shared_ptr<AudioAsset> asset_{nullptr};
         c_unique_ptr<drflac, drflac_deleter> decoder_{nullptr, drflac_deleter};
+        SampleFormat sampleFormat_{SampleFormat_Int16};
 
     public:
-        explicit FlacDecoder(std::shared_ptr<AudioAsset> asset);
+        explicit FlacDecoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat);
 
         FlacDecoder(FlacDecoder&&) = default;
 
@@ -41,6 +42,10 @@ namespace uniasset {
         uint32_t getSampleRate() override;
 
         bool read(void* buffer, uint32_t count) override;
+
+        bool seek(int64_t position) override;
+
+        int64_t tell() override;
     };
 
 } // Uniasset

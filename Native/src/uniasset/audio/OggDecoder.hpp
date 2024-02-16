@@ -24,12 +24,13 @@ namespace uniasset {
     class OggDecoder : public IAudioDecoder {
         std::shared_ptr<AudioAsset> asset_{};
         c_unique_ptr<stb_vorbis, stb_vorbis_deleter> decoder_{nullptr, stb_vorbis_deleter};
+        SampleFormat sampleFormat_{SampleFormat_Int16};
 
         stb_vorbis_info info_{};
         int loadError_{};
 
     public:
-        explicit OggDecoder(std::shared_ptr<AudioAsset> asset);
+        explicit OggDecoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat);
 
         OggDecoder(OggDecoder&&) = default;
 
@@ -46,6 +47,10 @@ namespace uniasset {
         bool read(void* buffer, uint32_t count) override;
 
         int getLoadError() const;
+
+        bool seek(int64_t position) override;
+
+        int64_t tell() override;
     };
 
 } // Uniasset

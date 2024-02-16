@@ -5,3 +5,4 @@ project(Uniasset)
 include_directories(src)
 
 add_subdirectory(src/uniasset)
+add_subdirectory(src/uniasset.test)

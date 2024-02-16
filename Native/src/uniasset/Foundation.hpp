@@ -6,7 +6,7 @@
 #ifndef UNIASSET_LIBRARY_HPP
 #define UNIASSET_LIBRARY_HPP
 
-#if defined(_WIN32) || defined(_WIN64) || defined(_WINDOWS)
+#if (defined(_WIN32) || defined(_WIN64) || defined(_WINDOWS)) && defined(UNIASSET_SHARED)
 #ifdef UNIASSET_BUILD
 #define UNIASSET_API __declspec(dllexport)
 #else

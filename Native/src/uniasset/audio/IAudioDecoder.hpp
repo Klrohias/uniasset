@@ -26,6 +26,10 @@ namespace uniasset {
 
         virtual uint32_t getSampleRate() = 0;
 
+        virtual bool seek(int64_t position) = 0;
+
+        virtual int64_t tell() = 0;
+
         virtual bool read(void* buffer, uint32_t count) = 0;
     };
 

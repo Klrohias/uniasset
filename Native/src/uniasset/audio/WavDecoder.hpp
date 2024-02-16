@@ -24,9 +24,10 @@ namespace uniasset {
     class WavDecoder : public IAudioDecoder {
         std::shared_ptr<AudioAsset> asset_{};
         c_unique_ptr<drwav, drwav_deleter> decoder_{nullptr, drwav_deleter};
+        SampleFormat sampleFormat_{SampleFormat_Int16};
 
     public:
-        explicit WavDecoder(std::shared_ptr<AudioAsset> asset);
+        explicit WavDecoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat);
 
         WavDecoder(WavDecoder&&) = default;
 
@@ -41,6 +42,10 @@ namespace uniasset {
         uint32_t getSampleRate() override;
 
         bool read(void* buffer, uint32_t count) override;
+
+        bool seek(int64_t position) override;
+
+        int64_t tell() override;
     };
 
 } // Uniasset

@@ -13,13 +13,9 @@
 namespace uniasset {
     inline ma_format toMaFormat(SampleFormat format) {
         switch (format) {
-            case Uint8:
-                return ma_format_u8;
-            case Int32:
-                return ma_format_s32;
-            case Float:
+            case SampleFormat_Float:
                 return ma_format_f32;
-            case Int16:
+            case SampleFormat_Int16:
                 return ma_format_s16;
         }
         return ma_format_u8;
@@ -71,7 +67,7 @@ namespace uniasset {
         errorHandler_.clear();
 
         // get decoder
-        auto audioDecoder = audioAsset->getAudioDecoder();
+        auto audioDecoder = audioAsset->getAudioDecoder(SampleFormat_Int16);
 
         if (!audioDecoder) {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
@@ -164,7 +160,10 @@ namespace uniasset {
     }
 
     float AudioPlayer::getTime() const {
-        return static_cast<float>(decodedSampleCount_) /
-               static_cast<float>(sampleRate_);
+        return static_cast<float>(audioDecoder_->tell()) / static_cast<float>(sampleRate_);
+    }
+
+    void AudioPlayer::setTime(float time) {
+        audioDecoder_->seek(static_cast<int64_t>(time * static_cast<float>(sampleRate_)));
     }
 } // Uniasset

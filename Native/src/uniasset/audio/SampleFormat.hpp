@@ -10,10 +10,8 @@
 
 namespace uniasset {
     enum SampleFormat : uint8_t {
-        Uint8,
-        Int32,
-        Float,
-        Int16,
+        SampleFormat_Float,
+        SampleFormat_Int16,
     };
 }
 

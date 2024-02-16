@@ -31,8 +31,8 @@ namespace uniasset {
         return result;
     }
 
-    Mp3Decoder::Mp3Decoder(std::shared_ptr<AudioAsset> asset)
-            : asset_{std::move(asset)} {
+    Mp3Decoder::Mp3Decoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat)
+            : asset_{std::move(asset)}, sampleFormat_{sampleFormat} {
         auto loadType = asset_->getLoadType();
 
         if (loadType == LoadType_Memory) {
@@ -59,7 +59,7 @@ namespace uniasset {
     }
 
     SampleFormat Mp3Decoder::getSampleFormat() {
-        return Int16;
+        return SampleFormat_Int16;
     }
 
     uint32_t Mp3Decoder::getSampleRate() {
@@ -69,7 +69,21 @@ namespace uniasset {
 
     bool Mp3Decoder::read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
-        drmp3_read_pcm_frames_s16(decoder_.get(), count, static_cast<int16_t*>(buffer));
+        if (sampleFormat_ == SampleFormat_Int16) {
+            drmp3_read_pcm_frames_s16(decoder_.get(), count, static_cast<int16_t*>(buffer));
+        } else {
+            drmp3_read_pcm_frames_f32(decoder_.get(), count, static_cast<float_t*>(buffer));
+        }
         return true;
+    }
+
+    bool Mp3Decoder::seek(int64_t position) {
+        if (!decoder_) return false;
+        return drmp3_seek_to_pcm_frame(decoder_.get(), position);
+    }
+
+    int64_t Mp3Decoder::tell() {
+        if (!decoder_) return 0;
+        return static_cast<int64_t >(decoder_->currentPCMFrame);
     }
 } // Uniasset

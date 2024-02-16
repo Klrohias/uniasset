@@ -9,8 +9,8 @@
 #include <utility>
 
 namespace uniasset {
-    FlacDecoder::FlacDecoder(std::shared_ptr<AudioAsset> asset)
-            : asset_{std::move(asset)} {
+    FlacDecoder::FlacDecoder(std::shared_ptr<AudioAsset> asset, SampleFormat sampleFormat)
+            : asset_{std::move(asset)}, sampleFormat_{sampleFormat} {
         auto loadType = asset_->getLoadType();
 
         if (loadType == LoadType_Memory) {
@@ -35,7 +35,7 @@ namespace uniasset {
     }
 
     SampleFormat FlacDecoder::getSampleFormat() {
-        return Int16;
+        return sampleFormat_;
     }
 
     uint32_t FlacDecoder::getSampleRate() {
@@ -45,7 +45,21 @@ namespace uniasset {
 
     bool FlacDecoder::read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
-        drflac_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
+        if (sampleFormat_ == SampleFormat_Int16) {
+            drflac_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
+        } else {
+            drflac_read_pcm_frames_f32(decoder_.get(), count, reinterpret_cast<float_t*>(buffer));
+        }
         return true;
+    }
+
+    bool FlacDecoder::seek(int64_t position) {
+        if (!decoder_) return false;
+        return drflac_seek_to_pcm_frame(decoder_.get(), position);
+    }
+
+    int64_t FlacDecoder::tell() {
+        if (!decoder_) return 0;
+        return static_cast<int64_t>(decoder_->currentPCMFrame);
     }
 } // Uniasset

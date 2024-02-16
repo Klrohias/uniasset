@@ -261,29 +261,30 @@ namespace uniasset {
         errorHandler_.clear();
 
         c_unique_ptr<void, tj_deleter> processor{nullptr, tj_deleter};
-        c_unique_ptr<uint8_t, tj_deleter> transformedData{nullptr, tj_deleter};
-        uint64_t transformedSize = 0;
+        /*
+         c_unique_ptr<uint8_t, tj_deleter> transformedData{nullptr, tj_deleter};
+         uint64_t transformedSize = 0;
 
-        // transform
-        processor.reset(tjInitTransform());
-        if (!processor) {
-            errorHandler_.setError(tjGetErrorStr());
-            return;
-        }
+         // transform
+         processor.reset(tjInitTransform());
+         if (!processor) {
+             errorHandler_.setError(tjGetErrorStr());
+             return;
+         }
 
-        tjtransform transform{};
-        memset(&transform, 0, sizeof(tjtransform));
-        transform.op = TJXOP_VFLIP;
+         tjtransform transform{};
+         memset(&transform, 0, sizeof(tjtransform));
+         transform.op = TJXOP_VFLIP;
 
-        uint8_t* transformedDataRaw = nullptr;
-        if (tjTransform(processor.get(), fileData, size, 1, &transformedDataRaw,
-                        reinterpret_cast<unsigned long*>(&transformedSize), &transform, 0) != 0) {
-            errorHandler_.setError(tjGetErrorStr2(processor.get()));
-            return;
-        }
-        transformedData.reset(transformedDataRaw);
+         uint8_t* transformedDataRaw = nullptr;
+         if (tjTransform(processor.get(), fileData, size, 1, &transformedDataRaw,
+                         reinterpret_cast<unsigned long*>(&transformedSize), &transform, 0) != 0) {
+             errorHandler_.setError(tjGetErrorStr2(processor.get()));
+             return;
+         }
+         transformedData.reset(transformedDataRaw);
 
-
+ */
         // decode
         processor.reset(tjInitDecompress());
         if (!processor) {
@@ -302,13 +303,15 @@ namespace uniasset {
 
         Buffer buffer{new uint8_t[width_ * height_ * channelCount_], default_array_deleter<uint8_t>};
         if (tjDecompress2(processor.get(),
-                          transformedData.get(),
-                          transformedSize,
+/*                          transformedData.get(),
+                          transformedSize,*/
+                          fileData,
+                          size,
                           buffer.get(), width_,
                           0,
                           height_,
                           TJPF_RGB,
-                          TJFLAG_FASTDCT) != 0) {
+                          TJFLAG_FASTDCT | TJFLAG_BOTTOMUP) != 0) {
             errorHandler_.setError(tjGetErrorStr2(processor.get()));
             return;
         }
