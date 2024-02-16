@@ -9,7 +9,7 @@ TRIPLET=arm64-ios-bitcode
 
 # print info
 echo "[iOS-build] Begin of environment variables"
-env
+# env
 echo "[iOS-build] End"
 
 echo "[iOS-build] Begin of files in $OUTPUT_DIR"
