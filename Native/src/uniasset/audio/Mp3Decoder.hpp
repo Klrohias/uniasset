@@ -8,34 +8,40 @@
 
 #include <cstdlib>
 #include <string_view>
+#include <memory>
+#include <dr_mp3.h>
 
 #include "uniasset/audio/IAudioDecoder.hpp"
+#include "uniasset/thirdparty/unique.hpp"
 
 namespace uniasset {
+    class AudioAsset;
+
+    inline void drmp3_deleter(drmp3* decoder) {
+        drmp3_uninit(decoder);
+        delete decoder;
+    }
 
     class Mp3Decoder : public IAudioDecoder {
-        void* decoder_{nullptr};
+        std::shared_ptr<AudioAsset> asset_{};
+        c_unique_ptr<drmp3, drmp3_deleter> decoder_{nullptr, drmp3_deleter};
 
     public:
-        explicit Mp3Decoder(uint8_t* data, size_t len);
+        explicit Mp3Decoder(std::shared_ptr<AudioAsset> asset);
 
-        explicit Mp3Decoder(const std::string_view& path);
+        Mp3Decoder(Mp3Decoder&&) = default;
 
-        ~Mp3Decoder() override;
+        ~Mp3Decoder() override = default;
 
-        Mp3Decoder(const Mp3Decoder&) = delete;
+        uint32_t getChannelCount() override;
 
-        Mp3Decoder& operator=(const Mp3Decoder&) = delete;
+        size_t getSampleCount() override;
 
-        uint32_t GetChannelCount() override;
+        SampleFormat getSampleFormat() override;
 
-        size_t GetSampleCount() override;
+        uint32_t getSampleRate() override;
 
-        SampleFormat GetSampleFormat() override;
-
-        uint32_t GetSampleRate() override;
-
-        bool Read(void* buffer, uint32_t count) override;
+        bool read(void* buffer, uint32_t count) override;
     };
 
 } // Uniasset

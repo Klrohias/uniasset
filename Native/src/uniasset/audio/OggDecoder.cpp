@@ -3,55 +3,61 @@
 //
 
 #include "OggDecoder.hpp"
+#include "AudioAsset.hpp"
 
 #include <iostream>
-#include <stb_vorbis.c>
+#include <utility>
 
 namespace uniasset {
-    OggDecoder::OggDecoder(uint8_t* data, size_t len) {
-        decoder_ = stb_vorbis_open_memory(data, len, &loadError_, nullptr);
-        if (loadError_ != 0) {
-            std::cerr << "Failed to open ogg file: " << loadError_ << "\n";
-        }
-    }
+    OggDecoder::OggDecoder(std::shared_ptr<AudioAsset> asset)
+            : asset_{std::move(asset)} {
+        auto loadType = asset_->getLoadType();
 
-    OggDecoder::OggDecoder(const std::string_view& path) {
-        decoder_ = stb_vorbis_open_filename(path.data(), &loadError_, nullptr);
-        if (loadError_ != 0) {
-            std::cerr << "Failed to open ogg file: " << loadError_ << "\n";
-        }
-    }
+        if (loadType == LoadType_Memory) {
+            auto& data = asset_->getData();
+            auto len = asset_->getDataLength();
+            decoder_ = make_c_unique<stb_vorbis, stb_vorbis_deleter>(
+                    stb_vorbis_open_memory(data.get(), len, &loadError_, nullptr));
+        } else if (loadType == LoadType_File) {
+            auto& path = asset_->getPath();
 
-    OggDecoder::~OggDecoder() {
+            decoder_ = make_c_unique<stb_vorbis, stb_vorbis_deleter>(
+                    stb_vorbis_open_filename(path.data(), &loadError_, nullptr));
+        }
+
         if (decoder_) {
-            stb_vorbis_close(reinterpret_cast<stb_vorbis*>(decoder_));
+            info_ = stb_vorbis_get_info(decoder_.get());
         }
     }
 
-    SampleFormat OggDecoder::GetSampleFormat() {
+    SampleFormat OggDecoder::getSampleFormat() {
         return Int16;
     }
 
-    uint32_t OggDecoder::GetChannelCount() {
+    uint32_t OggDecoder::getChannelCount() {
         if (!decoder_) return 1;
-        return reinterpret_cast<stb_vorbis*>(decoder_)->channels;
+        return info_.channels;
     }
 
-    uint32_t OggDecoder::GetSampleRate() {
+    uint32_t OggDecoder::getSampleRate() {
         if (!decoder_) return 19200;
-        return reinterpret_cast<stb_vorbis*>(decoder_)->sample_rate;
+        return info_.sample_rate;
     }
 
-    size_t OggDecoder::GetSampleCount() {
+    size_t OggDecoder::getSampleCount() {
         if (!decoder_) return 0;
-        return stb_vorbis_stream_length_in_samples(reinterpret_cast<stb_vorbis*>(decoder_)) * GetChannelCount();
+        return stb_vorbis_stream_length_in_samples(decoder_.get()) * getChannelCount();
     }
 
-    bool OggDecoder::Read(void* buffer, uint32_t count) {
+    bool OggDecoder::read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
-        auto channels = reinterpret_cast<stb_vorbis*>(decoder_)->channels;
-        stb_vorbis_get_samples_short_interleaved(reinterpret_cast<stb_vorbis*>(decoder_), channels,
-                                                 reinterpret_cast<int16*>(buffer), count * channels);
+        auto channels = info_.channels;
+        stb_vorbis_get_samples_short_interleaved(decoder_.get(), channels,
+                                                 reinterpret_cast<int16_t*>(buffer), count * channels);
         return true;
+    }
+
+    int OggDecoder::getLoadError() const {
+        return loadError_;
     }
 } // Uniasset

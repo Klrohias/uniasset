@@ -8,34 +8,39 @@
 
 #include <cstdlib>
 #include <string_view>
+#include <dr_flac.h>
 
+#include "uniasset/Foundation.hpp"
+#include "uniasset/thirdparty/unique.hpp"
 #include "uniasset/audio/IAudioDecoder.hpp"
 
 namespace uniasset {
+    class AudioAsset;
 
-    class FlacDecoder : public IAudioDecoder{
-        void* decoder_{nullptr};
+    inline void drflac_deleter(drflac* decoder) {
+        drflac_close(decoder);
+    }
+
+    class UNIASSET_API FlacDecoder : public IAudioDecoder {
+        std::shared_ptr<AudioAsset> asset_{nullptr};
+        c_unique_ptr<drflac, drflac_deleter> decoder_{nullptr, drflac_deleter};
 
     public:
-        explicit FlacDecoder(uint8_t* data, size_t len);
+        explicit FlacDecoder(std::shared_ptr<AudioAsset> asset);
 
-        explicit FlacDecoder(const std::string_view& path);
+        FlacDecoder(FlacDecoder&&) = default;
 
-        ~FlacDecoder() override;
+        ~FlacDecoder() override = default;
 
-        FlacDecoder(const FlacDecoder&) = delete;
+        uint32_t getChannelCount() override;
 
-        FlacDecoder& operator=(const FlacDecoder&) = delete;
+        size_t getSampleCount() override;
 
-        uint32_t GetChannelCount() override;
+        SampleFormat getSampleFormat() override;
 
-        size_t GetSampleCount() override;
+        uint32_t getSampleRate() override;
 
-        SampleFormat GetSampleFormat() override;
-
-        uint32_t GetSampleRate() override;
-
-        bool Read(void* buffer, uint32_t count) override;
+        bool read(void* buffer, uint32_t count) override;
     };
 
 } // Uniasset

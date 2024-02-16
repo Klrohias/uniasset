@@ -6,16 +6,15 @@
 
 #include <cstring>
 
-#include "miniaudio.h"
 #include "AudioAsset.hpp"
 #include "IAudioDecoder.hpp"
 
 namespace uniasset {
 
-    const char* ERROR_STR_AUDIO_NOT_LOADED = "audio asset is not loaded";
-    const char* ERROR_STR_AUDIO_NOT_OPENED = "audio player has not opened any audio asset";
+    const char ERROR_STR_AUDIO_NOT_LOADED[] = "audio asset is not loaded";
+    const char ERROR_STR_AUDIO_NOT_OPENED[] = "audio player has not opened any audio asset";
 
-    inline ma_format ToMaFormat(SampleFormat format) {
+    inline ma_format toMaFormat(SampleFormat format) {
         switch (format) {
             case Uint8:
                 return ma_format_u8;
@@ -29,7 +28,7 @@ namespace uniasset {
         return ma_format_u8;
     }
 
-    void AudioPlayer::MaDataCallback(ma_device* device, void* buffer, const void* unused1,
+    void AudioPlayer::maDataCallback(ma_device* device, void* buffer, const void* unused1,
                                      unsigned int count) {
         (void) unused1;
 
@@ -40,7 +39,7 @@ namespace uniasset {
                 break;
             }
 
-            if (!player->audioDecoder_->Read(buffer, count)) {
+            if (!player->audioDecoder_->read(buffer, count)) {
                 break;
             }
 
@@ -65,20 +64,14 @@ namespace uniasset {
         }
     }
 
-    AudioPlayer::AudioPlayer()
-            : device_{new ma_device} {
-    }
+    AudioPlayer::AudioPlayer() = default;
 
-    const std::string& AudioPlayer::GetError() {
+    const std::string& AudioPlayer::getError() {
         return errorHandler_.getError();
     }
 
-    void AudioPlayer::Open(AudioAsset* audioAsset) {
+    void AudioPlayer::open(const std::shared_ptr<AudioAsset>& audioAsset) {
         errorHandler_.clear();
-
-        if (state_ != Closed) {
-            Close();
-        }
 
         // get decoder
         auto audioDecoder = audioAsset->getAudioDecoder();
@@ -90,41 +83,32 @@ namespace uniasset {
 
         // init device
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
-        deviceConfig.playback.format = ToMaFormat(audioDecoder->GetSampleFormat());
-        deviceConfig.playback.channels = audioDecoder->GetChannelCount();
-        deviceConfig.sampleRate = audioDecoder->GetSampleRate();
+        deviceConfig.playback.format = toMaFormat(audioDecoder->getSampleFormat());
+        deviceConfig.playback.channels = audioDecoder->getChannelCount();
+        deviceConfig.sampleRate = audioDecoder->getSampleRate();
         deviceConfig.pUserData = this;
-        deviceConfig.dataCallback = &MaDataCallback;
+        deviceConfig.dataCallback = &maDataCallback;
 
-        if (ma_device_init(nullptr, &deviceConfig, device_) != MA_SUCCESS) {
+        device_ = miniaudio_create_device(deviceConfig);
+
+        if (!device_) {
             ERROR_HANDLER_ERRNO(errorHandler_, "Failed to create playback device");
             return;
         }
 
-        ma_device_set_master_volume(device_, volume_);
-
-        // attach asset
-        audioAsset->AttachPlayer(this);
+        ma_device_set_master_volume(device_.get(), volume_);
 
         audioAsset_ = audioAsset;
-        audioDecoder_ = audioDecoder.release();
+        audioDecoder_ = std::shared_ptr<IAudioDecoder>(audioDecoder.release());
 
         // set state
         state_ = Opened;
-        channelCount_ = audioDecoder_->GetChannelCount();
-        sampleRate_ = audioDecoder_->GetSampleRate();
+        decodedSampleCount_ = 0;
+        channelCount_ = audioDecoder_->getChannelCount();
+        sampleRate_ = audioDecoder_->getSampleRate();
     }
 
-    void AudioPlayer::Close() {
-        if (state_ == Closed) {
-            return;
-        }
-
-        audioAsset_->DetachPlayer(this);
-        CloseInternal();
-    }
-
-    void AudioPlayer::CloseInternal() {
+    void AudioPlayer::close() {
         if (state_ == Closed) {
             return;
         }
@@ -135,32 +119,21 @@ namespace uniasset {
         sampleRate_ = 0;
         channelCount_ = 0;
 
-        // dispose device
-        ma_device_uninit(device_);
+        device_.reset();
 
-        // dispose audio decoder
-        delete audioDecoder_;
-        audioDecoder_ = nullptr;
-
-        // detach asset
         audioAsset_ = nullptr;
+        audioDecoder_ = nullptr;
     }
 
-    AudioPlayer::~AudioPlayer() {
-        Close();
-
-        delete device_;
-    }
-
-    void AudioPlayer::Pause() {
+    void AudioPlayer::pause() {
         if (state_ == Resumed) {
             state_ = Paused;
         }
     }
 
-    void AudioPlayer::Resume() {
+    void AudioPlayer::resume() {
         if (state_ == Opened) {
-            ma_device_start(device_);
+            ma_device_start(device_.get());
             state_ = Paused;
         }
 
@@ -169,31 +142,31 @@ namespace uniasset {
         }
     }
 
-    bool AudioPlayer::IsPaused() {
+    bool AudioPlayer::isPaused() {
         return state_ != Resumed;
     }
 
-    float AudioPlayer::GetVolume() {
+    float AudioPlayer::getVolume() {
         if (state_ == Closed) {
             return volume_;
         }
 
-        ma_device_get_master_volume(device_, &volume_);
+        ma_device_get_master_volume(device_.get(), &volume_);
 
         return volume_;
     }
 
-    void AudioPlayer::SetVolume(float val) {
+    void AudioPlayer::setVolume(float val) {
         volume_ = val;
 
         if (state_ == Closed) {
             return;
         }
 
-        ma_device_set_master_volume(device_, val);
+        ma_device_set_master_volume(device_.get(), val);
     }
 
-    float AudioPlayer::GetTime() const {
+    float AudioPlayer::getTime() const {
         return static_cast<float>(decodedSampleCount_) /
                static_cast<float>(sampleRate_);
     }

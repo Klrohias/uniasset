@@ -8,35 +8,44 @@
 
 #include <cstdlib>
 #include <string_view>
+#include <memory>
 
 #include "uniasset/audio/IAudioDecoder.hpp"
+#include "uniasset/thirdparty/stb_vorbis.hpp"
+#include "uniasset/thirdparty/unique.hpp"
 
 namespace uniasset {
+    class AudioAsset;
+
+    inline void stb_vorbis_deleter(stb_vorbis* decoder) {
+        stb_vorbis_close(decoder);
+    }
 
     class OggDecoder : public IAudioDecoder {
-        void* decoder_{nullptr};
+        std::shared_ptr<AudioAsset> asset_{};
+        c_unique_ptr<stb_vorbis, stb_vorbis_deleter> decoder_{nullptr, stb_vorbis_deleter};
+
+        stb_vorbis_info info_{};
         int loadError_{};
 
     public:
-        explicit OggDecoder(uint8_t* data, size_t len);
+        explicit OggDecoder(std::shared_ptr<AudioAsset> asset);
 
-        explicit OggDecoder(const std::string_view& path);
+        OggDecoder(OggDecoder&&) = default;
 
-        ~OggDecoder() override;
+        ~OggDecoder() override = default;
 
-        OggDecoder(const OggDecoder&) = delete;
+        uint32_t getChannelCount() override;
 
-        OggDecoder& operator=(const OggDecoder&) = delete;
+        size_t getSampleCount() override;
 
-        uint32_t GetChannelCount() override;
+        SampleFormat getSampleFormat() override;
 
-        size_t GetSampleCount() override;
+        uint32_t getSampleRate() override;
 
-        SampleFormat GetSampleFormat() override;
+        bool read(void* buffer, uint32_t count) override;
 
-        uint32_t GetSampleRate() override;
-
-        bool Read(void* buffer, uint32_t count) override;
+        int getLoadError() const;
     };
 
 } // Uniasset

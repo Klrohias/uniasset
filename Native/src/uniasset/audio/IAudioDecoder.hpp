@@ -8,24 +8,25 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 
 #include "uniasset/Foundation.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
 
 namespace uniasset {
-    class IAudioDecoder {
+    class IAudioDecoder : public std::enable_shared_from_this<IAudioDecoder> {
     public:
         virtual ~IAudioDecoder() = default;
 
-        virtual SampleFormat GetSampleFormat() = 0;
+        virtual SampleFormat getSampleFormat() = 0;
 
-        virtual uint32_t GetChannelCount() = 0;
+        virtual uint32_t getChannelCount() = 0;
 
-        virtual size_t GetSampleCount() = 0;
+        virtual size_t getSampleCount() = 0;
 
-        virtual uint32_t GetSampleRate() = 0;
+        virtual uint32_t getSampleRate() = 0;
 
-        virtual bool Read(void* buffer, uint32_t count) = 0;
+        virtual bool read(void* buffer, uint32_t count) = 0;
     };
 
 } // Uniasset

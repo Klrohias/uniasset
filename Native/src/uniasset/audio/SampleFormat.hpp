@@ -6,8 +6,10 @@
 #ifndef UNIASSET_SAMPLEFORMAT_HPP
 #define UNIASSET_SAMPLEFORMAT_HPP
 
+#include <cstdint>
+
 namespace uniasset {
-    enum SampleFormat {
+    enum SampleFormat : uint8_t {
         Uint8,
         Int32,
         Float,

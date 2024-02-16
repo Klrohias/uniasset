@@ -6,10 +6,10 @@
 #ifndef UNIASSET_MINIAUDIOPLAYER_H
 #define UNIASSET_MINIAUDIOPLAYER_H
 
-#include <miniaudio.h>
 #include <memory>
 #include "uniasset/Foundation.hpp"
 #include "uniasset/utils/ErrorHandler.hpp"
+#include <uniasset/thirdparty/miniaudio.hpp>
 
 struct ma_device;
 
@@ -28,11 +28,13 @@ namespace uniasset {
             Opened,
             Paused
         };
-        ma_device* device_{nullptr};
+
+        c_unique_ptr<ma_device, miniaudio_deleter> device_{nullptr, miniaudio_deleter};
+
         ErrorHandler errorHandler_{};
 
-        AudioAsset* audioAsset_{nullptr};
-        IAudioDecoder* audioDecoder_{nullptr};
+        std::shared_ptr<AudioAsset> audioAsset_{nullptr};
+        std::shared_ptr<IAudioDecoder> audioDecoder_{nullptr};
 
         State state_{Closed};
         float volume_{1};
@@ -40,36 +42,32 @@ namespace uniasset {
         uint32_t sampleRate_{0};
         uint32_t channelCount_{0};
 
-        static void MaDataCallback(ma_device* device, void* buffer, const void* unused1, unsigned int count);
+        static void maDataCallback(ma_device* device, void* buffer, const void* unused1, unsigned int count);
 
     public:
         explicit AudioPlayer();
-
-        ~AudioPlayer();
 
         AudioPlayer(const AudioPlayer&) = delete;
 
         AudioPlayer& operator=(const AudioPlayer&) = delete;
 
-        const std::string& GetError();
+        const std::string& getError();
 
-        void Open(AudioAsset* audioAsset);
+        void open(const std::shared_ptr<AudioAsset>& audioAsset);
 
-        void Pause();
+        void pause();
 
-        void Resume();
+        void resume();
 
-        bool IsPaused();
+        bool isPaused();
 
-        void Close();
+        void close();
 
-        void CloseInternal();
+        float getVolume();
 
-        float GetVolume();
+        void setVolume(float val);
 
-        void SetVolume(float val);
-
-        float GetTime() const;
+        float getTime() const;
 
     };
 

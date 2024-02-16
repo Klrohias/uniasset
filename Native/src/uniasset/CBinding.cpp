@@ -8,6 +8,12 @@
 #include "image/ImageAsset.hpp"
 #include "audio/AudioPlayer.hpp"
 #include "audio/AudioAsset.hpp"
+#include "audio/IAudioDecoder.hpp"
+#include "audio/FlacDecoder.hpp"
+#include "audio/Mp3Decoder.hpp"
+#include "audio/OggDecoder.hpp"
+#include "audio/WavDecoder.hpp"
+#include "audio/ExternalAudioDecoder.hpp"
 
 using namespace uniasset;
 
@@ -32,7 +38,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Create) {
     return createInstance<ImageAsset>(new ImageAsset);
 }
 
-CBINDING_METHOD(void, ImageAsset, Free, CBINDING_TYPED_PTR(ImageAsset) obj) {
+CBINDING_METHOD(void, ImageAsset, Destory, CBINDING_TYPED_PTR(ImageAsset) obj) {
     destroyInstance<ImageAsset>(obj);
 }
 
@@ -93,45 +99,45 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(AudioPlayer), AudioPlayer, Create) {
     return createInstance<AudioPlayer>(new AudioPlayer);
 }
 
-CBINDING_METHOD(void, AudioPlayer, Free, CBINDING_TYPED_PTR(AudioPlayer) obj) {
+CBINDING_METHOD(void, AudioPlayer, Destory, CBINDING_TYPED_PTR(AudioPlayer) obj) {
     destroyInstance<AudioPlayer>(obj);
 }
 
 CBINDING_METHOD(CBINDING_CSTRING, AudioPlayer, GetError, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return getInstance<AudioPlayer>(self)->GetError().c_str();
+    return getInstance<AudioPlayer>(self)->getError().c_str();
 }
 
 CBINDING_METHOD(void, AudioPlayer, Pause, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    getInstance<AudioPlayer>(self)->Pause();
+    getInstance<AudioPlayer>(self)->pause();
 }
 
 CBINDING_METHOD(void, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    getInstance<AudioPlayer>(self)->Resume();
+    getInstance<AudioPlayer>(self)->resume();
 }
 
 CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    getInstance<AudioPlayer>(self)->Close();
+    getInstance<AudioPlayer>(self)->close();
 }
 
 CBINDING_METHOD(void, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
                 CBINDING_TYPED_PTR(AudioAsset) audioAsset) {
-    getInstance<AudioPlayer>(self)->Open(reinterpret_cast<AudioAsset*>(audioAsset));
+    getInstance<AudioPlayer>(self)->open(getInstance<AudioAsset>(audioAsset));
 }
 
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return getInstance<AudioPlayer>(self)->IsPaused();
+    return getInstance<AudioPlayer>(self)->isPaused();
 }
 
 CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val) {
-    getInstance<AudioPlayer>(self)->SetVolume(val);
+    getInstance<AudioPlayer>(self)->setVolume(val);
 }
 
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return getInstance<AudioPlayer>(self)->GetVolume();
+    return getInstance<AudioPlayer>(self)->getVolume();
 }
 
 CBINDING_METHOD(float, AudioPlayer, GetTime, CBINDING_TYPED_PTR(AudioPlayer) self) {
-    return getInstance<AudioPlayer>(self)->GetTime();
+    return getInstance<AudioPlayer>(self)->getTime();
 }
 
 // AudioAsset
@@ -139,7 +145,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create) {
     return createInstance<AudioAsset>(new AudioAsset);
 }
 
-CBINDING_METHOD(void, AudioAsset, Free, CBINDING_TYPED_PTR(AudioAsset) obj) {
+CBINDING_METHOD(void, AudioAsset, Destory, CBINDING_TYPED_PTR(AudioAsset) obj) {
     destroyInstance<AudioAsset>(obj);
 }
 
@@ -151,11 +157,11 @@ CBINDING_METHOD(void, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self,
     getInstance<AudioAsset>(self)->load(path);
 }
 
-CBINDING_METHOD(void, AudioAsset, load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
+CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
     getInstance<AudioAsset>(self)->load(std::span<uint8_t>(data, size));
 }
 
-CBINDING_METHOD(void, AudioAsset, unload, CBINDING_TYPED_PTR(AudioAsset) self) {
+CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self) {
     getInstance<AudioAsset>(self)->unload();
 }
 
@@ -163,14 +169,96 @@ CBINDING_METHOD(uint32_t, AudioAsset, GetChannelCount, CBINDING_TYPED_PTR(AudioA
     return getInstance<AudioAsset>(self)->getChannelCount();
 }
 
-CBINDING_METHOD(uint64_t, AudioAsset, getSampleCount, CBINDING_TYPED_PTR(AudioAsset) self) {
+CBINDING_METHOD(uint64_t, AudioAsset, GetSampleCount, CBINDING_TYPED_PTR(AudioAsset) self) {
     return getInstance<AudioAsset>(self)->getSampleCount();
 }
 
-CBINDING_METHOD(uint32_t, AudioAsset, getSampleRate, CBINDING_TYPED_PTR(AudioAsset) self) {
+CBINDING_METHOD(uint32_t, AudioAsset, GetSampleRate, CBINDING_TYPED_PTR(AudioAsset) self) {
     return getInstance<AudioAsset>(self)->getSampleRate();
 }
 
 CBINDING_METHOD(float, AudioAsset, GetLength, CBINDING_TYPED_PTR(AudioAsset) self) {
     return getInstance<AudioAsset>(self)->getLength();
+}
+
+CBINDING_METHOD(uint8_t, AudioAsset, GetLoadType, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return getInstance<AudioAsset>(self)->getLoadType();
+}
+
+CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetPath, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return getInstance<AudioAsset>(self)->getPath().c_str();
+}
+
+CBINDING_METHOD(void*, AudioAsset, GetData, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return getInstance<AudioAsset>(self)->getData().get();
+}
+
+CBINDING_METHOD(uint64_t, AudioAsset, GetDataLength, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return getInstance<AudioAsset>(self)->getDataLength();
+}
+
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, CBINDING_TYPED_PTR(AudioAsset) self) {
+    return createInstance<IAudioDecoder>(getInstance<AudioAsset>(self)->getAudioDecoder().release());
+}
+
+// IAudioDecoder
+CBINDING_METHOD(void, IAudioDecoder, Destory, CBINDING_TYPED_PTR(IAudioDecoder) obj) {
+    destroyInstance<IAudioDecoder>(obj);
+}
+
+CBINDING_METHOD(uint8_t, IAudioDecoder, GetSampleFormat, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    return getInstance<IAudioDecoder>(self)->getSampleFormat();
+}
+
+CBINDING_METHOD(uint32_t, IAudioDecoder, GetChannelCount, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    return getInstance<IAudioDecoder>(self)->getChannelCount();
+}
+
+CBINDING_METHOD(uint64_t, IAudioDecoder, GetSampleCount, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    return getInstance<IAudioDecoder>(self)->getSampleCount();
+}
+
+CBINDING_METHOD(uint32_t, IAudioDecoder, GetSampleRate, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    return getInstance<IAudioDecoder>(self)->getSampleRate();
+}
+
+CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
+                uint32_t count) {
+    return getInstance<IAudioDecoder>(self)->read(buffer, count);
+}
+
+// FlacDecoder
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
+    return createInstance<IAudioDecoder>(new FlacDecoder(getInstance<AudioAsset>(asset)));
+}
+
+// OggDecoder
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
+    return createInstance<IAudioDecoder>(new OggDecoder(getInstance<AudioAsset>(asset)));
+}
+
+// WavDecoder
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
+    return createInstance<IAudioDecoder>(new WavDecoder(getInstance<AudioAsset>(asset)));
+}
+
+// Mp3Decoder
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset) {
+    return createInstance<IAudioDecoder>(new Mp3Decoder(getInstance<AudioAsset>(asset)));
+}
+
+// ExternalAudioDecoder
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create, void* userData,
+                void* getChannelCountFunc,
+                void* getSampleCountFunc,
+                void* getSampleFormatFunc,
+                void* getSampleRateFunc,
+                void* readFunc) {
+    return createInstance<IAudioDecoder>(
+            new ExternalAudioDecoder(userData,
+                                     reinterpret_cast<ExternalAudioDecoder::GetChannelCountFunc>(getChannelCountFunc),
+                                     reinterpret_cast<ExternalAudioDecoder::GetSampleCountFunc>(getSampleCountFunc),
+                                     reinterpret_cast<ExternalAudioDecoder::GetSampleFormatFunc>(getSampleFormatFunc),
+                                     reinterpret_cast<ExternalAudioDecoder::GetSampleRateFunc>(getSampleRateFunc),
+                                     reinterpret_cast<ExternalAudioDecoder::ReadFunc>(readFunc)));
 }

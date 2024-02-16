@@ -27,28 +27,16 @@ namespace uniasset {
 
     std::unique_ptr<IAudioDecoder> AudioAsset::getAudioDecoder() {
         switch (format_) {
-            case Pcm:
+            case DataFormat_Pcm:
                 break;
-            case Mp3:
-                return std::unique_ptr<IAudioDecoder>(
-                        type_ == File ?
-                        new Mp3Decoder(path_) : new Mp3Decoder(data_.get(), dataLength_)
-                );
-            case Ogg:
-                return std::unique_ptr<IAudioDecoder>(
-                        type_ == File ?
-                        new OggDecoder(path_) : new OggDecoder(data_.get(), dataLength_)
-                );
-            case Wav:
-                return std::unique_ptr<IAudioDecoder>(
-                        type_ == File ?
-                        new WavDecoder(path_) : new WavDecoder(data_.get(), dataLength_)
-                );
-            case Flac:
-                return std::unique_ptr<IAudioDecoder>(
-                        type_ == File ?
-                        new FlacDecoder(path_) : new FlacDecoder(data_.get(), dataLength_)
-                );
+            case DataFormat_Mp3:
+                return std::unique_ptr<IAudioDecoder>(new Mp3Decoder{shared_from_this()});
+            case DataFormat_Ogg:
+                return std::unique_ptr<IAudioDecoder>(new OggDecoder{shared_from_this()});
+            case DataFormat_Wav:
+                return std::unique_ptr<IAudioDecoder>(new WavDecoder{shared_from_this()});
+            case DataFormat_Flac:
+                return std::unique_ptr<IAudioDecoder>(new FlacDecoder{shared_from_this()});
         }
         return nullptr;
     }
@@ -64,19 +52,19 @@ namespace uniasset {
         auto len = data.size();
 
         if (isMp3FileData(data.data(), len)) {
-            format_ = Mp3;
+            format_ = DataFormat_Mp3;
         } else if (isFlacFileData(data.data(), len)) {
-            format_ = Flac;
+            format_ = DataFormat_Flac;
         } else if (isOggFileData(data.data(), len)) {
-            format_ = Ogg;
+            format_ = DataFormat_Ogg;
         } else if (isWavFileData(data.data(), len)) {
-            format_ = Wav;
+            format_ = DataFormat_Wav;
         } else {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_SUPPORTED);
             return;
         }
 
-        type_ = Memory;
+        type_ = LoadType_Memory;
         data_ = {new uint8_t[len], default_array_deleter<uint8_t>};
         dataLength_ = len;
         memcpy(data_.get(), data.data(), len);
@@ -116,19 +104,19 @@ namespace uniasset {
 
         // Check magic number
         if (isMp3FileData(buffer, readSize)) {
-            format_ = Mp3;
+            format_ = DataFormat_Mp3;
         } else if (isFlacFileData(buffer, readSize)) {
-            format_ = Flac;
+            format_ = DataFormat_Flac;
         } else if (isOggFileData(buffer, readSize)) {
-            format_ = Ogg;
+            format_ = DataFormat_Ogg;
         } else if (isWavFileData(buffer, readSize)) {
-            format_ = Wav;
+            format_ = DataFormat_Wav;
         } else {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_SUPPORTED);
             return;
         }
 
-        type_ = File;
+        type_ = LoadType_File;
         path_ = path;
 
         if (!loadMetadata()) {
@@ -142,9 +130,9 @@ namespace uniasset {
             return false;
         }
 
-        channelCount_ = decoder->GetChannelCount();
-        sampleCount_ = decoder->GetSampleCount();
-        sampleRate_ = decoder->GetSampleRate();
+        channelCount_ = decoder->getChannelCount();
+        sampleCount_ = decoder->getSampleCount();
+        sampleRate_ = decoder->getSampleRate();
 
         return true;
     }
@@ -152,7 +140,7 @@ namespace uniasset {
     size_t AudioAsset::getSampleCount() {
         errorHandler_.clear();
 
-        if (type_ == None) {
+        if (type_ == LoadType_None) {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
             return 0;
         }
@@ -163,7 +151,7 @@ namespace uniasset {
     uint32_t AudioAsset::getSampleRate() {
         errorHandler_.clear();
 
-        if (type_ == None) {
+        if (type_ == LoadType_None) {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
             return 0;
         }
@@ -174,7 +162,7 @@ namespace uniasset {
     uint32_t AudioAsset::getChannelCount() {
         errorHandler_.clear();
 
-        if (type_ == None) {
+        if (type_ == LoadType_None) {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
             return 0;
         }
@@ -185,11 +173,47 @@ namespace uniasset {
     float AudioAsset::getLength() {
         errorHandler_.clear();
 
-        if (type_ == None) {
+        if (type_ == LoadType_None) {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
             return 0;
         }
 
         return static_cast<float>(sampleCount_) / static_cast<float>(channelCount_) / static_cast<float>(sampleRate_);
+    }
+
+    LoadType AudioAsset::getLoadType() {
+        errorHandler_.clear();
+        return type_;
+    }
+
+    const std::string& AudioAsset::getPath() {
+        errorHandler_.clear();
+
+        if (type_ == LoadType_None) {
+            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
+        }
+
+        return path_;
+    }
+
+    const Buffer& AudioAsset::getData() {
+        errorHandler_.clear();
+
+        if (type_ == LoadType_None) {
+            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
+        }
+
+        return data_;
+    }
+
+    size_t AudioAsset::getDataLength() {
+        errorHandler_.clear();
+
+        if (type_ == LoadType_None) {
+            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
+            return 0;
+        }
+
+        return dataLength_;
     }
 } // Uniasset

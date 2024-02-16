@@ -23,24 +23,24 @@ namespace uniasset {
 
     class AudioPlayer;
 
+    enum LoadType : uint8_t {
+        LoadType_None,
+        LoadType_File,
+        LoadType_Memory,
+    };
+
+    enum DataFormat : uint8_t {
+        DataFormat_Pcm,
+        DataFormat_Mp3,
+        DataFormat_Ogg,
+        DataFormat_Wav,
+        DataFormat_Flac
+    };
+
     class UNIASSET_API AudioAsset : public std::enable_shared_from_this<AudioAsset> {
     private:
-        enum LoadType {
-            None,
-            File,
-            Memory,
-        };
-
-        enum DataFormat {
-            Pcm,
-            Mp3,
-            Ogg,
-            Wav,
-            Flac
-        };
-
-        LoadType type_{None};
-        DataFormat format_{Pcm};
+        LoadType type_{LoadType_None};
+        DataFormat format_{DataFormat_Pcm};
         size_t sampleCount_{0};
         uint32_t sampleRate_{0};
         uint32_t channelCount_{0};
@@ -73,6 +73,14 @@ namespace uniasset {
         uint32_t getChannelCount();
 
         float getLength();
+
+        LoadType getLoadType();
+
+        const std::string& getPath();
+
+        const Buffer& getData();
+
+        size_t getDataLength();
     };
 
 } // Uniasset

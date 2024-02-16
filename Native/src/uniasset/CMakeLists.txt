@@ -60,6 +60,11 @@ add_library(uniasset
         thirdparty/c_file.hpp
         common/Templates.hpp
         thirdparty/turbojpeg.hpp
+        thirdparty/miniaudio.hpp
+        audio/ExternalAudioDecoder.cpp
+        audio/ExternalAudioDecoder.hpp
+        thirdparty/stb_vorbis.hpp
+        thirdparty/stb_vorbis.cpp
 )
 
 target_compile_features(uniasset PRIVATE cxx_std_20)

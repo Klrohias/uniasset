@@ -3,46 +3,49 @@
 //
 
 #include "FlacDecoder.hpp"
+#include "AudioAsset.hpp"
 
 #include <dr_flac.h>
+#include <utility>
 
 namespace uniasset {
-    FlacDecoder::FlacDecoder(uint8_t* data, size_t len) {
-        decoder_ = drflac_open_memory(data, len, nullptr);
-    }
+    FlacDecoder::FlacDecoder(std::shared_ptr<AudioAsset> asset)
+            : asset_{std::move(asset)} {
+        auto loadType = asset_->getLoadType();
 
-    FlacDecoder::FlacDecoder(const std::string_view& path) {
-        decoder_ = drflac_open_file(path.data(), nullptr);
-    }
+        if (loadType == LoadType_Memory) {
+            auto& data = asset_->getData();
+            auto len = asset_->getDataLength();
+            decoder_ = make_c_unique<drflac, drflac_deleter>(drflac_open_memory(data.get(), len, nullptr));
+        } else if (loadType == LoadType_File) {
+            auto& path = asset_->getPath();
 
-    FlacDecoder::~FlacDecoder() {
-        if (decoder_) {
-            drflac_close(reinterpret_cast<drflac*>(decoder_));
+            decoder_ = make_c_unique<drflac, drflac_deleter>(drflac_open_file(path.data(), nullptr));
         }
     }
 
-    uint32_t FlacDecoder::GetChannelCount() {
+    uint32_t FlacDecoder::getChannelCount() {
         if (!decoder_) return 1;
-        return reinterpret_cast<drflac*>(decoder_)->channels;
+        return decoder_->channels;
     }
 
-    size_t FlacDecoder::GetSampleCount() {
+    size_t FlacDecoder::getSampleCount() {
         if (!decoder_) return 0;
-        return reinterpret_cast<drflac*>(decoder_)->totalPCMFrameCount * GetChannelCount();
+        return decoder_->totalPCMFrameCount * getChannelCount();
     }
 
-    SampleFormat FlacDecoder::GetSampleFormat() {
+    SampleFormat FlacDecoder::getSampleFormat() {
         return Int16;
     }
 
-    uint32_t FlacDecoder::GetSampleRate() {
+    uint32_t FlacDecoder::getSampleRate() {
         if (!decoder_) return 19200;
-        return reinterpret_cast<drflac*>(decoder_)->sampleRate;
+        return decoder_->sampleRate;
     }
 
-    bool FlacDecoder::Read(void* buffer, uint32_t count) {
+    bool FlacDecoder::read(void* buffer, uint32_t count) {
         if (!decoder_) return false;
-        drflac_read_pcm_frames_s16(reinterpret_cast<drflac*>(decoder_), count, reinterpret_cast<int16_t*>(buffer));
+        drflac_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
         return true;
     }
 } // Uniasset
