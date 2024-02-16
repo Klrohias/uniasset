@@ -65,6 +65,8 @@ add_library(uniasset
         audio/ExternalAudioDecoder.hpp
         thirdparty/stb_vorbis.hpp
         thirdparty/stb_vorbis.cpp
+        common/Errors.hpp
+        common/Errors.cpp
 )
 
 target_compile_features(uniasset PRIVATE cxx_std_20)

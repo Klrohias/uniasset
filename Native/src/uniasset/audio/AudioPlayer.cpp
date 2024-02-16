@@ -6,14 +6,11 @@
 
 #include <cstring>
 
+#include "../common/Errors.hpp"
 #include "AudioAsset.hpp"
 #include "IAudioDecoder.hpp"
 
 namespace uniasset {
-
-    const char ERROR_STR_AUDIO_NOT_LOADED[] = "audio asset is not loaded";
-    const char ERROR_STR_AUDIO_NOT_OPENED[] = "audio player has not opened any audio asset";
-
     inline ma_format toMaFormat(SampleFormat format) {
         switch (format) {
             case Uint8:

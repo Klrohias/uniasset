@@ -6,6 +6,7 @@
 
 #include <cstring>
 
+#include "../common/Errors.hpp"
 #include "../common/MagicNumbers.hpp"
 #include "AudioPlayer.hpp"
 #include "IAudioDecoder.hpp"
@@ -17,11 +18,6 @@
 using namespace uniasset::utils;
 
 namespace uniasset {
-
-    const char ERROR_STR_AUDIO_NOT_SUPPORTED[] = "audio format is not supported";
-    const char ERROR_STR_AUDIO_METADATA[] = "failed to read audio metadata";
-    extern const char ERROR_STR_AUDIO_NOT_LOADED[];
-
     AudioAsset::AudioAsset() = default;
 
 

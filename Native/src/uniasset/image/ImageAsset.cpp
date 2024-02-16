@@ -14,13 +14,10 @@
 #include "../thirdparty/turbojpeg.hpp"
 #include "../common/Templates.hpp"
 #include "../common/MagicNumbers.hpp"
-
+#include "../common/Errors.hpp"
 
 namespace uniasset {
     using namespace uniasset::utils;
-
-    const char ERROR_STR_IMAGE_NOT_LOADED[] = "image asset is not loaded";
-    const char ERROR_STR_IMAGE_SIZE_OVERFLOW[] = "range exceeds image size";
 
     template<int PixelSize = 3>
     void ScaleImage(const uint8_t* srcBuffer,
