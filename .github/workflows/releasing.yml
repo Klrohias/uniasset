@@ -94,7 +94,7 @@ jobs:
 
         TRIPLET='arm64-ios-bitcode'
         cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --target uniasset --config ${{env.BUILD_TYPE}}
 
     - name: Upload Artifact (x64-osx)
       uses: actions/upload-artifact@v3.1.2
