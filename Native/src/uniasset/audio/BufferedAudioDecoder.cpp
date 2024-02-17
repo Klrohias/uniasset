@@ -10,6 +10,7 @@
 #include <utility>
 #include <cstring>
 #include <chrono>
+#include "uniasset/common/Templates.hpp"
 
 namespace uniasset {
     using namespace std::chrono;
@@ -140,9 +141,10 @@ namespace uniasset {
             memcpy(buffer, getBufferOffset(buffer_, frameSize_, readBegin), requiredFrame * frameSize_);
             bufferOffset_ = readEnd;
         } else {
+            auto offset = (bufferSize_ - readBegin) * frameSize_;
             memcpy(buffer, getBufferOffset(buffer_, frameSize_, readBegin),
-                   (bufferSize_ - readBegin) * frameSize_);
-            memcpy(buffer, getBufferOffset(buffer_, frameSize_, readBegin),
+                   offset);
+            memcpy(ptr_offset(buffer, offset), getBufferOffset(buffer_, frameSize_, 0),
                    readEnd * frameSize_);
             bufferOffset_ = readEnd;
         }

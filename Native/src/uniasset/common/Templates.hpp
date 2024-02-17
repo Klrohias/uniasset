@@ -34,6 +34,12 @@ namespace uniasset {
     inline void default_array_deleter(const T* buffer) {
         delete[] buffer;
     }
+
+    template<typename NumType>
+    requires std::is_integral_v<NumType>
+    inline void* ptr_offset(void* ptr, NumType offset) {
+        return (char*) ptr + offset;
+    }
 }
 
 #endif //UNIASSET_TEMPLATES_HPP
