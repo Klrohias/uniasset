@@ -1,3 +1,4 @@
+using System;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Uniasset.Audio;
 using Uniasset.Image;
@@ -22,6 +23,7 @@ public class TestSceneManager : MonoBehaviour
     private byte[] _test1080P;
     private byte[] _testMp3;
     private Rect _draggableRect = new(0, 0, 10000, 20);
+    private byte[] _testOgg;
 
     private async void Start()
     {
@@ -31,6 +33,7 @@ public class TestSceneManager : MonoBehaviour
         _test1080P = await Utils.LoadStreamingAsset("Large.png", this);
 
         _testMp3 = await Utils.LoadStreamingAsset("Test.mp3", this);
+        _testOgg = await Utils.LoadStreamingAsset("click.ogg", this);
         // AudioClip.PCMSetPositionCallback
     }
 
@@ -75,7 +78,7 @@ public class TestSceneManager : MonoBehaviour
         GUI.DragWindow(_draggableRect);
         GUILayout.BeginHorizontal();
 
-        if (GUILayout.Button("Load")) _audioAsset.Load(_testMp3);
+        if (GUILayout.Button("Load")) _audioAsset.Load(_testOgg);
 
         if (GUILayout.Button("Unload")) _audioAsset.Unload();
 
@@ -86,6 +89,17 @@ public class TestSceneManager : MonoBehaviour
         {
             var decoder = _audioAsset.GetAudioDecoder(frameBufferSize: _audioAsset.SampleRate * 64);
             var clip = decoder.ToAudioClip();
+            source.clip = clip;
+        }    
+        
+        if (GUILayout.Button("AudioSourceOpen(Read)"))
+        {
+            var decoder = _audioAsset.GetAudioDecoder();
+            var clip = AudioClip.Create(name, (int)decoder.SampleCount / decoder.ChannelCount
+                , decoder.ChannelCount, decoder.SampleRate, false);
+            var samples = new float[decoder.SampleCount];
+            decoder.Read(new Span<float>(samples), (int)(decoder.SampleCount / decoder.ChannelCount));
+            clip.SetData(samples, 0);
             source.clip = clip;
         }
 

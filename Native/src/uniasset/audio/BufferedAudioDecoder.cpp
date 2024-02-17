@@ -113,19 +113,20 @@ namespace uniasset {
     bool BufferedAudioDecoder::read(void* buffer, uint32_t count) {
         std::lock_guard<std::mutex> lockGuard{*sync_lock};
 
-        while (count > 0) {
+        auto remain = count;
+        while (remain > 0) {
             auto bufferedCount = bufferedFrameEnd_ - bufferedFrameBegin_;
 
-            if (bufferedCount > count) {
-                readInternal(buffer, count);
-                bufferedFrameBegin_ += count;
-                count -= count;
+            if (bufferedCount > remain) {
+                readInternal(buffer, remain);
+                bufferedFrameBegin_ += remain;
+                remain -= remain;
                 generateBuffer();
             } else {
-                readInternal(buffer, bufferedCount);
+                auto bufferOffset = (count - remain) * frameSize_;
+                readInternal(ptr_offset(buffer, bufferOffset), bufferedCount);
                 bufferedFrameBegin_ += bufferedCount;
-                count -= bufferedCount;
-
+                remain -= bufferedCount;
                 generateBufferImmediately();
             }
         }
