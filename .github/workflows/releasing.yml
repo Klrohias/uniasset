@@ -1,0 +1,261 @@
+name: releasing
+
+on: 
+  push:
+    tags: [ 'v*.*.*' ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg-ci"
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
+        popd
+
+    - name: Build x64-windows
+      run: |
+        $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
+        $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
+        $TRIPLET='x64-windows';
+        
+        cd "${{github.workspace}}/Native"
+        $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
+        cmake -B $BUILD_ROOT -A x64 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
+        cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x64-windows)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: uniasset-x64-windows.dll
+        path: ${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll
+
+    - name: Build x86-windows
+      run: |
+        $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
+        $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
+        $TRIPLET='x86-windows';
+        
+        cd "${{github.workspace}}/Native"
+        $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
+        cmake -B $BUILD_ROOT -A Win32 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
+        cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x86-windows)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: uniasset-x86-windows.dll
+        path: ${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll
+
+    - name: Package for releasing
+      run: |
+        7za a -tzip "${{github.workspace}}/Native/uniasset-x86-windows.zip" "${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll"
+        7za a -tzip "${{github.workspace}}/Native/uniasset-x64-windows.zip" "${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll"
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/uniasset-*.zip"
+        file_glob: true
+  
+  build-darwin:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install vcpkg and dependencies
+      run: |
+        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
+        popd
+      
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
+
+    - name: Configure and build
+      run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        
+        cd "${{github.workspace}}/Native"
+        
+        TRIPLET='x64-osx'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_SHARED_LIBS=YES
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+        TRIPLET='arm64-ios-bitcode'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x64-osx)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-x64-osx.dylib
+        path: ${{github.workspace}}/Native/build-x64-osx/src/uniasset/libuniasset.dylib
+
+    - name: Upload Artifact (arm64-ios-bitcode)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-arm64-ios-bitcode.a
+        path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a
+
+    - name: Upload binaries to release (x64-osx)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-x64-osx/src/uniasset/libuniasset.dylib"
+    
+    - name: Upload binaries to release (arm64-ios-bitcode)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a"
+
+  build-android:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_NDK: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
+      ANDROID_NDK_HOME: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
+      ANDROID_NDK_LATEST_HOME: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
+      ANDROID_NDK_ROOT: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure environment
+      run: |
+        sudo apt install -y git build-essential ninja-build
+
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
+        popd
+
+    - name: Build (Android)
+      run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        CFG_FLAGS=('-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}' '-DBUILD_SHARED_LIBS=YES' '-DVCPKG_CMAKE_SYSTEM_NAME=Android' '-DCMAKE_SYSTEM_NAME=Android' "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake")
+
+        cd "${{github.workspace}}/Native"
+
+        TRIPLET='arm-neon-android'
+        ABI='armeabi-v7a'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+        TRIPLET='arm64-android'
+        ABI='arm64-v8a'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+        TRIPLET='x86-android'
+        ABI='x86'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+        TRIPLET='x64-android'
+        ABI='x86_64'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (arm-android)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-arm-neon-android.so
+        path: ${{github.workspace}}/Native/build-arm-neon-android/src/uniasset/libuniasset.so
+
+    - name: Upload Artifact (arm64-android)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-arm64-android.so
+        path: ${{github.workspace}}/Native/build-arm64-android/src/uniasset/libuniasset.so
+
+    - name: Upload Artifact (x86-android)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-x86-android.so
+        path: ${{github.workspace}}/Native/build-x86-android/src/uniasset/libuniasset.so
+
+    - name: Upload Artifact (x64-android)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-x64-android.so
+        path: ${{github.workspace}}/Native/build-x64-android/src/uniasset/libuniasset.so
+    
+    - name: Upload binaries to release (arm-android)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-arm-neon-android/src/uniasset/libuniasset.so"
+        asset_name: "libuniasset-arm-android.so"
+
+    - name: Upload binaries to release (arm64-android)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-arm64-android/src/uniasset/libuniasset.so"
+        asset_name: "libuniasset-arm64-android.so"
+
+    - name: Upload binaries to release (x86-android)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-x86-android/src/uniasset/libuniasset.so"
+        asset_name: "libuniasset-x86-android.so"
+
+    - name: Upload binaries to release (x64-android)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-x64-android/src/uniasset/libuniasset.so"
+        asset_name: "libuniasset-x64-android.so"
+  
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure environment
+      run: |
+        sudo apt install -y git build-essential "gobjc++"
+
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
+        pushd ~/vcpkg-ci
+        ./bootstrap-vcpkg.sh
+        popd
+
+    - name: Configure and build
+      run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        
+        cd "${{github.workspace}}/Native"
+        
+        TRIPLET="x64-linux"
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DBUILD_SHARED_LIBS=YES
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+
+    - name: Upload Artifact (x64-linux)
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: libuniasset-x64-linux.so
+        path: ${{github.workspace}}/Native/build-x64-linux/src/uniasset/libuniasset.so
+    
+    - name: Upload binaries to release (x64-linux)
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Native/build-x64-linux/src/uniasset/libuniasset.so"
+        asset_name: "libuniasset-x64-linux.so"
