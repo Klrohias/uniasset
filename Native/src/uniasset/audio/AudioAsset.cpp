@@ -14,27 +14,41 @@
 #include "FlacDecoder.hpp"
 #include "WavDecoder.hpp"
 #include "OggDecoder.hpp"
+#include "BufferedAudioDecoder.hpp"
 
 using namespace uniasset::utils;
 
 namespace uniasset {
     AudioAsset::AudioAsset() = default;
 
+    std::unique_ptr<IAudioDecoder> AudioAsset::getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize) {
+        errorHandler_.clear();
+        if (type_ == LoadType_None) {
+            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
+            return nullptr;
+        }
 
-    std::unique_ptr<IAudioDecoder> AudioAsset::getAudioDecoder(SampleFormat sampleFormat) {
+        IAudioDecoder* rawDecoder{nullptr};
+
         switch (format_) {
             case DataFormat_Pcm:
-                break;
+                return nullptr;
             case DataFormat_Mp3:
-                return std::unique_ptr<IAudioDecoder>(new Mp3Decoder{shared_from_this(), sampleFormat});
+                rawDecoder = new Mp3Decoder{shared_from_this(), sampleFormat};
+                break;
             case DataFormat_Ogg:
-                return std::unique_ptr<IAudioDecoder>(new OggDecoder{shared_from_this(), sampleFormat});
+                rawDecoder = new OggDecoder{shared_from_this(), sampleFormat};
+                break;
             case DataFormat_Wav:
-                return std::unique_ptr<IAudioDecoder>(new WavDecoder{shared_from_this(), sampleFormat});
+                rawDecoder = new WavDecoder{shared_from_this(), sampleFormat};
+                break;
             case DataFormat_Flac:
-                return std::unique_ptr<IAudioDecoder>(new FlacDecoder{shared_from_this(), sampleFormat});
+                rawDecoder = new FlacDecoder{shared_from_this(), sampleFormat};
+                break;
         }
-        return nullptr;
+
+        std::shared_ptr<IAudioDecoder> sharedRawDecoder{rawDecoder};
+        return std::unique_ptr<IAudioDecoder>(new BufferedAudioDecoder{sharedRawDecoder, frameBufferSize});
     }
 
     const std::string& AudioAsset::getError() {
@@ -72,6 +86,10 @@ namespace uniasset {
 
     void AudioAsset::unload() {
         errorHandler_.clear();
+
+        type_ = LoadType_None;
+        path_.clear();
+        data_.reset();
     }
 
     void AudioAsset::load(const std::string_view& path) {

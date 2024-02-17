@@ -198,9 +198,9 @@ CBINDING_METHOD(uint64_t, AudioAsset, GetDataLength, CBINDING_TYPED_PTR(AudioAss
 }
 
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, CBINDING_TYPED_PTR(AudioAsset) self,
-                uint8_t format) {
+                uint8_t format, int64_t frameBufferSize) {
     return createInstance<IAudioDecoder>(getInstance<AudioAsset>(self)->getAudioDecoder(
-            static_cast<SampleFormat>(format)).release());
+            static_cast<SampleFormat>(format), frameBufferSize).release());
 }
 
 // IAudioDecoder

@@ -59,7 +59,7 @@ namespace uniasset {
     }
 
     SampleFormat Mp3Decoder::getSampleFormat() {
-        return SampleFormat_Int16;
+        return sampleFormat_;
     }
 
     uint32_t Mp3Decoder::getSampleRate() {

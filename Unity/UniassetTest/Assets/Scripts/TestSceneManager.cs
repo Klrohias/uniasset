@@ -84,7 +84,7 @@ public class TestSceneManager : MonoBehaviour
 
         if (GUILayout.Button("AudioSourceOpen"))
         {
-            var decoder = _audioAsset.GetAudioDecoder();
+            var decoder = _audioAsset.GetAudioDecoder(frameBufferSize: _audioAsset.SampleRate * 64);
             var clip = decoder.ToAudioClip();
             source.clip = clip;
         }

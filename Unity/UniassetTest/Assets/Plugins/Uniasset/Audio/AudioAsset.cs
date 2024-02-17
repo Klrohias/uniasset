@@ -28,9 +28,9 @@ namespace Uniasset.Audio
             UnsafeHandle.Unload();
         }
         
-        public NativeAudioDecoder GetAudioDecoder(SampleFormat format = SampleFormat.Float)
+        public NativeAudioDecoder GetAudioDecoder(SampleFormat format = SampleFormat.Float, long frameBufferSize = -1)
         {
-            return new NativeAudioDecoder(UnsafeHandle.GetAudioDecoder(format));
+            return new NativeAudioDecoder(UnsafeHandle.GetAudioDecoder(format, frameBufferSize));
         }
 
         public void Dispose()

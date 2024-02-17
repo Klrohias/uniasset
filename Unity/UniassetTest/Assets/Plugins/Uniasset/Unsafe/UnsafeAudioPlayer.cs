@@ -47,6 +47,32 @@ namespace Uniasset.Unsafe
             CheckNativeErrorInternal();
             return result;
         }
+        
+        public void SetTime(float time)
+        {
+            Interop.Uniasset_AudioPlayer_SetTime(Instance, time);
+            CheckNativeErrorInternal();
+        }
+        
+        public float GetVolume()
+        {
+            var result = Interop.Uniasset_AudioPlayer_GetVolume(Instance);
+            CheckNativeErrorInternal();
+            return result;
+        }
+        
+        public void SetVolume(float volume)
+        {
+            Interop.Uniasset_AudioPlayer_SetVolume(Instance, volume);
+            CheckNativeErrorInternal();
+        }
+
+        public bool IsPaused()
+        {
+            var result = Interop.Uniasset_AudioPlayer_IsPaused(Instance) != 0;
+            CheckNativeErrorInternal();
+            return result;
+        }
 
         public void Destroy()
         {
@@ -55,7 +81,7 @@ namespace Uniasset.Unsafe
 
         private void CheckNativeErrorInternal()
         {
-            var errorMessage = Marshal.PtrToStringAuto(new IntPtr(Interop.Uniasset_AudioPlayer_GetError(Instance)));
+            var errorMessage = Marshal.PtrToStringAnsi(new IntPtr(Interop.Uniasset_AudioPlayer_GetError(Instance)));
 
             if (string.IsNullOrWhiteSpace(errorMessage)) return;
             throw new NativeException(errorMessage);

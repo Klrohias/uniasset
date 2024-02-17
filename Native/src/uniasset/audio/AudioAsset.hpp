@@ -62,7 +62,7 @@ namespace uniasset {
 
         void unload();
 
-        std::unique_ptr<IAudioDecoder> getAudioDecoder(SampleFormat sampleFormat);
+        std::unique_ptr<IAudioDecoder> getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize = -1);
 
         const std::string& getError();
 

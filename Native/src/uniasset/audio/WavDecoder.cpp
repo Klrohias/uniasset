@@ -57,7 +57,7 @@ namespace uniasset {
     }
 
     SampleFormat WavDecoder::getSampleFormat() {
-        return SampleFormat_Int16;
+        return sampleFormat_;
     }
 
     uint32_t WavDecoder::getSampleRate() {

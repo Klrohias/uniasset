@@ -30,7 +30,7 @@ namespace uniasset {
     }
 
     SampleFormat OggDecoder::getSampleFormat() {
-        return SampleFormat_Int16;
+        return sampleFormat_;
     }
 
     uint32_t OggDecoder::getChannelCount() {

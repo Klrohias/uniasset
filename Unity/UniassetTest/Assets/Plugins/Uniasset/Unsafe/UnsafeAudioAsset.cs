@@ -79,9 +79,9 @@ namespace Uniasset.Unsafe
             return result;
         }
         
-        public UnsafeAudioDecoder GetAudioDecoder(SampleFormat format)
+        public UnsafeAudioDecoder GetAudioDecoder(SampleFormat format, long frameBufferSize)
         {
-            var result = Interop.Uniasset_AudioAsset_GetAudioDecoder(Instance, (byte)format);
+            var result = Interop.Uniasset_AudioAsset_GetAudioDecoder(Instance, (byte)format, frameBufferSize);
             CheckNativeErrorInternal();
             return new UnsafeAudioDecoder(result);
         }
@@ -94,7 +94,7 @@ namespace Uniasset.Unsafe
         
         private void CheckNativeErrorInternal()
         {
-            var errorMessage = Marshal.PtrToStringAuto(new IntPtr(Interop.Uniasset_AudioAsset_GetError(Instance)));
+            var errorMessage = Marshal.PtrToStringAnsi(new IntPtr(Interop.Uniasset_AudioAsset_GetError(Instance)));
 
             if (string.IsNullOrWhiteSpace(errorMessage)) return;
             throw new NativeException(errorMessage);

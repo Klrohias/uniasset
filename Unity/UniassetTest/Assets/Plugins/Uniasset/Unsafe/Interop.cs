@@ -138,7 +138,7 @@ namespace Uniasset.Unsafe
         public static extern ulong Uniasset_AudioAsset_GetDataLength(void* self);
 
         [DllImport(NativeLibrary.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_AudioAsset_GetAudioDecoder(void* self, [NativeTypeName("uint8_t")] byte format);
+        public static extern void* Uniasset_AudioAsset_GetAudioDecoder(void* self, [NativeTypeName("uint8_t")] byte format, [NativeTypeName("int64_t")] long frameBufferSize);
 
         [DllImport(NativeLibrary.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_IAudioDecoder_Destory(void* obj);

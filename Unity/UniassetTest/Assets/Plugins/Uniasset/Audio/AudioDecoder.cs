@@ -22,7 +22,7 @@ namespace Uniasset.Audio
         public abstract long Tell();
         public abstract void Dispose();
 
-        public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream = true)
+        public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream = false)
         {
             if (Format != SampleFormat.Float)
                 Debug.LogWarning("Uniasset: If you want to create a audio clip from AudioDecoder, " +

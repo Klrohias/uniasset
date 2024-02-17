@@ -105,7 +105,7 @@ namespace Uniasset.Unsafe
 
         private void CheckNativeErrorInternal()
         {
-            var errorMessage = Marshal.PtrToStringAuto(new IntPtr(Interop.Uniasset_ImageAsset_GetError(Instance)));
+            var errorMessage = Marshal.PtrToStringAnsi(new IntPtr(Interop.Uniasset_ImageAsset_GetError(Instance)));
 
             if (string.IsNullOrWhiteSpace(errorMessage)) return;
             throw new NativeException(errorMessage);
