@@ -57,8 +57,8 @@ jobs:
 
     - name: Package for releasing
       run: |
-        7za a -tzip "${{github.workspace}}/Native/uniasset-x86-windows.zip" "${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll"
-        7za a -tzip "${{github.workspace}}/Native/uniasset-x64-windows.zip" "${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll"
+        Compress-Archive -Path "${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll" -Destination "${{github.workspace}}/Native/uniasset-x86-windows.zip"
+        Compress-Archive -Path "${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll" -Destination "${{github.workspace}}/Native/uniasset-x64-windows.zip"
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
