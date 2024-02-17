@@ -8,6 +8,7 @@
 #include "BufferedAudioDecoder.hpp"
 
 #include <utility>
+#include <cstring>
 #include <chrono>
 
 namespace uniasset {
