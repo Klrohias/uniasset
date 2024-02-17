@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 #include <span>
+#include <cmath>
 
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
