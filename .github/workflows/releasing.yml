@@ -57,8 +57,8 @@ jobs:
 
     - name: Package for releasing
       run: |
-        Compress-Archive -Path "${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll" -Destination "${{github.workspace}}/Native/uniasset-x86-windows.zip"
-        Compress-Archive -Path "${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll" -Destination "${{github.workspace}}/Native/uniasset-x64-windows.zip"
+        Compress-Archive -Path "${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll","${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.pdb" -Destination "${{github.workspace}}/Native/uniasset-x86-windows.zip"
+        Compress-Archive -Path "${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll","${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.pdb" -Destination "${{github.workspace}}/Native/uniasset-x64-windows.zip"
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
@@ -252,7 +252,18 @@ jobs:
       with:
         name: libuniasset-x64-linux.so
         path: ${{github.workspace}}/Native/build-x64-linux/src/uniasset/libuniasset.so
+
+    - name: Package unity scripts
+      run: |
+        zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
     
+    - name: Upload unity scripts
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: "${{github.workspace}}/Unity/UnityScripts.zip"
+        asset_name: "uniasset-unity-scripts.zip"
+
     - name: Upload binaries to release (x64-linux)
       uses: svenstaro/upload-release-action@v2
       with:
