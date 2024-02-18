@@ -21,9 +21,9 @@ namespace Uniasset.Audio
         public override int ChannelCount { get; }
         public override SampleFormat Format { get; }
 
-        public override bool Read<T>(Span<T> buffer, int sampleCount)
+        public override bool Read<T>(Span<T> buffer, int frameCount)
         {
-            return UnsafeHandle.Read(buffer, sampleCount);
+            return UnsafeHandle.Read(buffer, frameCount);
         }
 
         public override bool Seek(long samplePosition)
