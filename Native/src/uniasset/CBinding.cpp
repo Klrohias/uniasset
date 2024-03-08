@@ -4,6 +4,8 @@
 
 #include "CBinding.h"
 
+#include <span>
+#include <ranges>
 #include <memory>
 #include "image/ImageAsset.hpp"
 #include "audio/AudioPlayer.hpp"
@@ -72,9 +74,20 @@ CBINDING_METHOD(int32_t, ImageAsset, GetChannelCount, CBINDING_TYPED_PTR(ImageAs
     return getInstance<ImageAsset>(self)->getChannelCount();
 }
 
-CBINDING_METHOD(void, ImageAsset, Clip, CBINDING_TYPED_PTR(ImageAsset) self, int32_t x, int32_t y,
+CBINDING_METHOD(void, ImageAsset, Crop, CBINDING_TYPED_PTR(ImageAsset) self, int32_t x, int32_t y,
                 int32_t width, int32_t height) {
-    getInstance<ImageAsset>(self)->clip(x, y, width, height);
+    getInstance<ImageAsset>(self)->crop(x, y, width, height);
+}
+
+CBINDING_METHOD(void, ImageAsset, CropMultiple, CBINDING_TYPED_PTR(ImageAsset) self, void* items, int16_t count,
+                void** output) {
+    auto result = getInstance<ImageAsset>(self)->cropMultiple(std::span(reinterpret_cast<CropOptions*>(items), count));
+
+    for (int i = 0; i < count; ++i) {
+        output[i] = createInstance<ImageAsset>(new ImageAsset(std::move(result[i])));
+    }
+
+    result.clear();
 }
 
 CBINDING_METHOD(void, ImageAsset, Resize, CBINDING_TYPED_PTR(ImageAsset) self, int32_t width,
@@ -91,7 +104,7 @@ CBINDING_METHOD(void, ImageAsset, CopyTo, CBINDING_TYPED_PTR(ImageAsset) self, v
 }
 
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Clone, CBINDING_TYPED_PTR(ImageAsset) self) {
-    return getInstance<ImageAsset>(self)->clone();
+    return createInstance(getInstance<ImageAsset>(self)->clone());
 }
 
 // AudioPlayer

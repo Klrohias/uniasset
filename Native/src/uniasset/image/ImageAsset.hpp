@@ -10,6 +10,7 @@
 #include <string_view>
 #include <functional>
 #include <memory>
+#include <span>
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
 #include "uniasset/common/Templates.hpp"
@@ -19,6 +20,10 @@ namespace uniasset {
     using namespace uniasset::utils;
 
     inline void stb_deleter(uint8_t* buffer);
+
+    struct CropOptions {
+        int32_t x, y, width, height;
+    };
 
     class UNIASSET_API ImageAsset : public std::enable_shared_from_this<ImageAsset> {
     private:
@@ -45,6 +50,10 @@ namespace uniasset {
     public:
         explicit ImageAsset();
 
+        explicit ImageAsset(Buffer&& buffer, int32_t width, int32_t height, int32_t channelCount);
+
+        ImageAsset(ImageAsset&&) = default;
+
         void load(const std::string_view& path);
 
         void load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
@@ -61,13 +70,15 @@ namespace uniasset {
 
         int32_t getChannelCount();
 
-        void clip(int32_t x, int32_t y, int32_t width, int32_t height);
+        void crop(int32_t x, int32_t y, int32_t width, int32_t height);
 
         void resize(int32_t width, int32_t height);
 
         void copyTo(void* buffer);
 
         [[nodiscard]] ImageAsset* clone() const;
+
+        std::vector<ImageAsset> cropMultiple(std::span<CropOptions> items);
     };
 
 } // Uniasset

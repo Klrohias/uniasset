@@ -7,6 +7,7 @@
 #include <stb_image.h>
 #include <webp/decode.h>
 #include <cstring>
+#include <format>
 
 #include "ImageAsset.hpp"
 #include "../thirdparty/unique.hpp"
@@ -45,6 +46,10 @@ namespace uniasset {
     }
 
     ImageAsset::ImageAsset() = default;
+
+    ImageAsset::ImageAsset(Buffer&& buffer, int32_t width, int32_t height, int32_t channelCount)
+            : buffer_{std::move(buffer)}, width_{width}, height_{height}, channelCount_{channelCount} {
+    }
 
     void ImageAsset::load(const std::string_view& path) {
         errorHandler_.clear();
@@ -261,30 +266,7 @@ namespace uniasset {
         errorHandler_.clear();
 
         c_unique_ptr<void, tj_deleter> processor{nullptr, tj_deleter};
-        /*
-         c_unique_ptr<uint8_t, tj_deleter> transformedData{nullptr, tj_deleter};
-         uint64_t transformedSize = 0;
 
-         // transform
-         processor.reset(tjInitTransform());
-         if (!processor) {
-             errorHandler_.setError(tjGetErrorStr());
-             return;
-         }
-
-         tjtransform transform{};
-         memset(&transform, 0, sizeof(tjtransform));
-         transform.op = TJXOP_VFLIP;
-
-         uint8_t* transformedDataRaw = nullptr;
-         if (tjTransform(processor.get(), fileData, size, 1, &transformedDataRaw,
-                         reinterpret_cast<unsigned long*>(&transformedSize), &transform, 0) != 0) {
-             errorHandler_.setError(tjGetErrorStr2(processor.get()));
-             return;
-         }
-         transformedData.reset(transformedDataRaw);
-
- */
         // decode
         processor.reset(tjInitDecompress());
         if (!processor) {
@@ -303,8 +285,6 @@ namespace uniasset {
 
         Buffer buffer{new uint8_t[width_ * height_ * channelCount_], default_array_deleter<uint8_t>};
         if (tjDecompress2(processor.get(),
-/*                          transformedData.get(),
-                          transformedSize,*/
                           fileData,
                           size,
                           buffer.get(), width_,
@@ -352,7 +332,7 @@ namespace uniasset {
         return channelCount_;
     }
 
-    void ImageAsset::clip(int32_t x, int32_t y, int32_t width, int32_t height) {
+    void ImageAsset::crop(int32_t x, int32_t y, int32_t width, int32_t height) {
         errorHandler_.clear();
 
         if (!buffer_) {
@@ -367,7 +347,6 @@ namespace uniasset {
         int32_t endLine = height_ - y;
         int32_t startPixel = x;
         int32_t endPixel = x + width;
-
 
         if (startLine < 0 || startLine > height_ ||
             endLine < 0 || endLine > height_ ||
@@ -447,6 +426,50 @@ namespace uniasset {
         auto result = new ImageAsset;
 
         result->load(buffer_.get(), width_ * height_ * channelCount_, width_, height_, channelCount_);
+
+        return result;
+    }
+
+    std::vector<ImageAsset> ImageAsset::cropMultiple(std::span<CropOptions> items) {
+        errorHandler_.clear();
+
+        std::vector<ImageAsset> result{};
+
+        // check
+        for (const auto& [x, y, width, height]: items) {
+            int32_t startLine = height_ - y - height;
+            int32_t endLine = height_ - y;
+            int32_t startPixel = x;
+            int32_t endPixel = x + width;
+
+            if (startLine < 0 || startLine > height_ ||
+                endLine < 0 || endLine > height_ ||
+                startPixel < 0 || startPixel > width_ ||
+                endPixel < 0 || endPixel > width_) {
+                errorHandler_.setError(ERROR_STR_IMAGE_SIZE_OVERFLOW);
+
+                return result;
+            }
+        }
+
+        result.reserve(items.size());
+
+        // crop
+        for (const auto& [x, y, width, height]: items) {
+            int32_t startLine = height_ - y - height;
+
+            int32_t srcStrideSize = width_ * channelCount_;
+            int32_t newStrideSize = width * channelCount_;
+
+            Buffer newBuffer{new uint8_t[width * height * channelCount_], default_array_deleter<uint8_t>};
+
+            for (int iy = 0; iy < height; iy++) {
+                memcpy(newBuffer.get() + newStrideSize * iy,
+                       buffer_.get() + srcStrideSize * (iy + startLine) + x * channelCount_, newStrideSize);
+            }
+
+            result.emplace_back(std::move(newBuffer), width, height, channelCount_);
+        }
 
         return result;
     }

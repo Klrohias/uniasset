@@ -31,13 +31,15 @@ CBINDING_METHOD(CBINDING_CSTRING, ImageAsset, GetError, CBINDING_TYPED_PTR(Image
 CBINDING_METHOD(int32_t, ImageAsset, GetWidth, CBINDING_TYPED_PTR(ImageAsset) self);
 CBINDING_METHOD(int32_t, ImageAsset, GetHeight, CBINDING_TYPED_PTR(ImageAsset) self);
 CBINDING_METHOD(int32_t, ImageAsset, GetChannelCount, CBINDING_TYPED_PTR(ImageAsset) self);
-CBINDING_METHOD(void, ImageAsset, Clip, CBINDING_TYPED_PTR(ImageAsset) self, int32_t x, int32_t y,
+CBINDING_METHOD(void, ImageAsset, Crop, CBINDING_TYPED_PTR(ImageAsset) self, int32_t x, int32_t y,
                 int32_t width, int32_t height);
 CBINDING_METHOD(void, ImageAsset, Resize, CBINDING_TYPED_PTR(ImageAsset) self, int32_t width,
                 int32_t height);
 CBINDING_METHOD(void, ImageAsset, Unload, CBINDING_TYPED_PTR(ImageAsset) self);
 CBINDING_METHOD(void, ImageAsset, CopyTo, CBINDING_TYPED_PTR(ImageAsset) self, void* dest);
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Clone, CBINDING_TYPED_PTR(ImageAsset) self);
+CBINDING_METHOD(void, ImageAsset, CropMultiple, CBINDING_TYPED_PTR(ImageAsset) self, void* items, int16_t count,
+                void** output);
 
 // AudioPlayer
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioPlayer), AudioPlayer, Create);
@@ -89,7 +91,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING
 
 // OggDecoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
-        uint8_t format);
+                uint8_t format);
 
 // WavDecoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,

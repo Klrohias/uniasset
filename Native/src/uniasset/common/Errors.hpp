@@ -13,6 +13,7 @@ namespace uniasset {
     extern const char* ERROR_STR_AUDIO_NOT_OPENED;
     extern const char* ERROR_STR_IMAGE_NOT_LOADED;
     extern const char* ERROR_STR_IMAGE_SIZE_OVERFLOW;
+    extern const char* ERROR_STR_IMAGE_SIZE_OVERFLOW_AT;
 }
 
 #endif //UNIASSET_ERRORS_HPP
