@@ -7,14 +7,6 @@ BINARY_DIR=$1
 
 TRIPLET=arm64-ios-bitcode
 
-# print info
-echo "[iOS-build] Begin of environment variables"
-# env
-echo "[iOS-build] End"
-
-echo "[iOS-build] Begin of files in $OUTPUT_DIR"
-ls -al $OUTPUT_DIR
-echo "[iOS-build] End"
 
 # merge archives
 echo "[iOS-build] Merge archives"
@@ -23,6 +15,13 @@ mv $OUTPUT_DIR/libuniasset.a $OUTPUT_DIR/libuniasset_raw.a
 libtool -static -o $OUTPUT_DIR/libuniasset_merge.a $OUTPUT_DIR/libuniasset_raw.a \
   $BINARY_DIR/vcpkg_installed/$TRIPLET/lib/libturbojpeg.a \
   $BINARY_DIR/vcpkg_installed/$TRIPLET/lib/libwebpdecoder.a
+
+
+
+# detect symbols
+nm -j $OUTPUT_DIR/libuniasset_raw.a | grep "_Uniasset_" > $SCRIPT_DIR/export-symbols.txt
+echo "[iOS-build] Export symbols"
+cat $SCRIPT_DIR/export-symbols.txt
 
 # link objects
 echo "[iOS-build] Link objects"
