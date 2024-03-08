@@ -140,6 +140,10 @@ CBINDING_METHOD(float, AudioPlayer, GetTime, CBINDING_TYPED_PTR(AudioPlayer) sel
     return getInstance<AudioPlayer>(self)->getTime();
 }
 
+CBINDING_METHOD(void, AudioPlayer, SetTime, CBINDING_TYPED_PTR(AudioPlayer) self, float time) {
+    getInstance<AudioPlayer>(self)->setTime(time);
+}
+
 // AudioAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create) {
     return createInstance<AudioAsset>(new AudioAsset);
