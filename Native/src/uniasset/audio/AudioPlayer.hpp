@@ -32,8 +32,6 @@ namespace uniasset {
         c_unique_ptr<ma_device, miniaudio_deleter> device_{nullptr, miniaudio_deleter};
 
         ErrorHandler errorHandler_{};
-
-        std::shared_ptr<AudioAsset> audioAsset_{nullptr};
         std::shared_ptr<IAudioDecoder> audioDecoder_{nullptr};
 
         State state_{Closed};
@@ -54,6 +52,8 @@ namespace uniasset {
         const std::string& getError();
 
         void open(const std::shared_ptr<AudioAsset>& audioAsset);
+        
+        void open(const std::shared_ptr<IAudioDecoder>& audioDecoder);
 
         void pause();
 

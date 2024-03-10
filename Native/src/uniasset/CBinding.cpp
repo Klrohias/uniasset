@@ -137,6 +137,12 @@ CBINDING_METHOD(void, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
     getInstance<AudioPlayer>(self)->open(getInstance<AudioAsset>(audioAsset));
 }
 
+
+CBINDING_METHOD(void, AudioPlayer, OpenDecoder, CBINDING_TYPED_PTR(AudioPlayer) self,
+                CBINDING_TYPED_PTR(IAudioDecoder) audioDecoder) {
+    getInstance<AudioPlayer>(self)->open(getInstance<IAudioDecoder>(audioDecoder));
+}
+
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self) {
     return getInstance<AudioPlayer>(self)->isPaused();
 }
@@ -288,12 +294,16 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
                 void* getSampleCountFunc,
                 void* getSampleFormatFunc,
                 void* getSampleRateFunc,
-                void* readFunc) {
+                void* readFunc,
+                void* seekFunc,
+                void* tellFunc) {
     return createInstance<IAudioDecoder>(
             new ExternalAudioDecoder(userData,
                                      reinterpret_cast<ExternalAudioDecoder::GetChannelCountFunc>(getChannelCountFunc),
                                      reinterpret_cast<ExternalAudioDecoder::GetSampleCountFunc>(getSampleCountFunc),
                                      reinterpret_cast<ExternalAudioDecoder::GetSampleFormatFunc>(getSampleFormatFunc),
                                      reinterpret_cast<ExternalAudioDecoder::GetSampleRateFunc>(getSampleRateFunc),
-                                     reinterpret_cast<ExternalAudioDecoder::ReadFunc>(readFunc)));
+                                     reinterpret_cast<ExternalAudioDecoder::ReadFunc>(readFunc),
+                                     reinterpret_cast<ExternalAudioDecoder::SeekFunc>(seekFunc),
+                                     reinterpret_cast<ExternalAudioDecoder::TellFunc>(tellFunc)));
 }

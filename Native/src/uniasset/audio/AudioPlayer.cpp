@@ -66,7 +66,11 @@ namespace uniasset {
 
         // get decoder
         auto audioDecoder = audioAsset->getAudioDecoder(SampleFormat_Int16);
+        auto sharedAudioDecoder = std::shared_ptr<IAudioDecoder>(audioDecoder.release());
+        open(sharedAudioDecoder);
+    }
 
+    void AudioPlayer::open(const std::shared_ptr<IAudioDecoder>& audioDecoder) {
         if (!audioDecoder) {
             errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
             return;
@@ -89,8 +93,7 @@ namespace uniasset {
 
         ma_device_set_master_volume(device_.get(), volume_);
 
-        audioAsset_ = audioAsset;
-        audioDecoder_ = std::shared_ptr<IAudioDecoder>(audioDecoder.release());
+        audioDecoder_ = audioDecoder;
 
         // set state
         state_ = Opened;
@@ -112,7 +115,6 @@ namespace uniasset {
 
         device_.reset();
 
-        audioAsset_ = nullptr;
         audioDecoder_ = nullptr;
     }
 

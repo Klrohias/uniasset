@@ -50,6 +50,8 @@ CBINDING_METHOD(void, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self)
 CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self);
 CBINDING_METHOD(void, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
                 CBINDING_TYPED_PTR(AudioAsset) audioAsset);
+CBINDING_METHOD(void, AudioPlayer, OpenDecoder, CBINDING_TYPED_PTR(AudioPlayer) self,
+                CBINDING_TYPED_PTR(IAudioDecoder) audioDecoder);
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self);
 CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val);
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self);
@@ -100,6 +102,16 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_
 // Mp3Decoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
                 uint8_t format);
+
+// ExternalAudioDecoder
+CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create, void* userData,
+                void* getChannelCountFunc,
+                void* getSampleCountFunc,
+                void* getSampleFormatFunc,
+                void* getSampleRateFunc,
+                void* readFunc,
+                void* seekFunc,
+                void* tellFunc);
 
 #ifdef __cplusplus
 }
