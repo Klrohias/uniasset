@@ -64,6 +64,8 @@ public class TestSceneManager : MonoBehaviour
 
         if (GUILayout.Button("Clip (Async)")) ClipImageAsync();
 
+        if (GUILayout.Button("ClipMulti[1] (Async)")) ClipImageMultiAsync();
+
         if (GUILayout.Button("Resize (Async)")) ResizeImageAsync();
 
         if (GUILayout.Button("Load Large (Async)")) LoadImageAsync(_test1080P, false);
@@ -90,8 +92,8 @@ public class TestSceneManager : MonoBehaviour
             var decoder = _audioAsset.GetAudioDecoder(frameBufferSize: _audioAsset.SampleRate * 64);
             var clip = decoder.ToAudioClip();
             source.clip = clip;
-        }    
-        
+        }
+
         if (GUILayout.Button("AudioSourceOpen(Read)"))
         {
             var decoder = _audioAsset.GetAudioDecoder();
@@ -169,11 +171,27 @@ public class TestSceneManager : MonoBehaviour
     private async void ClipImageAsync()
     {
         var s = Stopwatch.StartNew();
-        await _imageAsset.ClipAsync(25, 25, 50, 50);
+        await _imageAsset.CropAsync(25, 25, 50, 50);
         Debug.Log("Clip: " + s.ElapsedMilliseconds + "ms");
 
         s.Restart();
         display.texture = await _imageAsset.ToTexture2DAsync();
+        Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
+    }
+
+    private async void ClipImageMultiAsync()
+    {
+        var s = Stopwatch.StartNew();
+        var result = await _imageAsset.CropMultipleAsync(new[]
+        {
+            new CropOptions(0, 0, 25, 25),
+            new CropOptions(25, 25, 50, 50),
+            new CropOptions(50, 50, 25, 25),
+        });
+        Debug.Log("ClipMultiple: " + s.ElapsedMilliseconds + "ms");
+
+        s.Restart();
+        display.texture = await result[1].ToTexture2DAsync();
         Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
     }
 }

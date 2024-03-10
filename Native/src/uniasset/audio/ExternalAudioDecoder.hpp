@@ -14,7 +14,7 @@ namespace uniasset {
     class ExternalAudioDecoder : public IAudioDecoder {
     public:
         using GetChannelCountFunc = uint32_t(*)(void*);
-        using GetSampleCountFunc = size_t(*)(void*);
+        using GetSampleCountFunc = uint64_t(*)(void*);
         using GetSampleFormatFunc = SampleFormat(*)(void*);
         using GetSampleRateFunc = uint32_t(*)(void*);
         using ReadFunc = uint32_t(*)(void*, void*, uint32_t);

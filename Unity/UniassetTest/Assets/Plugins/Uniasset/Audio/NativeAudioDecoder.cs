@@ -21,7 +21,7 @@ namespace Uniasset.Audio
         public override int ChannelCount { get; }
         public override SampleFormat Format { get; }
 
-        public override bool Read<T>(Span<T> buffer, int frameCount)
+        public override int Read<T>(Span<T> buffer, int frameCount)
         {
             return UnsafeHandle.Read(buffer, frameCount);
         }

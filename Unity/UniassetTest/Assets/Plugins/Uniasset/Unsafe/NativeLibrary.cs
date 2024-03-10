@@ -1,6 +1,6 @@
 ﻿namespace Uniasset.Unsafe
 {
-    public static class NativeLibrary
+    public static partial class Interop
     {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
         public const string LibraryName = "uniasset";

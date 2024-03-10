@@ -47,12 +47,12 @@ namespace Uniasset.Unsafe
             return Interop.Uniasset_IAudioDecoder_Seek(Instance, pos) != 0;
         }
 
-        public bool Read<T>(Span<T> buffer, int frameCount)
+        public int Read<T>(Span<T> buffer, int frameCount)
             where T : unmanaged
         {
             fixed (T* bufferPtr = buffer)
             {
-                return Interop.Uniasset_IAudioDecoder_Read(Instance, bufferPtr, (uint)frameCount) != 0;
+                return (int)Interop.Uniasset_IAudioDecoder_Read(Instance, bufferPtr, (uint)frameCount);
             }
         }
 

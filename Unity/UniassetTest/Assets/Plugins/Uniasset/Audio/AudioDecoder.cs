@@ -15,7 +15,7 @@ namespace Uniasset.Audio
         public abstract int ChannelCount { get; }
         public abstract SampleFormat Format { get; }
 
-        public abstract bool Read<T>(Span<T> buffer, int frameCount)
+        public abstract int Read<T>(Span<T> buffer, int frameCount)
             where T : unmanaged;
 
         public abstract bool Seek(long samplePosition);

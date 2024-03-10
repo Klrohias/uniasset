@@ -9,7 +9,7 @@ ClangSharpPInvokeGenerator @./scripts/clangsharp-binding.rsp
 pushd ClangSharpGenerated
 
 # DllImport("uniasset_platform_dynamic_binding",
-cat Interop.cs | sed -e 's#\[DllImport[(]"uniasset_platform_dynamic_binding",#\[DllImport\(NativeLibrary.LibraryName,#g' > Interop.cs
+cat Interop.cs | sed -e 's#\[DllImport[(]"uniasset_platform_dynamic_binding",#\[DllImport\(LibraryName,#g' > Interop.cs
 
 popd
 

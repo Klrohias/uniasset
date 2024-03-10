@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Uniasset.Image;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -14,7 +15,7 @@ namespace Uniasset.Unsafe
         {
             return new UnsafeImageAsset(Interop.Uniasset_ImageAsset_Create());
         }
-        
+
         public UnsafeImageAsset(void* instance)
         {
             Instance = instance;
@@ -79,12 +80,37 @@ namespace Uniasset.Unsafe
             CheckNativeErrorInternal();
         }
 
-        public void Clip(int x, int y, int width, int height)
+        public UnsafeImageAsset Clone()
         {
-            Interop.Uniasset_ImageAsset_Clip(Instance, x, y, width, height);
+            var result = Interop.Uniasset_ImageAsset_Clone(Instance);
+            CheckNativeErrorInternal();
+            return new UnsafeImageAsset(result);
+        }
+
+        public void Crop(int x, int y, int width, int height)
+        {
+            Interop.Uniasset_ImageAsset_Crop(Instance, x, y, width, height);
             CheckNativeErrorInternal();
         }
         
+        public UnsafeImageAsset[] CropMultiple(CropOptions[] optionsArray)
+        {
+            fixed (CropOptions* options = optionsArray)
+            fixed (void** result = new void*[optionsArray.Length])
+            {
+                Interop.Uniasset_ImageAsset_CropMultiple(Instance, options, (short)optionsArray.Length, result);
+                CheckNativeErrorInternal();
+
+                var handleResult = new UnsafeImageAsset[optionsArray.Length];
+                for (int i = 0; i < optionsArray.Length; i++)
+                {
+                    handleResult[i] = new UnsafeImageAsset(result[i]);
+                }
+
+                return handleResult;
+            }
+        }
+
         public void Resize(int width, int height)
         {
             Interop.Uniasset_ImageAsset_Resize(Instance, width, height);
@@ -97,7 +123,7 @@ namespace Uniasset.Unsafe
             Interop.Uniasset_ImageAsset_CopyTo(Instance, arrayPtr);
             CheckNativeErrorInternal();
         }
-        
+
         public void Destroy()
         {
             Interop.Uniasset_ImageAsset_Destory(Instance);

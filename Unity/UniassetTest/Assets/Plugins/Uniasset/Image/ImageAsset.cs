@@ -6,18 +6,28 @@ using UnityEngine;
 
 namespace Uniasset.Image
 {
-    public sealed class ImageAsset : IDisposable
+    public sealed class ImageAsset : IDisposable, ICloneable
     {
         private bool _disposed = false;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
-        
-        public UnsafeImageAsset UnsafeHandle { get; } = UnsafeImageAsset.Create();
+
+        public UnsafeImageAsset UnsafeHandle { get; }
 
         public int Width => UnsafeHandle.GetWidth();
 
         public int Height => UnsafeHandle.GetHeight();
 
         public int ChannelCount => UnsafeHandle.GetChannelCount();
+
+        public ImageAsset()
+        {
+            UnsafeHandle = UnsafeImageAsset.Create();
+        }
+
+        private ImageAsset(UnsafeImageAsset unsafeImageAsset)
+        {
+            UnsafeHandle = unsafeImageAsset;
+        }
 
         public void Dispose()
         {
@@ -81,18 +91,41 @@ namespace Uniasset.Image
             UnsafeHandle.Unload();
         }
 
-        public void Clip(int x, int y, int width, int height)
+        public void Crop(int x, int y, int width, int height)
         {
-            UnsafeHandle.Clip(x, y, width, height);
+            UnsafeHandle.Crop(x, y, width, height);
         }
 
-        public Task ClipAsync(int x, int y, int width, int height)
+        public Task CropAsync(int x, int y, int width, int height)
         {
             return Task.Factory.StartNew(() =>
             {
                 lock (this)
                 {
-                    Clip(x, y, width, height);
+                    Crop(x, y, width, height);
+                }
+            }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
+        public ImageAsset[] CropMultiple(CropOptions[] optionsArray)
+        {
+            var unsafeImageAssets = UnsafeHandle.CropMultiple(optionsArray);
+            var result = new ImageAsset[optionsArray.Length];
+            for (int i = 0; i < optionsArray.Length; i++)
+            {
+                result[i] = new ImageAsset(unsafeImageAssets[i]);
+            }
+
+            return result;
+        }
+        
+        public Task<ImageAsset[]> CropMultipleAsync(CropOptions[] optionsArray)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                lock (this)
+                {
+                    return CropMultiple(optionsArray);
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
@@ -161,6 +194,13 @@ namespace Uniasset.Image
 
             return texture;
         }
+
+        public ImageAsset Clone()
+        {
+            return new ImageAsset(UnsafeHandle.Clone());
+        }
+
+        object ICloneable.Clone() => Clone();
 
         ~ImageAsset()
         {
