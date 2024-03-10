@@ -48,6 +48,11 @@ CBINDING_METHOD(void, ImageAsset, LoadFile, CBINDING_TYPED_PTR(ImageAsset) self,
     getInstance<ImageAsset>(self)->load(path);
 }
 
+CBINDING_METHOD(void, ImageAsset, LoadEmpty, CBINDING_TYPED_PTR(ImageAsset) self, int32_t width, int32_t height,
+                int32_t channelCount) {
+    getInstance<ImageAsset>(self)->load(width, height, channelCount);
+}
+
 CBINDING_METHOD(void, ImageAsset, LoadPixels, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* pixels,
                 uint64_t size, int32_t width, int32_t height, int32_t channelCount) {
     getInstance<ImageAsset>(self)->load(pixels, size, width, height, channelCount);

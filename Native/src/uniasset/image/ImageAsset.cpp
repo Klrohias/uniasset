@@ -125,6 +125,13 @@ namespace uniasset {
         }
     }
 
+    void ImageAsset::load(int32_t width, int32_t height, int32_t channelCount) {
+        buffer_ = {new uint8_t[width * height * channelCount], default_array_deleter<uint8_t>};
+        width_ = width;
+        height_ = height;
+        channelCount_ = channelCount;
+    }
+
     void ImageAsset::loadFile(const std::string_view& path) {
         errorHandler_.clear();
 
@@ -472,6 +479,10 @@ namespace uniasset {
         }
 
         return result;
+    }
+
+    uint8_t* ImageAsset::getBuffer() {
+        return buffer_.get();
     }
 
     void stb_deleter(uint8_t* buffer) {

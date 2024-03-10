@@ -14,7 +14,7 @@
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
 #include "uniasset/common/Templates.hpp"
-#include "uniasset/utils/ErrorHandler.hpp"
+#include "uniasset/common/ErrorHandler.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
 
 namespace uniasset {

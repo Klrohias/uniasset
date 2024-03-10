@@ -14,7 +14,7 @@
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
 #include "uniasset/common/Templates.hpp"
-#include "uniasset/utils/ErrorHandler.hpp"
+#include "uniasset/common/ErrorHandler.hpp"
 
 namespace uniasset {
     using namespace uniasset::utils;
@@ -58,6 +58,8 @@ namespace uniasset {
 
         void load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount);
 
+        void load(int32_t width, int32_t height, int32_t channelCount);
+
         void load(uint8_t* fileData, size_t size);
 
         void unload();
@@ -79,6 +81,8 @@ namespace uniasset {
         [[nodiscard]] ImageAsset* clone() const;
 
         std::vector<ImageAsset> cropMultiple(std::span<CropOptions> items);
+
+        uint8_t* getBuffer();
     };
 
 } // Uniasset

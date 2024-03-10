@@ -33,8 +33,8 @@ add_library(uniasset
         CBinding.cpp
         image/ImageAsset.cpp
         image/ImageAsset.hpp
-        utils/ErrorHandler.cpp
-        utils/ErrorHandler.hpp
+        common/ErrorHandler.cpp
+        common/ErrorHandler.hpp
         audio/AudioAsset.cpp
         audio/AudioAsset.hpp
         audio/AudioPlayer.cpp
@@ -69,6 +69,9 @@ add_library(uniasset
         common/Errors.cpp
         audio/BufferedAudioDecoder.cpp
         audio/BufferedAudioDecoder.hpp
+        image/ImageProcessor.cpp
+        image/ImageProcessor.hpp
+        image/Pixels.hpp
 )
 
 target_compile_features(uniasset PUBLIC cxx_std_20)

@@ -8,7 +8,7 @@
 
 #include <memory>
 #include "uniasset/Foundation.hpp"
-#include "uniasset/utils/ErrorHandler.hpp"
+#include "uniasset/common/ErrorHandler.hpp"
 #include <uniasset/thirdparty/miniaudio.hpp>
 
 struct ma_device;

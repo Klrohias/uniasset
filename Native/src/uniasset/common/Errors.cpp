@@ -12,4 +12,5 @@ namespace uniasset {
     const char* ERROR_STR_IMAGE_NOT_LOADED = "image asset is not loaded";
     const char* ERROR_STR_IMAGE_SIZE_OVERFLOW = "range exceeds image size";
     const char* ERROR_STR_IMAGE_SIZE_OVERFLOW_AT = "range exceeds image size at item {}";
+    const char* ERROR_STR_IMAGE_CHANNEL_MISMATCH = "the count of channel is mismatch";
 }

@@ -24,6 +24,8 @@ extern "C" {
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Create);
 CBINDING_METHOD(void, ImageAsset, Destory, CBINDING_TYPED_PTR(ImageAsset) obj);
 CBINDING_METHOD(void, ImageAsset, LoadFile, CBINDING_TYPED_PTR(ImageAsset) self, CBINDING_CSTRING path);
+CBINDING_METHOD(void, ImageAsset, LoadEmpty, CBINDING_TYPED_PTR(ImageAsset) self, int32_t width, int32_t height,
+                int32_t channelCount);
 CBINDING_METHOD(void, ImageAsset, LoadPixels, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* pixels,
                 uint64_t size, int32_t width, int32_t height, int32_t channelCount);
 CBINDING_METHOD(void, ImageAsset, Load, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* data, uint64_t size);
