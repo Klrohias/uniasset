@@ -43,14 +43,16 @@ namespace uniasset {
         return decoder_->sampleRate;
     }
 
-    bool FlacDecoder::read(void* buffer, uint32_t count) {
-        if (!decoder_) return false;
+    uint32_t FlacDecoder::read(void* buffer, uint32_t count) {
+        if (!decoder_) return 0;
+
         if (sampleFormat_ == SampleFormat_Int16) {
-            drflac_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
+            return static_cast<uint32_t>(drflac_read_pcm_frames_s16(decoder_.get(), count,
+                                                                    reinterpret_cast<int16_t*>(buffer)));
         } else {
-            drflac_read_pcm_frames_f32(decoder_.get(), count, reinterpret_cast<float_t*>(buffer));
+            return static_cast<uint32_t>(drflac_read_pcm_frames_f32(decoder_.get(), count,
+                                                                    reinterpret_cast<float_t*>(buffer)));
         }
-        return true;
     }
 
     bool FlacDecoder::seek(int64_t position) {

@@ -80,14 +80,14 @@ namespace uniasset {
                 auto writeSize = bufferSize_ - writeBegin;
 
                 if (writeSize < bufferBlockSize) {
-                    wrappedAudioDecoder_->read(getBufferOffset(buffer_, frameSize_, writeBegin), writeSize);
-                    wrappedAudioDecoder_->read(getBufferOffset(buffer_, frameSize_, 0), bufferBlockSize - writeSize);
+                    readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin), writeSize);
+                    readWrappedDecoder(getBufferOffset(buffer_, frameSize_, 0), bufferBlockSize - writeSize);
                 } else {
-                    wrappedAudioDecoder_->read(getBufferOffset(buffer_, frameSize_, writeBegin), bufferBlockSize);
+                    readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin), bufferBlockSize);
                 }
 
             } else {
-                wrappedAudioDecoder_->read(getBufferOffset(buffer_, frameSize_, writeBegin), bufferBlockSize);
+                readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin), bufferBlockSize);
             }
 
             bufferedFrameEnd_ += bufferBlockSize;
@@ -110,7 +110,7 @@ namespace uniasset {
         return wrappedAudioDecoder_->getChannelCount();
     }
 
-    bool BufferedAudioDecoder::read(void* buffer, uint32_t count) {
+    uint32_t BufferedAudioDecoder::read(void* buffer, uint32_t count) {
         std::lock_guard<std::mutex> lockGuard{*sync_lock};
 
         auto remain = count;
@@ -131,7 +131,7 @@ namespace uniasset {
             }
         }
 
-        return true;
+        return count;
     }
 
     void BufferedAudioDecoder::readInternal(void* buffer, int64_t requiredFrame) {
@@ -159,11 +159,22 @@ namespace uniasset {
         auto writeBegin = (bufferOffset_ + bufferedCount) % bufferSize_;
 
         if (writeBegin >= bufferOffset_) {
-            wrappedAudioDecoder_->read(getBufferOffset(buffer_, frameSize_, writeBegin), bufferSize_ - writeBegin);
+            readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin),
+                               bufferSize_ - writeBegin);
             writeBegin = 0;
         }
 
-        wrappedAudioDecoder_->read(getBufferOffset(buffer_, frameSize_, writeBegin), bufferOffset_ - writeBegin);
+        readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin),
+                           bufferOffset_ - writeBegin);
         bufferedFrameEnd_ += willBufferedCount;
+    }
+
+    void BufferedAudioDecoder::readWrappedDecoder(void* buffer, int64_t requiredFrame) {
+        if (uint32_t readFrameCount = wrappedAudioDecoder_->read(buffer, requiredFrame);
+                readFrameCount < requiredFrame) {
+            memset(ptr_offset(buffer, readFrameCount * frameSize_),
+                   0,
+                   (requiredFrame - readFrameCount) * frameSize_);
+        }
     }
 } // uniasset

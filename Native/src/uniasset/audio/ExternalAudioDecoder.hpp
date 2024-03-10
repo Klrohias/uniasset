@@ -17,7 +17,9 @@ namespace uniasset {
         using GetSampleCountFunc = size_t(*)(void*);
         using GetSampleFormatFunc = SampleFormat(*)(void*);
         using GetSampleRateFunc = uint32_t(*)(void*);
-        using ReadFunc = uint8_t(*)(void*, void*, uint32_t);
+        using ReadFunc = uint32_t(*)(void*, void*, uint32_t);
+        using SeekFunc = uint8_t(*)(void*, int64_t);
+        using TellFunc = int64_t(*)(void*);
 
     private:
         void* userData_;
@@ -25,6 +27,8 @@ namespace uniasset {
         GetSampleCountFunc getSampleCountFunc_{};
         GetSampleFormatFunc getSampleFormatFunc_{};
         GetSampleRateFunc getSampleRateFunc_{};
+        SeekFunc seekFunc_{};
+        TellFunc tellFunc_{};
         ReadFunc readFunc_{};
 
     public:
@@ -34,7 +38,9 @@ namespace uniasset {
                                       GetSampleCountFunc getSampleCountFunc,
                                       GetSampleFormatFunc getSampleFormatFunc,
                                       GetSampleRateFunc getSampleRateFunc,
-                                      ReadFunc readFunc);
+                                      ReadFunc readFunc,
+                                      SeekFunc seekFunc,
+                                      TellFunc tellFunc);
 
         uint32_t getChannelCount() override;
 
@@ -44,7 +50,7 @@ namespace uniasset {
 
         uint32_t getSampleRate() override;
 
-        bool read(void* buffer, uint32_t count) override;
+        uint32_t read(void* buffer, uint32_t count) override;
 
         bool seek(int64_t position) override;
 

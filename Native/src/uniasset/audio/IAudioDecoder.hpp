@@ -30,7 +30,7 @@ namespace uniasset {
 
         virtual int64_t tell() = 0;
 
-        virtual bool read(void* buffer, uint32_t count) = 0;
+        virtual uint32_t read(void* buffer, uint32_t count) = 0;
     };
 
 } // Uniasset

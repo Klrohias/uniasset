@@ -9,10 +9,14 @@ namespace uniasset {
                                                GetChannelCountFunc getChannelCountFunc,
                                                GetSampleCountFunc getSampleCountFunc,
                                                GetSampleFormatFunc getSampleFormatFunc,
-                                               GetSampleRateFunc getSampleRateFunc, ReadFunc readFunc)
+                                               GetSampleRateFunc getSampleRateFunc,
+                                               ReadFunc readFunc,
+                                               SeekFunc seekFunc,
+                                               TellFunc tellFunc)
             : userData_{userData},
               getChannelCountFunc_{getChannelCountFunc}, getSampleCountFunc_{getSampleCountFunc},
-              getSampleFormatFunc_{getSampleFormatFunc}, getSampleRateFunc_{getSampleRateFunc}, readFunc_{readFunc} {
+              getSampleFormatFunc_{getSampleFormatFunc}, getSampleRateFunc_{getSampleRateFunc}, readFunc_{readFunc},
+              seekFunc_{seekFunc}, tellFunc_{tellFunc} {
     }
 
     uint32_t ExternalAudioDecoder::getChannelCount() {
@@ -31,15 +35,15 @@ namespace uniasset {
         return getSampleRateFunc_(userData_);
     }
 
-    bool ExternalAudioDecoder::read(void* buffer, uint32_t count) {
+    uint32_t ExternalAudioDecoder::read(void* buffer, uint32_t count) {
         return readFunc_(userData_, buffer, count);
     }
 
     bool ExternalAudioDecoder::seek(int64_t position) {
-        return false;
+        return seekFunc_(userData_, position);
     }
 
     int64_t ExternalAudioDecoder::tell() {
-        return 0;
+        return tellFunc_(userData_);
     }
 } // uniasset

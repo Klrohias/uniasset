@@ -50,6 +50,8 @@ CBINDING_METHOD(void, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self)
 CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self);
 CBINDING_METHOD(void, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
                 CBINDING_TYPED_PTR(AudioAsset) audioAsset);
+CBINDING_METHOD(void, AudioPlayer, OpenDecoder, CBINDING_TYPED_PTR(AudioPlayer) self,
+                CBINDING_TYPED_PTR(IAudioDecoder) audioDecoder);
 CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self);
 CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val);
 CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self);
@@ -80,7 +82,7 @@ CBINDING_METHOD(uint8_t, IAudioDecoder, GetSampleFormat, CBINDING_TYPED_PTR(IAud
 CBINDING_METHOD(uint32_t, IAudioDecoder, GetChannelCount, CBINDING_TYPED_PTR(IAudioDecoder) self);
 CBINDING_METHOD(uint64_t, IAudioDecoder, GetSampleCount, CBINDING_TYPED_PTR(IAudioDecoder) self);
 CBINDING_METHOD(uint32_t, IAudioDecoder, GetSampleRate, CBINDING_TYPED_PTR(IAudioDecoder) self);
-CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
+CBINDING_METHOD(uint32_t, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
                 uint32_t count);
 CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Seek, CBINDING_TYPED_PTR(IAudioDecoder) self, int64_t pos);
 CBINDING_METHOD(int64_t, IAudioDecoder, Tell, CBINDING_TYPED_PTR(IAudioDecoder) self);
@@ -107,7 +109,9 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
                 void* getSampleCountFunc,
                 void* getSampleFormatFunc,
                 void* getSampleRateFunc,
-                void* readFunc);
+                void* readFunc,
+                void* seekFunc,
+                void* tellFunc);
 
 #ifdef __cplusplus
 }

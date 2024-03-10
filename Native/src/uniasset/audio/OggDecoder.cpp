@@ -48,19 +48,21 @@ namespace uniasset {
         return stb_vorbis_stream_length_in_samples(decoder_.get()) * getChannelCount();
     }
 
-    bool OggDecoder::read(void* buffer, uint32_t count) {
-        if (!decoder_) return false;
+    uint32_t OggDecoder::read(void* buffer, uint32_t count) {
+        if (!decoder_) return 0;
         auto channels = info_.channels;
 
         if (sampleFormat_ == SampleFormat_Int16) {
-            stb_vorbis_get_samples_short_interleaved(decoder_.get(), channels,
-                                                     reinterpret_cast<int16_t*>(buffer), count * channels);
+            return static_cast<uint32_t>(
+                    stb_vorbis_get_samples_short_interleaved(decoder_.get(), channels,
+                                                             reinterpret_cast<int16_t*>(buffer), count * channels)
+            );
         } else {
-            stb_vorbis_get_samples_float_interleaved(decoder_.get(), channels,
-                                                     reinterpret_cast<float_t*>(buffer), count * channels);
+            return static_cast<uint32_t>(
+                    stb_vorbis_get_samples_float_interleaved(decoder_.get(), channels,
+                                                             reinterpret_cast<float_t*>(buffer), count * channels)
+            );
         }
-
-        return true;
     }
 
     int OggDecoder::getLoadError() const {
