@@ -7,7 +7,6 @@
 #include <stb_image.h>
 #include <webp/decode.h>
 #include <cstring>
-#include <format>
 
 #include "ImageAsset.hpp"
 #include "../thirdparty/unique.hpp"

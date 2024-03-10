@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <span>
+#include <vector>
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
 #include "uniasset/common/Templates.hpp"

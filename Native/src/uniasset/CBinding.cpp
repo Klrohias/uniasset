@@ -5,7 +5,6 @@
 #include "CBinding.h"
 
 #include <span>
-#include <ranges>
 #include <memory>
 #include "image/ImageAsset.hpp"
 #include "audio/AudioPlayer.hpp"
