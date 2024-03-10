@@ -42,7 +42,7 @@ namespace uniasset {
 
         uint32_t getSampleRate() override;
 
-        bool read(void* buffer, uint32_t count) override;
+        uint32_t read(void* buffer, uint32_t count) override;
 
         bool seek(int64_t position) override;
 

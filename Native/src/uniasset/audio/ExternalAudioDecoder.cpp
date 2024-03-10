@@ -5,6 +5,8 @@
 #include "ExternalAudioDecoder.hpp"
 
 namespace uniasset {
+    // TODO
+
     ExternalAudioDecoder::ExternalAudioDecoder(void* userData,
                                                GetChannelCountFunc getChannelCountFunc,
                                                GetSampleCountFunc getSampleCountFunc,
@@ -31,7 +33,7 @@ namespace uniasset {
         return getSampleRateFunc_(userData_);
     }
 
-    bool ExternalAudioDecoder::read(void* buffer, uint32_t count) {
+    uint32_t ExternalAudioDecoder::read(void* buffer, uint32_t count) {
         return readFunc_(userData_, buffer, count);
     }
 

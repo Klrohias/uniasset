@@ -36,6 +36,8 @@ namespace uniasset {
 
         void readInternal(void* buffer, int64_t requiredFrame);
 
+        void readWrappedDecoder(void* buffer, int64_t requiredFrame);
+
     public:
         explicit BufferedAudioDecoder(std::shared_ptr<IAudioDecoder> wrappedAudioDecoder, int64_t bufferFrames = -1);
 
@@ -55,7 +57,7 @@ namespace uniasset {
 
         uint32_t getChannelCount() override;
 
-        bool read(void* buffer, uint32_t count) override;
+        uint32_t read(void* buffer, uint32_t count) override;
     };
 
 } // uniasset

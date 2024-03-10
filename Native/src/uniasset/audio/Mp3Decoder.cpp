@@ -67,14 +67,16 @@ namespace uniasset {
         return decoder_->sampleRate;
     }
 
-    bool Mp3Decoder::read(void* buffer, uint32_t count) {
-        if (!decoder_) return false;
+    uint32_t Mp3Decoder::read(void* buffer, uint32_t count) {
+        if (!decoder_) return 0;
+
         if (sampleFormat_ == SampleFormat_Int16) {
-            drmp3_read_pcm_frames_s16(decoder_.get(), count, static_cast<int16_t*>(buffer));
+            return static_cast<uint32_t>(drmp3_read_pcm_frames_s16(decoder_.get(), count,
+                                                                   static_cast<int16_t*>(buffer)));
         } else {
-            drmp3_read_pcm_frames_f32(decoder_.get(), count, static_cast<float_t*>(buffer));
+            return static_cast<uint32_t>(drmp3_read_pcm_frames_f32(decoder_.get(), count,
+                                                                   static_cast<float_t*>(buffer)));
         }
-        return true;
     }
 
     bool Mp3Decoder::seek(int64_t position) {

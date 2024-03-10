@@ -42,7 +42,7 @@ namespace uniasset {
         uint32_t sampleRate_{0};
         uint32_t channelCount_{0};
 
-        static void maDataCallback(ma_device* device, void* buffer, const void* unused1, unsigned int count);
+        static void maDataCallback(ma_device* device, void* buffer, const void* unused1, unsigned int frameCount);
 
     public:
         explicit AudioPlayer();

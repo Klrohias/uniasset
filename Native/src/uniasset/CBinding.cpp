@@ -241,7 +241,7 @@ CBINDING_METHOD(uint32_t, IAudioDecoder, GetSampleRate, CBINDING_TYPED_PTR(IAudi
     return getInstance<IAudioDecoder>(self)->getSampleRate();
 }
 
-CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
+CBINDING_METHOD(uint32_t, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
                 uint32_t count) {
     return getInstance<IAudioDecoder>(self)->read(buffer, count);
 }

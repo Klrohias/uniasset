@@ -37,6 +37,12 @@ int main() {
             audioPlayer->setTime(time);
         } else if (command == "tellf") {
             std::cout << audioPlayer->getTime() << "\n";
+        } else if (command == "setvol") {
+            float vol{0};
+            std::cin >> vol;
+            audioPlayer->setVolume(vol);
+        } else if (command == "getvol") {
+            std::cout << audioPlayer->getVolume() << "\n";
         }
 
         std::cout << ".\n";

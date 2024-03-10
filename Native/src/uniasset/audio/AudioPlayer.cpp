@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "../common/Errors.hpp"
+#include "../common/Templates.hpp"
 #include "AudioAsset.hpp"
 #include "IAudioDecoder.hpp"
 
@@ -22,39 +23,36 @@ namespace uniasset {
     }
 
     void AudioPlayer::maDataCallback(ma_device* device, void* buffer, const void* unused1,
-                                     unsigned int count) {
+                                     unsigned int frameCount) {
         (void) unused1;
 
         auto player = reinterpret_cast<AudioPlayer*>(device->pUserData);
 
-        do {
-            if (player->state_ == Paused) {
-                break;
-            }
-
-            if (!player->audioDecoder_->read(buffer, count)) {
-                break;
-            }
-
-            player->decodedSampleCount_ += count;
-            return;
-        } while (false);
-
-        auto bufferLength = device->playback.channels * count;
+        auto frameSize = device->playback.channels;
         switch (device->playback.format) {
-            case ma_format_u8:
-                memset(buffer, 0, sizeof(uint8_t) * bufferLength);
-                break;
             case ma_format_s16:
-                memset(buffer, 0, sizeof(int16_t) * bufferLength);
+                frameSize *= sizeof(int16_t);
                 break;
-            case ma_format_s32:
             case ma_format_f32:
-                memset(buffer, 0, sizeof(int32_t) * bufferLength);
+                frameSize *= sizeof(float);
                 break;
             default:
                 break;
         }
+
+        if (player->state_ == Paused) {
+            // paused, fill zero
+            memset(buffer, 0, frameSize * frameCount);
+        }
+
+        // read frame
+        if (uint32_t readFrameCount = player->audioDecoder_->read(buffer, frameCount);
+                readFrameCount < frameCount) {
+            memset(ptr_offset(buffer, readFrameCount * frameSize), 0, (frameCount - readFrameCount) * frameSize);
+        }
+
+        // decodedSampleCount_ is used for time calculation
+        player->decodedSampleCount_ += frameCount;
     }
 
     AudioPlayer::AudioPlayer() = default;

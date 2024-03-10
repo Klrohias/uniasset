@@ -65,12 +65,15 @@ namespace uniasset {
         return decoder_->sampleRate;
     }
 
-    bool WavDecoder::read(void* buffer, uint32_t count) {
-        if (!decoder_) return false;
+    uint32_t WavDecoder::read(void* buffer, uint32_t count) {
+        if (!decoder_) return 0;
+
         if (sampleFormat_ == SampleFormat_Int16) {
-            drwav_read_pcm_frames_s16(decoder_.get(), count, reinterpret_cast<int16_t*>(buffer));
+            return static_cast<uint32_t>(drwav_read_pcm_frames_s16(decoder_.get(), count,
+                                                                   reinterpret_cast<int16_t*>(buffer)));
         } else {
-            drwav_read_pcm_frames_f32(decoder_.get(), count, reinterpret_cast<float_t*>(buffer));
+            return static_cast<uint32_t>(drwav_read_pcm_frames_f32(decoder_.get(), count,
+                                                                   reinterpret_cast<float_t*>(buffer)));
         }
         return true;
     }
