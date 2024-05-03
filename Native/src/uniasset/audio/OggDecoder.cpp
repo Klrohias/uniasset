@@ -18,7 +18,7 @@ namespace uniasset {
             decoder_ = make_c_unique<stb_vorbis, stb_vorbis_deleter>(
                     stb_vorbis_open_memory(data.get(), len, &loadError_, nullptr));
         } else if (loadType == LoadType_File) {
-            auto& path = asset_->getPath();
+            auto& path = **asset_->getPath().data();
 
             decoder_ = make_c_unique<stb_vorbis, stb_vorbis_deleter>(
                     stb_vorbis_open_filename(path.data(), &loadError_, nullptr));

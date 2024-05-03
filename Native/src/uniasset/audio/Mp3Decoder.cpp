@@ -40,7 +40,7 @@ namespace uniasset {
             auto len = asset_->getDataLength();
             decoder_ = createDrmp3Decoder(std::span<uint8_t>(data.get(), len));
         } else if (loadType == LoadType_File) {
-            auto& path = asset_->getPath();
+            auto& path = **asset_->getPath().data();
             decoder_ = createDrmp3Decoder(path);
         }
     }

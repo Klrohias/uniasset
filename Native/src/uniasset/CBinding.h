@@ -20,6 +20,9 @@
 extern "C" {
 #endif
 
+UNIASSET_API CBINDING_CSTRING Uniasset_GetError();
+UNIASSET_API CBINDING_BOOLEAN Uniasset_HasError();
+
 // ImageAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Create);
 CBINDING_METHOD(void, ImageAsset, Destory, CBINDING_TYPED_PTR(ImageAsset) obj);
@@ -27,7 +30,6 @@ CBINDING_METHOD(void, ImageAsset, LoadFile, CBINDING_TYPED_PTR(ImageAsset) self,
 CBINDING_METHOD(void, ImageAsset, LoadPixels, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* pixels,
                 uint64_t size, int32_t width, int32_t height, int32_t channelCount);
 CBINDING_METHOD(void, ImageAsset, Load, CBINDING_TYPED_PTR(ImageAsset) self, uint8_t* data, uint64_t size);
-CBINDING_METHOD(CBINDING_CSTRING, ImageAsset, GetError, CBINDING_TYPED_PTR(ImageAsset) self);
 CBINDING_METHOD(int32_t, ImageAsset, GetWidth, CBINDING_TYPED_PTR(ImageAsset) self);
 CBINDING_METHOD(int32_t, ImageAsset, GetHeight, CBINDING_TYPED_PTR(ImageAsset) self);
 CBINDING_METHOD(int32_t, ImageAsset, GetChannelCount, CBINDING_TYPED_PTR(ImageAsset) self);
@@ -41,27 +43,9 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Clone, CBINDING_TYPE
 CBINDING_METHOD(void, ImageAsset, CropMultiple, CBINDING_TYPED_PTR(ImageAsset) self, void* items, int16_t count,
                 void** output);
 
-// AudioPlayer
-CBINDING_METHOD(CBINDING_TYPED_PTR(AudioPlayer), AudioPlayer, Create);
-CBINDING_METHOD(void, AudioPlayer, Destory, CBINDING_TYPED_PTR(AudioPlayer) obj);
-CBINDING_METHOD(CBINDING_CSTRING, AudioPlayer, GetError, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(void, AudioPlayer, Pause, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(void, AudioPlayer, Resume, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(void, AudioPlayer, Close, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(void, AudioPlayer, Open, CBINDING_TYPED_PTR(AudioPlayer) self,
-                CBINDING_TYPED_PTR(AudioAsset) audioAsset);
-CBINDING_METHOD(void, AudioPlayer, OpenDecoder, CBINDING_TYPED_PTR(AudioPlayer) self,
-                CBINDING_TYPED_PTR(IAudioDecoder) audioDecoder);
-CBINDING_METHOD(CBINDING_BOOLEAN, AudioPlayer, IsPaused, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(void, AudioPlayer, SetVolume, CBINDING_TYPED_PTR(AudioPlayer) self, float val);
-CBINDING_METHOD(float, AudioPlayer, GetVolume, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(float, AudioPlayer, GetTime, CBINDING_TYPED_PTR(AudioPlayer) self);
-CBINDING_METHOD(void, AudioPlayer, SetTime, CBINDING_TYPED_PTR(AudioPlayer) self, float time);
-
 // AudioAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create);
 CBINDING_METHOD(void, AudioAsset, Destory, CBINDING_TYPED_PTR(AudioAsset) obj);
-CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetError, CBINDING_TYPED_PTR(AudioAsset) self);
 CBINDING_METHOD(void, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path);
 CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size);
 CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self);

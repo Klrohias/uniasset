@@ -12,7 +12,7 @@
 #include "IAudioDecoder.hpp"
 
 namespace uniasset {
-    inline ma_format toMaFormat(SampleFormat format) {
+    /*inline ma_format toMaFormat(SampleFormat format) {
         switch (format) {
             case SampleFormat_Float:
                 return ma_format_f32;
@@ -165,5 +165,5 @@ namespace uniasset {
 
     void AudioPlayer::setTime(float time) {
         audioDecoder_->seek(static_cast<int64_t>(time * static_cast<float>(sampleRate_)));
-    }
+    }*/
 } // Uniasset

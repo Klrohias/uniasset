@@ -18,7 +18,7 @@ namespace uniasset {
             auto len = asset_->getDataLength();
             decoder_ = make_c_unique<drflac, drflac_deleter>(drflac_open_memory(data.get(), len, nullptr));
         } else if (loadType == LoadType_File) {
-            auto& path = asset_->getPath();
+            auto& path = **asset_->getPath().data();
 
             decoder_ = make_c_unique<drflac, drflac_deleter>(drflac_open_file(path.data(), nullptr));
         }

@@ -12,8 +12,15 @@
 #else
 #define UNIASSET_API __declspec(dllimport)
 #endif
+
+#elif (defined(__GNUC__) || defined(__clang__)) && defined(UNIASSET_SHARED)
+#ifdef UNIASSET_BUILD
+#define UNIASSET_API __attribute__ ((visibility ("default")))
+#endif
+
 #else
 #define UNIASSET_API
+
 #endif
 
 #define CBINDING_TYPED_PTR(TYPE) void*

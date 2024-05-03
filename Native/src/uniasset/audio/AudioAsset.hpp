@@ -14,15 +14,12 @@
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
 #include "uniasset/common/Templates.hpp"
-#include "uniasset/utils/ErrorHandler.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
+#include "uniasset/common/Result.hpp"
 
 namespace uniasset {
-    using namespace uniasset::utils;
 
     class IAudioDecoder;
-
-    class AudioPlayer;
 
     enum LoadType : uint8_t {
         LoadType_None,
@@ -50,38 +47,34 @@ namespace uniasset {
         Buffer data_{};
         size_t dataLength_{0};
 
-        ErrorHandler errorHandler_{};
-
-        bool loadMetadata();
+        std::error_code loadMetadata();
 
     public:
         explicit AudioAsset();
 
-        void load(const std::span<uint8_t>& data);
+        std::error_code load(const std::span<uint8_t>& data);
 
-        void load(const std::string_view& path);
+        std::error_code load(const std::string_view& path);
 
         void unload();
 
-        std::unique_ptr<IAudioDecoder> getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize = -1);
+        Result<std::unique_ptr<IAudioDecoder>> getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize = -1);
 
-        const std::string& getError();
+        Result<size_t> getSampleCount();
 
-        size_t getSampleCount();
+        Result<uint32_t> getSampleRate();
 
-        uint32_t getSampleRate();
+        Result<uint32_t> getChannelCount();
 
-        uint32_t getChannelCount();
-
-        float getLength();
+        Result<float> getLength();
 
         LoadType getLoadType();
 
-        const std::string& getPath();
+        Result<const std::string_view> getPath();
 
         const Buffer& getData();
 
-        size_t getDataLength();
+        size_t getDataLength() const;
     };
 
 } // Uniasset

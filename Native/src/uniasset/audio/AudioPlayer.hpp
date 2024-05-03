@@ -8,19 +8,17 @@
 
 #include <memory>
 #include "uniasset/Foundation.hpp"
-#include "uniasset/utils/ErrorHandler.hpp"
-#include <uniasset/thirdparty/miniaudio.hpp>
+#include "uniasset/audio/AudioDevice.hpp"
+#include "uniasset/thirdparty/miniaudio.hpp"
 
 struct ma_device;
 
 namespace uniasset {
-    using namespace uniasset::utils;
-
     class AudioAsset;
 
     class IAudioDecoder;
 
-    class UNIASSET_API AudioPlayer : public std::enable_shared_from_this<AudioPlayer> {
+    /*class UNIASSET_API AudioPlayer : public std::enable_shared_from_this<AudioPlayer> {
     private:
         enum State {
             Closed,
@@ -31,7 +29,6 @@ namespace uniasset {
 
         c_unique_ptr<ma_device, miniaudio_deleter> device_{nullptr, miniaudio_deleter};
 
-        ErrorHandler errorHandler_{};
         std::shared_ptr<IAudioDecoder> audioDecoder_{nullptr};
 
         State state_{Closed};
@@ -71,7 +68,7 @@ namespace uniasset {
 
         void setTime(float time);
 
-    };
+    };*/
 
 } // Uniasset
 

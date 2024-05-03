@@ -17,8 +17,6 @@
 #include "../common/Errors.hpp"
 
 namespace uniasset {
-    using namespace uniasset::utils;
-
     template<int PixelSize = 3>
     void ScaleImage(const uint8_t* srcBuffer,
                     uint8_t* destBuffer,
@@ -50,109 +48,92 @@ namespace uniasset {
             : buffer_{std::move(buffer)}, width_{width}, height_{height}, channelCount_{channelCount} {
     }
 
-    void ImageAsset::load(const std::string_view& path) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::load(const std::string_view& path) {
         // open
         auto file{make_c_unique<FILE, FILE_deleter>(fopen(path.data(), "rb"))};
         if (!file) {
-            errorHandler_.setError(strerror(errno));
-            return;
+            return err_errno();
         }
 
         // detect
         if (fseek(file.get(), 0L, SEEK_END) != 0) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "failed to detect format (seek to end)");
-            return;
+            return err_errno();
         }
 
         size_t fileSize = ftell(file.get());
         if (!fileSize) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "failed to detect format (empty file)");
-            return;
+            return err_errno();
         }
 
         if (fseek(file.get(), 0L, SEEK_SET)) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "failed to detect format (seek to begin)");
-            return;
+            return err_errno();
         }
 
         uint8_t magicNumberBuffer[16];
         size_t readSize = fileSize > sizeof(magicNumberBuffer) ? sizeof(magicNumberBuffer) : fileSize;
         if (!fread(magicNumberBuffer, readSize, 1, file.get())) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to detect format (read file)");
-            return;
+            return err_errno();
         }
 
         file.reset(nullptr);
 
         // load
         if (isWebPFileData(magicNumberBuffer, readSize)) {
-            loadWebP(path.data());
+            return loadWebP(path.data());
         } else if (isJpegFileData(magicNumberBuffer, readSize)) {
-            loadJpeg(path.data());
+            return loadJpeg(path.data());
         } else {
-            loadFile(path.data());
+            return loadFile(path.data());
         }
     }
 
-    const std::string& ImageAsset::getError() {
-        return errorHandler_.getError();
-    }
-
-    void ImageAsset::load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount) {
-        errorHandler_.clear();
-
+    std::error_code
+    ImageAsset::load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount) {
         buffer_ = {new uint8_t[size], default_array_deleter<uint8_t>};
         memcpy(buffer_.get(), pixelData, size);
 
         width_ = width;
         height_ = height;
         channelCount_ = channelCount;
+
+        return err_ok();
     }
 
-    void ImageAsset::load(uint8_t* fileData, size_t size) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::load(uint8_t* fileData, size_t size) {
         // load
         if (isWebPFileData(fileData, size)) {
-            loadWebP(fileData, size);
+            return loadWebP(fileData, size);
         } else if (isJpegFileData(fileData, size)) {
-            loadJpeg(fileData, size);
+            return loadJpeg(fileData, size);
         } else {
-            loadFile(fileData, size);
+            return loadFile(fileData, size);
         }
     }
 
-    void ImageAsset::loadFile(const std::string_view& path) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::loadFile(const std::string_view& path) {
         stbi_set_flip_vertically_on_load(true);
         buffer_ = {stbi_load(path.data(), &width_, &height_, &channelCount_, 0), stb_deleter};
         if (!buffer_) {
-            errorHandler_.setError(stbi_failure_reason());
-            return;
+            return {1, stbi_category()};
         }
+
+        return err_ok();
     }
 
-    void ImageAsset::loadFile(uint8_t* fileData, size_t size) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::loadFile(uint8_t* fileData, size_t size) {
         stbi_set_flip_vertically_on_load(true);
 
         buffer_ = {stbi_load_from_memory(fileData, size, &width_, &height_, &channelCount_, 0), stb_deleter};
         if (!buffer_) {
-            errorHandler_.setError(stbi_failure_reason());
-            return;
+            return {1, stbi_category()};
         }
+
+        return err_ok();
     }
 
-    void ImageAsset::loadWebP(uint8_t* fileData, size_t size) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::loadWebP(uint8_t* fileData, size_t size) {
         if (!WebPGetInfo(fileData, size, &width_, &height_)) {
-            errorHandler_.setError("Failed to get webp info");
-            return;
+            return {kWebPInfoReadFail, uniasset_category()};
         }
 
         channelCount_ = 4;
@@ -162,15 +143,13 @@ namespace uniasset {
         WebPDecoderConfig decoderConfig;
 
         if (WebPInitDecoderConfig(&decoderConfig) == 0) {
-            errorHandler_.setError("Failed to initialize decoder config");
-            return;
+            return {kWebPDecoderInitFail, uniasset_category()};
         }
 
         decoderConfig.options.use_threads = true;
         decoderConfig.options.use_scaling = false;
         if ((statusCode = WebPGetFeatures(fileData, size, &decoderConfig.input)) != VP8_STATUS_OK) {
-            errorHandler_.setError("Failed to call WebPGetFeatures: " + std::to_string(statusCode));
-            return;
+            return {statusCode, vp8_category()};
         }
 
         auto strideSize = channelCount_ * width_;
@@ -184,100 +163,83 @@ namespace uniasset {
         decoderConfig.output.height = height_;
 
         if ((statusCode = WebPDecode(fileData, size, &decoderConfig)) != VP8_STATUS_OK) {
-            errorHandler_.setError("Failed to call WebPDecode: " + std::to_string(statusCode));
-            return;
+            return {statusCode, vp8_category()};
         }
+
+        return err_ok();
     }
 
-    void ImageAsset::loadWebP(const std::string_view& path) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::loadWebP(const std::string_view& path) {
         // open
         auto file{make_c_unique<FILE, FILE_deleter>(fopen(path.data(), "rb"))};
         if (!file) {
-            errorHandler_.setError(strerror(errno));
-            return;
+            return err_errno();
         }
 
         // read
         if (fseek(file.get(), 0L, SEEK_END) != 0) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load webp (seek to end)");
-            return;
+            return err_errno();
         }
 
         size_t fileSize = ftell(file.get());
         if (!fileSize) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load webp (empty file)");
-            return;
+            return err_errno();
         }
 
         if (fseek(file.get(), 0L, SEEK_SET)) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load webp (seek to begin)");
-            return;
+            return err_errno();
         }
 
         std::unique_ptr<uint8_t> rdBuf(new uint8_t[fileSize]);
         if (!fread(rdBuf.get(), fileSize, 1, file.get())) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load webp (read file)");
-            return;
+            return err_errno();
         }
 
-        loadWebP(rdBuf.get(), fileSize);
+        return loadWebP(rdBuf.get(), fileSize);
     }
 
-    void ImageAsset::loadJpeg(const std::string_view& path) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::loadJpeg(const std::string_view& path) {
         // open
         auto file{make_c_unique<FILE, FILE_deleter>(fopen(path.data(), "rb"))};
         if (!file) {
-            errorHandler_.setError(strerror(errno));
-            return;
+            return err_errno();
         }
 
         // read
         if (fseek(file.get(), 0L, SEEK_END) != 0) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load jpeg (seek to end)");
-            return;
+            return err_errno();
         }
 
         size_t fileSize = ftell(file.get());
         if (!fileSize) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load jpeg (empty file)");
-            return;
+            return err_errno();
         }
 
         if (fseek(file.get(), 0L, SEEK_SET)) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load jpeg (seek to begin)");
-            return;
+            return err_errno();
         }
 
         std::unique_ptr<uint8_t> rdBuf(new uint8_t[fileSize]);
         if (!fread(rdBuf.get(), fileSize, 1, file.get())) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "Failed to load jpeg (read file)");
-            return;
+            return err_errno();
         }
 
-        loadJpeg(rdBuf.get(), fileSize);
+        return loadJpeg(rdBuf.get(), fileSize);
     }
 
-    void ImageAsset::loadJpeg(uint8_t* fileData, size_t size) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::loadJpeg(uint8_t* fileData, size_t size) {
         c_unique_ptr<void, tj_deleter> processor{nullptr, tj_deleter};
 
         // decode
         processor.reset(tjInitDecompress());
         if (!processor) {
-            errorHandler_.setError(tjGetErrorStr());
-            return;
+            return {kTurboJpegInitFail, uniasset_category()};
         }
 
         int jpegSubsample, jpegColorspace;
         if (tjDecompressHeader3(processor.get(), fileData,
                                 size, &width_, &height_, &jpegSubsample, &jpegColorspace) != 0) {
-            errorHandler_.setError(tjGetErrorStr2(processor.get()));
-            return;
+            return {tjGetErrorCode(processor.get()), turbojpeg_category()};
         }
 
         channelCount_ = 3;
@@ -291,52 +253,41 @@ namespace uniasset {
                           height_,
                           TJPF_RGB,
                           TJFLAG_FASTDCT | TJFLAG_BOTTOMUP) != 0) {
-            errorHandler_.setError(tjGetErrorStr2(processor.get()));
-            return;
+            return {tjGetErrorCode(processor.get()), turbojpeg_category()};
         }
 
         buffer_ = std::move(buffer);
+
+        return err_ok();
     }
 
-    int32_t ImageAsset::getWidth() {
-        errorHandler_.clear();
-
+    Result<int32_t> ImageAsset::getWidth() {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return -1;
+            return std::error_code(kImageNotLoadFail, uniasset_category());
         }
 
         return width_;
     }
 
-    int32_t ImageAsset::getHeight() {
-        errorHandler_.clear();
-
+    Result<int32_t> ImageAsset::getHeight() {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return -1;
+            return std::error_code(kImageNotLoadFail, uniasset_category());
         }
 
         return height_;
     }
 
-    int32_t ImageAsset::getChannelCount() {
-        errorHandler_.clear();
-
+    Result<int32_t> ImageAsset::getChannelCount() {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return -1;
+            return std::error_code(kImageNotLoadFail, uniasset_category());
         }
 
         return channelCount_;
     }
 
-    void ImageAsset::crop(int32_t x, int32_t y, int32_t width, int32_t height) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::crop(int32_t x, int32_t y, int32_t width, int32_t height) {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return;
+            return {kImageNotLoadFail, uniasset_category()};
         }
 
         int32_t srcStrideSize = width_ * channelCount_;
@@ -351,8 +302,7 @@ namespace uniasset {
             endLine < 0 || endLine > height_ ||
             startPixel < 0 || startPixel > width_ ||
             endPixel < 0 || endPixel > width_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_SIZE_OVERFLOW);
-            return;
+            return {kRectOverflow, uniasset_category()};
         }
 
         Buffer newBuffer{new uint8_t[width * height * channelCount_], default_array_deleter<uint8_t>};
@@ -365,14 +315,13 @@ namespace uniasset {
         buffer_ = std::move(newBuffer);
         width_ = width;
         height_ = height;
+
+        return err_ok();
     }
 
-    void ImageAsset::resize(int32_t width, int32_t height) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::resize(int32_t width, int32_t height) {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return;
+            return {kImageNotLoadFail, uniasset_category()};
         }
 
         Buffer newBuffer{new uint8_t[width * height * channelCount_], default_array_deleter<uint8_t>};
@@ -394,44 +343,54 @@ namespace uniasset {
         height_ = height;
 
         buffer_ = std::move(newBuffer);
+
+        return err_ok();
     }
 
-    void ImageAsset::unload() {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::unload() {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return;
+            return {kImageNotLoadFail, uniasset_category()};
         }
 
         buffer_.reset();
         width_ = 0;
         height_ = 0;
         channelCount_ = 0;
+
+        return err_ok();
     }
 
-    void ImageAsset::copyTo(void* buffer) {
-        errorHandler_.clear();
-
+    std::error_code ImageAsset::copyTo(void* buffer) {
         if (!buffer_) {
-            errorHandler_.setError(ERROR_STR_IMAGE_NOT_LOADED);
-            return;
+            return {kImageNotLoadFail, uniasset_category()};
         }
 
         memcpy(buffer, buffer_.get(), width_ * height_ * channelCount_);
+
+        return err_ok();
     }
 
-    ImageAsset* ImageAsset::clone() const {
-        auto result = new ImageAsset;
+    Result<ImageAsset*> ImageAsset::clone() const {
+        if (!buffer_) {
+            return std::error_code{kImageNotLoadFail, uniasset_category()};
+        }
 
-        result->load(buffer_.get(), width_ * height_ * channelCount_, width_, height_, channelCount_);
+        auto result = std::make_unique<ImageAsset>();
 
-        return result;
+        if (auto err =
+                    result->load(buffer_.get(),
+                                 width_ * height_ * channelCount_,
+                                 width_,
+                                 height_,
+                                 channelCount_);
+                err.value()) {
+            return err;
+        }
+
+        return result.release();
     }
 
-    std::vector<ImageAsset> ImageAsset::cropMultiple(std::span<CropOptions> items) {
-        errorHandler_.clear();
-
+    Result<std::vector<ImageAsset>> ImageAsset::cropMultiple(std::span<CropOptions> items) {
         std::vector<ImageAsset> result{};
 
         // check
@@ -445,9 +404,8 @@ namespace uniasset {
                 endLine < 0 || endLine > height_ ||
                 startPixel < 0 || startPixel > width_ ||
                 endPixel < 0 || endPixel > width_) {
-                errorHandler_.setError(ERROR_STR_IMAGE_SIZE_OVERFLOW);
 
-                return result;
+                return std::error_code{kRectOverflow, uniasset_category()};
             }
         }
 

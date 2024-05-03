@@ -16,23 +16,17 @@
 #include "OggDecoder.hpp"
 #include "BufferedAudioDecoder.hpp"
 
-using namespace uniasset::utils;
-
 namespace uniasset {
-    AudioAsset::AudioAsset() = default;
-
-    std::unique_ptr<IAudioDecoder> AudioAsset::getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize) {
-        errorHandler_.clear();
+    Result<std::unique_ptr<IAudioDecoder>> AudioAsset::getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize) {
         if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-            return nullptr;
+            return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
         IAudioDecoder* rawDecoder{nullptr};
 
         switch (format_) {
             case DataFormat_Pcm:
-                return nullptr;
+                return std::error_code{kNotSupportedFail, uniasset_category()};
             case DataFormat_Mp3:
                 rawDecoder = new Mp3Decoder{shared_from_this(), sampleFormat};
                 break;
@@ -51,13 +45,7 @@ namespace uniasset {
         return std::unique_ptr<IAudioDecoder>(new BufferedAudioDecoder{sharedRawDecoder, frameBufferSize});
     }
 
-    const std::string& AudioAsset::getError() {
-        return errorHandler_.getError();
-    }
-
-    void AudioAsset::load(const std::span<uint8_t>& data) {
-        errorHandler_.clear();
-
+    std::error_code AudioAsset::load(const std::span<uint8_t>& data) {
         auto content = data.data();
         auto len = data.size();
 
@@ -70,8 +58,7 @@ namespace uniasset {
         } else if (isWavFileData(data.data(), len)) {
             format_ = DataFormat_Wav;
         } else {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_SUPPORTED);
-            return;
+            return {kNotSupportedFail, uniasset_category()};
         }
 
         type_ = LoadType_Memory;
@@ -79,41 +66,36 @@ namespace uniasset {
         dataLength_ = len;
         memcpy(data_.get(), data.data(), len);
 
-        if (!loadMetadata()) {
-            errorHandler_.setError(ERROR_STR_AUDIO_METADATA);
+        if (auto err = loadMetadata(); err.value()) {
+            return err;
         }
+
+        return err_ok();
     }
 
     void AudioAsset::unload() {
-        errorHandler_.clear();
-
         type_ = LoadType_None;
         path_.clear();
         data_.reset();
     }
 
-    void AudioAsset::load(const std::string_view& path) {
-        errorHandler_.clear();
-
+    std::error_code AudioAsset::load(const std::string_view& path) {
         // Read
         FILE* file = fopen(path.data(), "rb");
 
         if (!file) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "failed to open audio file");
-            return;
+            return err_errno();
         }
 
         uint8_t buffer[32] = {0};
         size_t readSize = fread(buffer, 1, 32, file);
 
         if (readSize == 0) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "failed to read audio file");
-            return;
+            return err_errno();
         }
 
         if (fclose(file) != 0) {
-            ERROR_HANDLER_ERRNO(errorHandler_, "failed to close audio file");
-            return;
+            return err_errno();
         }
 
         // Check magic number
@@ -126,108 +108,85 @@ namespace uniasset {
         } else if (isWavFileData(buffer, readSize)) {
             format_ = DataFormat_Wav;
         } else {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_SUPPORTED);
-            return;
+            return {kNotSupportedFail, uniasset_category()};
         }
 
         type_ = LoadType_File;
         path_ = path;
 
-        if (!loadMetadata()) {
-            errorHandler_.setError(ERROR_STR_AUDIO_METADATA);
+        if (auto err = loadMetadata(); err.value()) {
+            return err;
         }
+
+        return err_ok();
     }
 
-    bool AudioAsset::loadMetadata() {
-        auto decoder = getAudioDecoder(SampleFormat_Int16);
-        if (!decoder) {
-            return false;
+    std::error_code AudioAsset::loadMetadata() {
+        auto decoderResult = getAudioDecoder(SampleFormat_Int16);
+        if (auto err = decoderResult.error(); err.has_value()) {
+            return *err.value();
         }
+
+        auto& decoder = **decoderResult.data();
 
         channelCount_ = decoder->getChannelCount();
         sampleCount_ = decoder->getSampleCount();
         sampleRate_ = decoder->getSampleRate();
 
-        return true;
+        return err_ok();
     }
 
-    size_t AudioAsset::getSampleCount() {
-        errorHandler_.clear();
-
+    Result<size_t> AudioAsset::getSampleCount() {
         if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-            return 0;
+            return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
         return sampleCount_;
     }
 
-    uint32_t AudioAsset::getSampleRate() {
-        errorHandler_.clear();
-
+    Result<uint32_t> AudioAsset::getSampleRate() {
         if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-            return 0;
+            return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
         return sampleRate_;
     }
 
-    uint32_t AudioAsset::getChannelCount() {
-        errorHandler_.clear();
-
+    Result<uint32_t> AudioAsset::getChannelCount() {
         if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-            return 0;
+            return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
         return channelCount_;
     }
 
-    float AudioAsset::getLength() {
-        errorHandler_.clear();
-
+    Result<float> AudioAsset::getLength() {
         if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-            return 0;
+            return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
         return static_cast<float>(sampleCount_) / static_cast<float>(channelCount_) / static_cast<float>(sampleRate_);
     }
 
     LoadType AudioAsset::getLoadType() {
-        errorHandler_.clear();
         return type_;
     }
 
-    const std::string& AudioAsset::getPath() {
-        errorHandler_.clear();
-
+    Result<const std::string_view> AudioAsset::getPath() {
         if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
+            return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
-        return path_;
+        return std::string_view{path_};
     }
 
     const Buffer& AudioAsset::getData() {
-        errorHandler_.clear();
-
-        if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-        }
-
         return data_;
     }
 
-    size_t AudioAsset::getDataLength() {
-        errorHandler_.clear();
-
-        if (type_ == LoadType_None) {
-            errorHandler_.setError(ERROR_STR_AUDIO_NOT_LOADED);
-            return 0;
-        }
-
+    size_t AudioAsset::getDataLength() const {
         return dataLength_;
     }
+
+    AudioAsset::AudioAsset() = default;
 } // Uniasset

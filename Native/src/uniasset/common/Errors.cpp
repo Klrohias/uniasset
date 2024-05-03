@@ -3,13 +3,69 @@
 //
 
 #include "Errors.hpp"
+#include <stb_image.h>
+#include <turbojpeg.h>
 
 namespace uniasset {
-    const char* ERROR_STR_AUDIO_NOT_SUPPORTED = "audio format is not supported";
-    const char* ERROR_STR_AUDIO_METADATA = "failed to read audio metadata";
-    const char* ERROR_STR_AUDIO_NOT_LOADED = "audio asset is not loaded";
-    const char* ERROR_STR_AUDIO_NOT_OPENED = "audio player has not opened any audio asset";
-    const char* ERROR_STR_IMAGE_NOT_LOADED = "image asset is not loaded";
-    const char* ERROR_STR_IMAGE_SIZE_OVERFLOW = "range exceeds image size";
-    const char* ERROR_STR_IMAGE_SIZE_OVERFLOW_AT = "range exceeds image size at item {}";
+    namespace internal {
+        class error_category : public std::error_category {
+            [[nodiscard]] const char* name() const noexcept override {
+                return "Uniasset";
+            }
+
+            [[nodiscard]] std::string message(int ev) const override {
+                return std::to_string(ev);
+            }
+        };
+
+        class vp8_error_category : public std::error_category {
+            [[nodiscard]] const char* name() const noexcept override {
+                return "VP8";
+            }
+
+            [[nodiscard]] std::string message(int ev) const override {
+                return std::to_string(ev);
+            }
+        };
+
+        class stbi_error_category : public std::error_category {
+            [[nodiscard]] const char* name() const noexcept override {
+                return "StbImage";
+            }
+
+            [[nodiscard]] std::string message(int ev) const override {
+                return stbi_failure_reason();
+            }
+        };
+
+        class turbojpeg_error_category : public std::error_category {
+            [[nodiscard]] const char* name() const noexcept override {
+                return "TurboJpeg";
+            }
+
+            [[nodiscard]] std::string message(int ev) const override {
+                return std::to_string(ev);
+            }
+        };
+    }
+
+    const std::error_category& uniasset_category() {
+        static internal::error_category instance;
+        return instance;
+    }
+
+    const std::error_category& vp8_category() {
+        static internal::vp8_error_category instance;
+        return instance;
+    }
+
+    const std::error_category& stbi_category() {
+        static internal::stbi_error_category instance;
+        return instance;
+    }
+
+    const std::error_category& turbojpeg_category() {
+        static internal::turbojpeg_error_category instance;
+        return instance;
+    }
 }
