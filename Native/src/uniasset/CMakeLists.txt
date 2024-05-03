@@ -91,6 +91,15 @@ target_include_directories(uniasset PUBLIC ${DRLIBS_INCLUDE_DIRS})
 target_link_libraries(uniasset PRIVATE WebP::webpdecoder)
 target_link_libraries(uniasset PRIVATE ${LINK_LIBJPEG_NAME})
 
+if ((BUILD_SHARED_LIBS) AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    set_target_properties(uniasset PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections")
+    set_target_properties(uniasset PROPERTIES LINK_FLAGS "--version-script=${CMAKE_SOURCE_DIR}/scripts/ld-version.script --gc-sections")
+endif()
+
+if ((BUILD_SHARED_LIBS) AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
+    set_target_properties(uniasset PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden")
+endif()
+
 # Post build
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     add_custom_command(
