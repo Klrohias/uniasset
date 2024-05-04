@@ -40,14 +40,15 @@ namespace uniasset {
         Result(E&& error) : state_{Error}, error_{std::move(error)} {}
 
         Result(Result&& other) noexcept {
-            state_ = other.state;
+            state_ = other.state_;
+
             if (state_ == Object) {
-                object_ = std::move(other.data.object);
+                object_ = std::move(other.object_);
             } else if (state_ == Error) {
-                error_ = std::move(other.data.error);
+                error_ = std::move(other.error_);
             }
 
-            other.state = Null;
+            other.state_ = Null;
         }
 
         ~Result() {
