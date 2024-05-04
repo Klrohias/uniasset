@@ -75,16 +75,21 @@ add_library(uniasset
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
 
+set(UNIASSET_COMPILE_FLAGS "")
+set(UNIASSET_CXX_FLAGS "")
+set(UNIASSET_C_FLAGS "")
+set(UNIASSET_LINK_FLAGS "")
+
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(uniasset PRIVATE UNIASSET_SHARED)
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # enable bitcode
-    target_compile_options(uniasset PRIVATE -fembed-bitcode)
+    list(APPEND UNIASSET_COMPILE_FLAGS "-fembed-bitcode")
 endif()
 
-# Link
+# Options
 target_include_directories(uniasset PUBLIC ${Stb_INCLUDE_DIR})
 target_include_directories(uniasset PUBLIC ${MINIAUDIO_INCLUDE_DIRS})
 target_include_directories(uniasset PUBLIC ${DRLIBS_INCLUDE_DIRS})
@@ -92,13 +97,22 @@ target_link_libraries(uniasset PRIVATE WebP::webpdecoder)
 target_link_libraries(uniasset PRIVATE ${LINK_LIBJPEG_NAME})
 
 if ((BUILD_SHARED_LIBS) AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-    set_target_properties(uniasset PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -ffunction-sections")
-    set_target_properties(uniasset PROPERTIES LINK_FLAGS "--version-script=${CMAKE_SOURCE_DIR}/scripts/ld-version.script --gc-sections")
+    list(APPEND UNIASSET_CXX_FLAGS "-fvisibility=hidden" "-fvisibility-inlines-hidden" "-ffunction-sections" "-fdata-sections")
+    list(APPEND UNIASSET_C_FLAGS "-fvisibility=hidden" "-ffunction-sections")
+    list(APPEND UNIASSET_LINK_FLAGS  "-Wl,--version-script=${CMAKE_SOURCE_DIR}/scripts/ld-version.script" "-Wl,--gc-sections" "-s")
+
 endif()
 
 if ((BUILD_SHARED_LIBS) AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-    set_target_properties(uniasset PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden")
+    list(APPEND UNIASSET_CXX_FLAGS "-fvisibility=hidden" "-fvisibility-inlines-hidden")
 endif()
+
+target_compile_options(uniasset PRIVATE
+    ${UNIASSET_COMPILE_FLAGS}
+    $<$<COMPILE_LANGUAGE:CXX>:${UNIASSET_CXX_FLAGS}>
+    $<$<COMPILE_LANGUAGE:C>:${UNIASSET_C_FLAGS}>)
+
+target_link_options(uniasset PRIVATE ${UNIASSET_LINK_FLAGS})
 
 # Post build
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
