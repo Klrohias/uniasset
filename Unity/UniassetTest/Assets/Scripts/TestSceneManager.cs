@@ -12,7 +12,6 @@ public class TestSceneManager : MonoBehaviour
 
     private ImageAsset _imageAsset = new();
     private AudioAsset _audioAsset = new();
-    private AudioPlayer _audioPlayer = new();
 
     private Rect _imageTestWindow;
     private Rect _audioTestWindow = new(100, 100, 100, 100);
@@ -32,7 +31,7 @@ public class TestSceneManager : MonoBehaviour
         _testWebp = await Utils.LoadStreamingAsset("Test.webp", this);
         _test1080P = await Utils.LoadStreamingAsset("Large.png", this);
 
-        _testMp3 = await Utils.LoadStreamingAsset("Test.mp3", this);
+        _testMp3 = await Utils.LoadStreamingAsset("Test3.mp3", this);
         _testOgg = await Utils.LoadStreamingAsset("click.ogg", this);
         // AudioClip.PCMSetPositionCallback
     }
@@ -80,12 +79,9 @@ public class TestSceneManager : MonoBehaviour
         GUI.DragWindow(_draggableRect);
         GUILayout.BeginHorizontal();
 
-        if (GUILayout.Button("Load")) _audioAsset.Load(_testOgg);
+        if (GUILayout.Button("Load")) _audioAsset.Load(_testMp3);
 
         if (GUILayout.Button("Unload")) _audioAsset.Unload();
-
-        if (GUILayout.Button("AudioPlayerOpen")) _audioPlayer.Open(_audioAsset);
-
 
         if (GUILayout.Button("AudioSourceOpen"))
         {
@@ -106,13 +102,6 @@ public class TestSceneManager : MonoBehaviour
         }
 
         GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("AudioPlayerPause")) _audioPlayer.Pause();
-        if (GUILayout.Button("AudioPlayerResume")) _audioPlayer.Resume();
-        if (GUILayout.Button("AudioPlayerClose")) _audioPlayer.Close();
-        GUILayout.EndHorizontal();
-
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("AudioSourcePause")) source.Pause();

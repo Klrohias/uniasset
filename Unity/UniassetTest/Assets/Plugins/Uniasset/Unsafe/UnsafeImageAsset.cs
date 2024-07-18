@@ -27,21 +27,21 @@ namespace Uniasset.Unsafe
         public int GetWidth()
         {
             var result = Interop.Uniasset_ImageAsset_GetWidth(Instance);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
             return result;
         }
 
         public int GetHeight()
         {
             var result = Interop.Uniasset_ImageAsset_GetHeight(Instance);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
             return result;
         }
 
         public int GetChannelCount()
         {
             var result = Interop.Uniasset_ImageAsset_GetChannelCount(Instance);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
             return result;
         }
 
@@ -51,7 +51,7 @@ namespace Uniasset.Unsafe
             fixed (byte* pathPtr = pathBytes)
             {
                 Interop.Uniasset_ImageAsset_LoadFile(Instance, (sbyte*)pathPtr);
-                CheckNativeErrorInternal();
+                NativeException.ThrowIfNeeded();
             }
         }
 
@@ -60,7 +60,7 @@ namespace Uniasset.Unsafe
             fixed (byte* imageData = &data.GetPinnableReference())
             {
                 Interop.Uniasset_ImageAsset_Load(Instance, imageData, Convert.ToUInt64(data.Length));
-                CheckNativeErrorInternal();
+                NativeException.ThrowIfNeeded();
             }
         }
 
@@ -70,27 +70,27 @@ namespace Uniasset.Unsafe
             {
                 Interop.Uniasset_ImageAsset_LoadPixels(Instance, imageData, Convert.ToUInt64(data.Length),
                     width, height, channelCount);
-                CheckNativeErrorInternal();
+                NativeException.ThrowIfNeeded();
             }
         }
 
         public void Unload()
         {
             Interop.Uniasset_ImageAsset_Unload(Instance);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
         }
 
         public UnsafeImageAsset Clone()
         {
             var result = Interop.Uniasset_ImageAsset_Clone(Instance);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
             return new UnsafeImageAsset(result);
         }
 
         public void Crop(int x, int y, int width, int height)
         {
             Interop.Uniasset_ImageAsset_Crop(Instance, x, y, width, height);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
         }
         
         public UnsafeImageAsset[] CropMultiple(CropOptions[] optionsArray)
@@ -99,7 +99,7 @@ namespace Uniasset.Unsafe
             fixed (void** result = new void*[optionsArray.Length])
             {
                 Interop.Uniasset_ImageAsset_CropMultiple(Instance, options, (short)optionsArray.Length, result);
-                CheckNativeErrorInternal();
+                NativeException.ThrowIfNeeded();
 
                 var handleResult = new UnsafeImageAsset[optionsArray.Length];
                 for (int i = 0; i < optionsArray.Length; i++)
@@ -114,27 +114,19 @@ namespace Uniasset.Unsafe
         public void Resize(int width, int height)
         {
             Interop.Uniasset_ImageAsset_Resize(Instance, width, height);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
         }
 
         public void CopyTo(NativeArray<byte> dest)
         {
             var arrayPtr = dest.GetUnsafePtr();
             Interop.Uniasset_ImageAsset_CopyTo(Instance, arrayPtr);
-            CheckNativeErrorInternal();
+            NativeException.ThrowIfNeeded();
         }
 
         public void Destroy()
         {
             Interop.Uniasset_ImageAsset_Destory(Instance);
-        }
-
-        private void CheckNativeErrorInternal()
-        {
-            var errorMessage = Marshal.PtrToStringAnsi(new IntPtr(Interop.Uniasset_ImageAsset_GetError(Instance)));
-
-            if (string.IsNullOrWhiteSpace(errorMessage)) return;
-            throw new NativeException(errorMessage);
         }
     }
 }
