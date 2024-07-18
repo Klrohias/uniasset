@@ -1,6 +1,8 @@
 name: ci-win
 
-on: workflow_dispatch
+on:
+  workflow_dispatch: {}
+  workflow_call: {}
 
 
 env:
@@ -21,6 +23,7 @@ jobs:
         popd
 
     - name: Build x64-windows
+      if: '!cancelled()'
       run: |
         $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
         $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
@@ -31,13 +34,9 @@ jobs:
         cmake -B $BUILD_ROOT -A x64 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
         cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
 
-    - name: Upload Artifact (x64-windows)
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: uniasset-x64-windows.dll
-        path: ${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll
 
     - name: Build x86-windows
+      if: '!cancelled()'
       run: |
         $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
         $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
@@ -48,7 +47,15 @@ jobs:
         cmake -B $BUILD_ROOT -A Win32 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
         cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
 
+    - name: Upload Artifact (x64-windows)
+      if: '!cancelled()'
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: uniasset-x64-windows.dll
+        path: ${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll
+
     - name: Upload Artifact (x86-windows)
+      if: '!cancelled()'
       uses: actions/upload-artifact@v3.1.2
       with:
         name: uniasset-x86-windows.dll

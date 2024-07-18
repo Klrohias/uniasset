@@ -1,6 +1,8 @@
 name: ci-darwin
 
-on: workflow_dispatch
+on:
+  workflow_dispatch: {}
+  workflow_call: {}
 
 env:
   BUILD_TYPE: Release
@@ -21,28 +23,54 @@ jobs:
         VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
         cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
 
-    - name: Configure and build
+    - name: Build macOS (x64-osx)
+      if: '!cancelled()'
       run: |
         VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        
         cd "${{github.workspace}}/Native"
         
         TRIPLET='x64-osx'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_SHARED_LIBS=YES
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_SHARED_LIBS=YES -DCMAKE_OSX_ARCHITECTURES=x86_64
         cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
 
+    - name: Build macOS (arm64-osx)
+      if: '!cancelled()'
+      run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        cd "${{github.workspace}}/Native"
+        
+        TRIPLET='arm64-osx'
+        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DBUILD_SHARED_LIBS=YES -DCMAKE_OSX_ARCHITECTURES=arm64
+        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --target uniasset --config ${{env.BUILD_TYPE}}
+
+    - name: Build iOS (ios-osx)
+      if: '!cancelled()'
+      run: |
+        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
+        cd "${{github.workspace}}/Native"
+        
         TRIPLET='arm64-ios-bitcode'
         cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64
         cmake --build ${{github.workspace}}/Native/build-$TRIPLET --target uniasset --config ${{env.BUILD_TYPE}}
 
+
     - name: Upload Artifact (x64-osx)
       uses: actions/upload-artifact@v3.1.2
+      if: '!cancelled()'
       with:
         name: libuniasset-x64-osx.dylib
         path: ${{github.workspace}}/Native/build-x64-osx/src/uniasset/libuniasset.dylib
 
+    - name: Upload Artifact (arm64-osx)
+      uses: actions/upload-artifact@v3.1.2
+      if: '!cancelled()'
+      with:
+        name: libuniasset-arm64-osx.dylib
+        path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.dylib
+
     - name: Upload Artifact (arm64-ios-bitcode)
       uses: actions/upload-artifact@v3.1.2
+      if: '!cancelled()'
       with:
         name: libuniasset-arm64-ios-bitcode.a
         path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a
