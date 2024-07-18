@@ -66,7 +66,7 @@ jobs:
       if: '!cancelled()'
       with:
         name: libuniasset-arm64-osx.dylib
-        path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.dylib
+        path: ${{github.workspace}}/Native/build-arm64-osx/src/uniasset/libuniasset.dylib
 
     - name: Upload Artifact (arm64-ios-bitcode)
       uses: actions/upload-artifact@v3.1.2
