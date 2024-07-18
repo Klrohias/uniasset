@@ -4,7 +4,7 @@
 
 #include "Errors.hpp"
 #include <stb_image.h>
-#include <turbojpeg.h>
+#include <string>
 
 namespace uniasset {
     namespace internal {

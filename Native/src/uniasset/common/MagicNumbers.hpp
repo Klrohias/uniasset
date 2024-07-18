@@ -11,9 +11,12 @@
 
 namespace uniasset {
     constexpr uint8_t jpegMagicNumber[] = {0xff, 0xd8, 0xff, 0xe0};
-    constexpr uint8_t mp3MagicNumber[] = {0x49, 0x44, 0x33};
-    constexpr uint8_t oggMagicNumber[] = {0x4F, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                          0x00};
+    constexpr uint8_t mp3MagicNumberCase1[] = {0x49, 0x44, 0x33};
+    constexpr uint8_t mp3MagicNumberCase2[] = {0xff, 0xfb};
+    constexpr uint8_t oggMagicNumber[] = {
+        0x4F, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00
+    };
 
     inline bool isWebPFileData(const uint8_t* data, size_t len) {
         if (len < 15) {
@@ -36,7 +39,8 @@ namespace uniasset {
             return false;
         }
 
-        return memcmp(data, mp3MagicNumber, sizeof(mp3MagicNumber)) == 0;
+        return memcmp(data, mp3MagicNumberCase1, sizeof(mp3MagicNumberCase1)) == 0
+               || memcmp(data, mp3MagicNumberCase2, sizeof(mp3MagicNumberCase2)) == 0;
     }
 
     inline bool isFlacFileData(const uint8_t* data, size_t len) {
