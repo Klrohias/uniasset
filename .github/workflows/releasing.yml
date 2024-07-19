@@ -28,93 +28,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Download libuniasset-x64-osx.dylib
-        uses: dawidd6/action-download-artifact@v6
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: libuniasset-x64-osx.dylib
-          path: 'outputs/libuniasset-x64-osx/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download libuniasset-x64-osx.dylib
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-arm64-osx.dylib
-          path: 'outputs/libuniasset-arm64-osx/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download libuniasset-arm64-ios-bitcode.a
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-arm64-ios-bitcode.a
-          path: 'outputs/libuniasset-arm64-ios-bitcode/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download libuniasset-arm-neon-android.so
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-arm-neon-android.so
-          path: 'outputs/libuniasset-arm-neon-android/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download libuniasset-arm64-android.so
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-arm64-android.so
-          path: 'outputs/libuniasset-arm64-android/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download libuniasset-x86-android.so
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-x86-android.so
-          path: 'outputs/libuniasset-x86-android/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download libuniasset-x64-android.so
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-x64-android.so
-          path: 'outputs/libuniasset-x64-android/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download uniasset-x64-windows.dll
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: uniasset-x64-windows.dll
-          path: 'outputs/uniasset-x64-windows/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-      - name: Download uniasset-x86-windows.dll
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: uniasset-x86-windows.dll
-          path: 'outputs/uniasset-x86-windows/'
-          run_id:  ${{ github.event.workflow_run.id }}
-
-
-      - name: Download libuniasset-x64-linux.so
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: libuniasset-x64-linux.so
-          path: 'outputs/libuniasset-x64-linux/'
-          run_id:  ${{ github.event.workflow_run.id }}
+          path: 'outputs/'
 
       - name: Zipping all things
+        if: '!cancelled()'
         run: |
-          zip -r "${{github.workspace}}/output.zip" "${{github.workspace}}/outputs/*"
+          ls -R "${{github.workspace}}/outputs/"
+          zip -r "${{github.workspace}}/output.zip" "${{github.workspace}}/outputs/"
+
+      - name: Package unity scripts
+        if: '!cancelled()'
+        run: |
+          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
 
       - name: Upload binaries to release
+        if: '!cancelled()'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: "${{github.workspace}}/output.zip"
           asset_name: "uniasset-native-libraries.zip"
 
-      - name: Package unity scripts
-        run: |
-          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
-
       - name: Upload unity scripts
+        if: '!cancelled()'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}

@@ -49,16 +49,16 @@ jobs:
 
     - name: Upload Artifact (x64-windows)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
-        name: uniasset-x64-windows.dll
+        name: uniasset-x64-windows
         path: ${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll
 
     - name: Upload Artifact (x86-windows)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
-        name: uniasset-x86-windows.dll
+        name: uniasset-x86-windows
         path: ${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll
 
 
