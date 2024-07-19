@@ -49,6 +49,11 @@ jobs:
         run: |
           zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
 
+      - name: Package unity scripts
+        if: '!cancelled()'
+        run: |
+          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
+
       - name: Upload binaries to release
         if: '!cancelled()'
         uses: svenstaro/upload-release-action@v2
