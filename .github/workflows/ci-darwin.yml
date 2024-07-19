@@ -55,23 +55,23 @@ jobs:
 
 
     - name: Upload Artifact (x64-osx)
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-x64-osx.dylib
+        name: libuniasset-x64-osx
         path: ${{github.workspace}}/Native/build-x64-osx/src/uniasset/libuniasset.dylib
 
     - name: Upload Artifact (arm64-osx)
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-arm64-osx.dylib
+        name: libuniasset-arm64-osx
         path: ${{github.workspace}}/Native/build-arm64-osx/src/uniasset/libuniasset.dylib
 
     - name: Upload Artifact (arm64-ios-bitcode)
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-arm64-ios-bitcode.a
+        name: libuniasset-arm64-ios-bitcode
         path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a
 

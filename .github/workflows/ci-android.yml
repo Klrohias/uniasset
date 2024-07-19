@@ -80,28 +80,28 @@ jobs:
 
     - name: Upload Artifact (arm-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
-        name: libuniasset-arm-neon-android.so
+        name: libuniasset-arm-neon-android
         path: ${{github.workspace}}/Native/build-arm-neon-android/src/uniasset/libuniasset.so
 
     - name: Upload Artifact (arm64-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
-        name: libuniasset-arm64-android.so
+        name: libuniasset-arm64-android
         path: ${{github.workspace}}/Native/build-arm64-android/src/uniasset/libuniasset.so
 
     - name: Upload Artifact (x86-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
-        name: libuniasset-x86-android.so
+        name: libuniasset-x86-android
         path: ${{github.workspace}}/Native/build-x86-android/src/uniasset/libuniasset.so
 
     - name: Upload Artifact (x64-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v3.1.2
+      uses: actions/upload-artifact@v4
       with:
-        name: libuniasset-x64-android.so
+        name: libuniasset-x64-android
         path: ${{github.workspace}}/Native/build-x64-android/src/uniasset/libuniasset.so
