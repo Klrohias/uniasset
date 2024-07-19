@@ -24,8 +24,8 @@ async void LoadAsync()
     using var imageAsset = new ImageAsset();
     await imageAsset.LoadAsync(fileContent);
 
-    // Clip
-    await imageAsset.ClipAsync(100, 100, 100, 100);
+    // Crop
+    await imageAsset.CropAsync(100, 100, 100, 100);
 
     // Resize
     await imageAsset.ResizeAsync(50, 50);
@@ -49,15 +49,6 @@ async void LoadAsync()
     await Task.Delay(5000);
 
     audioSource.Pause();
-
-    // Or use the provided AudioPlayer for playback
-    using var player = new AudioPlayer();
-    player.Open(audioAsset);
-    player.Resume();
-
-    await Task.Delay(5000);
-
-    player.Pause();
 }
 ```
 

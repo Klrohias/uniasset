@@ -25,7 +25,7 @@ async void LoadAsync()
     await imageAsset.LoadAsync(fileContent);
 
     // 裁切
-    await imageAsset.ClipAsync(100, 100, 100, 100);
+    await imageAsset.CropAsync(100, 100, 100, 100);
 
     // 缩放
     await imageAsset.ResizeAsync(50, 50);
@@ -49,15 +49,6 @@ async void LoadAsync()
     await Task.Delay(5000);
 
     audioSource.pause();
-
-    // 或者使用提供的 AudioPlayer 播放
-    using var player = new AudioPlayer();
-    player.Open(audioAsset);
-    player.Resume();
-
-    await Task.Delay(5000);
-
-    player.Pause();
 }
 
 ```
