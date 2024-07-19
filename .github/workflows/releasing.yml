@@ -37,22 +37,16 @@ jobs:
         if: '!cancelled()'
         run: |
           ls -R "${{github.workspace}}/outputs/"
-          zip -r "${{github.workspace}}/output.zip" "${{github.workspace}}/outputs/"
+          pushd "${{github.workspace}}"
+          zip -r "${{github.workspace}}/output.zip" "outputs/"
+          popd
 
       - name: Package unity scripts
         if: '!cancelled()'
         run: |
-          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
-
-      - name: Package unity scripts
-        if: '!cancelled()'
-        run: |
-          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
-
-      - name: Package unity scripts
-        if: '!cancelled()'
-        run: |
-          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "${{github.workspace}}/Unity/UniassetTest/Assets/Plugins/"
+          pushd "${{github.workspace}}/Unity/UniassetTest/Assets"
+          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "Plugins/"
+          popd
 
       - name: Upload binaries to release
         if: '!cancelled()'
