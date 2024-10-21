@@ -26,7 +26,7 @@ namespace uniasset {
 
     class UNIASSET_API ImageAsset : public std::enable_shared_from_this<ImageAsset> {
     private:
-        Buffer buffer_{nullptr, default_array_deleter<uint8_t>};
+        Buffer ringBuffer_{nullptr, default_array_deleter<uint8_t>};
 
         int32_t width_{-1};
         int32_t height_{-1};

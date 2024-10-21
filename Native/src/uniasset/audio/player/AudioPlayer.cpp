@@ -133,7 +133,7 @@ namespace uniasset {
 		}
         
         auto handler = std::make_shared<PlayingHandler>();
-        waveProvider->init(this->device_->playback.channels, toSampleFormat(this->device_->playback.format), this->device_->sampleRate);
+        waveProvider->init(AudioConfig(this->device_->playback.channels, toSampleFormat(this->device_->playback.format), this->device_->sampleRate));
 
         this->playingAudios_.push_back({ handler, waveProvider });
 

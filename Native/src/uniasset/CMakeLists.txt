@@ -76,7 +76,14 @@ add_library(uniasset
         audio/player/AudioMixer.hpp
         audio/player/PlayingHandler.cpp
         audio/player/PlayingHandler.hpp
-        common/AudioUtils.hpp)
+        common/AudioUtils.hpp
+        audio/player/waves/AdaptWaveProvider.hpp
+        audio/player/waves/AdaptWaveProvider.cpp
+        audio/AudioConfig.hpp
+        audio/player/waves/BufferedWaveProvider.hpp
+        audio/player/waves/BufferedWaveProvider.cpp
+        common/RingQueueBuffer.hpp
+        common/RingQueueBuffer.cpp)
 
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
