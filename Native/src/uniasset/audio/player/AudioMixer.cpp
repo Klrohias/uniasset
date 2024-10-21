@@ -1,5 +1,5 @@
 #include "AudioMixer.hpp"
-
+#include <cstring>
 #include <limits>
 #include <algorithm>
 
