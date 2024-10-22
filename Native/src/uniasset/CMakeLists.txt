@@ -83,7 +83,8 @@ add_library(uniasset
         audio/player/waves/BufferedWaveProvider.hpp
         audio/player/waves/BufferedWaveProvider.cpp
         common/RingQueueBuffer.hpp
-        common/RingQueueBuffer.cpp)
+        common/RingQueueBuffer.cpp
+        common/IJob.hpp)
 
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)

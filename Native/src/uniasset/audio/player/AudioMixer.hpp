@@ -1,7 +1,7 @@
 #pragma once
 #ifndef UNIASSET_AUDIOMIXER_H
 #define UNIASSET_AUDIOMIXER_H
-
+#include <cstring>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -14,14 +14,15 @@ namespace uniasset {
     struct AudioMixer {
     public:
         typedef void (*mixSampleEndFunc)(AudioMixer* pMixer);
-        typedef void (*mixSampleFunc)(AudioMixer* pMixer, const IWaveProvider::ReadResult& waveReadResult);
+        typedef void (*mixSampleFunc)(AudioMixer* pMixer, const IWaveProvider::ReadResult& waveReadResult, float volume);
 
         void* pDst_{ nullptr };
         uint32_t frameCount_{ 0 };
         uint32_t uncleanFrameCount_{ 0 };
+        bool isDstClean_{ false };
 
-        uint32_t bytesPerFrame_{ 0 };
-        uint32_t bytesPerSample_{ 0 };
+        size_t bytesPerFrame_{ 0 };
+        size_t bytesPerSample_{ 0 };
         uint32_t channelCount_{ 0 };
         
         void* pBuffer{ nullptr };
@@ -39,7 +40,7 @@ namespace uniasset {
 
         void begin(void* pDst, uint32_t frameCount);
 
-        void mix(const IWaveProvider::ReadResult& waveReadResult);
+        void mix(const IWaveProvider::ReadResult& waveReadResult, float volume);
 
         void end();
 

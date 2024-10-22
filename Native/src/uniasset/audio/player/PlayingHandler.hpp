@@ -26,11 +26,16 @@ namespace uniasset {
 
 		State getState() const noexcept;
 
+		float getVolume() const noexcept;
+
+		std::error_code setVolume(float volume);
+
 		float getTime() const noexcept;
 
 		std::error_code setTime(float time);
 
 	private:
+		float volume_{ 0.0f };
 		float time_{ 0.0f };
 		State state_{ Paused };
 	};

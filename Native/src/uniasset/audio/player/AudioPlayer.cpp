@@ -42,7 +42,12 @@ namespace uniasset {
 			}
             IWaveProvider::ReadResult readResult;
             audio.waveProvider->read(readResult, time2FrameOffset(audio.handler->getTime(), sampleRate), frameCount);
-            player->mixer_.mix(readResult);
+            audio.handler->setTime(audio.handler->getTime() + frameCount / static_cast<float>(sampleRate));
+            float volume = audio.handler->getVolume();
+            if (readResult.frameCount == 0 || volume == 0.0f) {
+                continue;
+            }
+            player->mixer_.mix(readResult, volume);
         }
         player->mixer_.end();
     }

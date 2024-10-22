@@ -3,7 +3,6 @@
 
 namespace uniasset {
 	PlayingHandler::PlayingHandler() {
-
 	}
 
 	std::error_code PlayingHandler::pause() {
@@ -23,6 +22,17 @@ namespace uniasset {
 
 	PlayingHandler::State PlayingHandler::getState() const noexcept {
 		return state_;
+	}
+
+	float PlayingHandler::getVolume() const noexcept
+	{
+		return volume_;
+	}
+
+	std::error_code PlayingHandler::setVolume(float volume)
+	{
+		volume_ = volume;
+		return err_ok();
 	}
 
 	float PlayingHandler::getTime() const noexcept {

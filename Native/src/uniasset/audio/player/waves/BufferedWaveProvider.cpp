@@ -47,6 +47,14 @@ namespace uniasset {
 		return audioConfig_;
 	}
 
+	bool BufferedWaveProvider::hasWork() {
+		return ringBuffer_.size() < ringBuffer_.capacity() / 2;
+	}
+
+	void BufferedWaveProvider::execute() {
+		readFromUpstream();
+	}
+
 	void BufferedWaveProvider::readFromUpstream() {
 		if (isReading_) {
 			return;

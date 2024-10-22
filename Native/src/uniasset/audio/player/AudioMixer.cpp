@@ -2,50 +2,44 @@
 #include <cstring>
 #include <limits>
 #include <algorithm>
-
 #include "uniasset/common/Templates.hpp"
 
 namespace uniasset {
 	template <typename TSrc, typename TBuf>
-	void mix_sample(AudioMixer* pMixer, const IWaveProvider::ReadResult& waveReadResult) {
+	void mix_sample(AudioMixer* pMixer, const IWaveProvider::ReadResult& waveReadResult, float volume) {
+		pMixer->ensureBufferCapacity(sizeof(TBuf) * pMixer->frameCount_ * pMixer->channelCount_);
+
 		auto readFrameCount = (std::min)(pMixer->frameCount_, waveReadResult.frameCount);
-		if (readFrameCount <= 0) {
-			return;
-		}
-
-		pMixer->ensureBufferCapacity(sizeof(TBuf) * pMixer->frameCount_ * pMixer->bytesPerFrame_);
-
 		TBuf* pMixBuffer = reinterpret_cast<TBuf*>(pMixer->pBuffer);
 		TSrc* pSrc = reinterpret_cast<TSrc*>(waveReadResult.data);
 		auto sampleCount = readFrameCount * pMixer->channelCount_;
 
 		if (!pMixer->isBufferUsed_) {
 			for (auto i = 0; i < sampleCount; i++) {
-				pMixBuffer[i] = (TBuf)pSrc[i];
+				pMixBuffer[i] = (TBuf)pSrc[i] * volume;
 			}
 			// pad with zero
-			memset(ptr_offset(pMixBuffer, sizeof(TBuf) * sampleCount), 0, sizeof(TBuf) * (pMixer->frameCount_ - readFrameCount) * pMixer->channelCount_);
+			memset(pMixBuffer + sampleCount, 0, sizeof(TBuf) * (pMixer->frameCount_ * pMixer->channelCount_ - sampleCount));
 			pMixer->isBufferUsed_ = true;
 		} else {
 			for (auto i = 0; i < sampleCount; i++) {
-				pMixBuffer[i] += (TBuf)pSrc[i];
+				pMixBuffer[i] += (TBuf)pSrc[i] * volume;
 			}
 		}
 	}
 
-	void unsupport_mix(AudioMixer* pMixer, const IWaveProvider::ReadResult& waveReadResult) {
+	void unsupport_mix(AudioMixer* pMixer, const IWaveProvider::ReadResult& waveReadResult, float volume) {
 		// do nothing
 	}
 
 	template <typename TSrc, typename TBuf>
 	void mix_sample_end(AudioMixer* pMixer, TBuf minv, TBuf maxv) {
-		if (!pMixer->isBufferUsed_) {
-			return;
+		if (pMixer->frameCount_ - pMixer->uncleanFrameCount_ != 0) {
+			// master stream also have audio data
+			// mix master buffer to mix buffer
+			IWaveProvider::ReadResult result{ pMixer->pDst_, pMixer->frameCount_ - pMixer->uncleanFrameCount_ };
+			pMixer->mixSample(pMixer, result, 1.0f);
 		}
-		
-		// mix master buffer to mix buffer
-		IWaveProvider::ReadResult result{pMixer->pDst_, pMixer->frameCount_ - pMixer->uncleanFrameCount_};
-		pMixer->mixSample(pMixer, result);
 
 		// copy mix result to master buffer
 		TSrc* pMaster = reinterpret_cast<TSrc*>(pMixer->pDst_);
@@ -115,31 +109,37 @@ namespace uniasset {
 	}
 
 	void AudioMixer::begin(void* pDst, uint32_t frameCount) {
+		if (pDst != this->pDst_) {
+			this->isDstClean_ = false;
+		}
 		this->pDst_ = pDst;
 		this->frameCount_ = frameCount;
 		this->uncleanFrameCount_ = frameCount;
+		this->isBufferUsed_ = false;
 	}
 
-	void AudioMixer::mix(const IWaveProvider::ReadResult& waveReadResult) {
-		if (waveReadResult.frameCount <= 0) {
-			return;
-		}
-
-		if (this->uncleanFrameCount_ == this->frameCount_) {
+	void AudioMixer::mix(const IWaveProvider::ReadResult& waveReadResult, float volume) {
+		if (this->uncleanFrameCount_ == this->frameCount_ && volume == 1.0f) {
 			// first wave provider, pad and copy wave data, skip mix
 			auto readFrameCount = (std::min)(this->frameCount_, waveReadResult.frameCount);
 			memcpy(pDst_, waveReadResult.data, readFrameCount * this->bytesPerFrame_);  // copy wave data
 			this->uncleanFrameCount_ -= readFrameCount;
+			this->isDstClean_ = false;
 			return;
 		}
 
 		// have to mix with other wave provider data
-		this->mixSample(this, waveReadResult);
+		this->mixSample(this, waveReadResult, volume);
 	}
 
 	void AudioMixer::end() {
-		memset(ptr_offset(this->pDst_, this->bytesPerFrame_ * (this->frameCount_ - this->uncleanFrameCount_)), 0, this->frameCount_ * this->uncleanFrameCount_);
-		this->mixSampleEnd(this);
+		if (!this->isDstClean_) {
+			memset(ptr_offset(this->pDst_, this->bytesPerFrame_ * (this->frameCount_ - this->uncleanFrameCount_)), 0, this->frameCount_ * this->bytesPerFrame_);
+		}
+		if (this->isBufferUsed_) {
+			this->mixSampleEnd(this);
+		}
+		this->isDstClean_ = !isBufferUsed_ && this->uncleanFrameCount_ == this->frameCount_;
 	}
 
 	void AudioMixer::ensureBufferCapacity(size_t size) {
