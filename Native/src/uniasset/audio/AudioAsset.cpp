@@ -8,7 +8,6 @@
 
 #include "../common/Errors.hpp"
 #include "../common/MagicNumbers.hpp"
-#include "AudioPlayer.hpp"
 #include "IAudioDecoder.hpp"
 #include "Mp3Decoder.hpp"
 #include "FlacDecoder.hpp"

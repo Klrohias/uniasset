@@ -35,7 +35,7 @@ namespace uniasset {
         frameSize_ = wrappedAudioDecoder_->getSampleFormat() == SampleFormat_Int16 ? sizeof(int16_t) : sizeof(float);
         frameSize_ *= wrappedAudioDecoder_->getChannelCount();
 
-        buffer_ = std::make_unique<uint8_t[]>(bufferFrames * frameSize_);
+        ringBuffer_ = std::make_unique<uint8_t[]>(bufferFrames * frameSize_);
 
         generateBufferImmediately();
     }
@@ -80,14 +80,14 @@ namespace uniasset {
                 auto writeSize = bufferSize_ - writeBegin;
 
                 if (writeSize < bufferBlockSize) {
-                    readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin), writeSize);
-                    readWrappedDecoder(getBufferOffset(buffer_, frameSize_, 0), bufferBlockSize - writeSize);
+                    readWrappedDecoder(getBufferOffset(ringBuffer_, frameSize_, writeBegin), writeSize);
+                    readWrappedDecoder(getBufferOffset(ringBuffer_, frameSize_, 0), bufferBlockSize - writeSize);
                 } else {
-                    readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin), bufferBlockSize);
+                    readWrappedDecoder(getBufferOffset(ringBuffer_, frameSize_, writeBegin), bufferBlockSize);
                 }
 
             } else {
-                readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin), bufferBlockSize);
+                readWrappedDecoder(getBufferOffset(ringBuffer_, frameSize_, writeBegin), bufferBlockSize);
             }
 
             bufferedFrameEnd_ += bufferBlockSize;
@@ -139,13 +139,13 @@ namespace uniasset {
         auto readEnd = (bufferOffset_ + requiredFrame) % bufferSize_;
 
         if (readBegin < readEnd) {
-            memcpy(buffer, getBufferOffset(buffer_, frameSize_, readBegin), requiredFrame * frameSize_);
+            memcpy(buffer, getBufferOffset(ringBuffer_, frameSize_, readBegin), requiredFrame * frameSize_);
             bufferOffset_ = readEnd;
         } else {
             auto offset = (bufferSize_ - readBegin) * frameSize_;
-            memcpy(buffer, getBufferOffset(buffer_, frameSize_, readBegin),
+            memcpy(buffer, getBufferOffset(ringBuffer_, frameSize_, readBegin),
                    offset);
-            memcpy(ptr_offset(buffer, offset), getBufferOffset(buffer_, frameSize_, 0),
+            memcpy(ptr_offset(buffer, offset), getBufferOffset(ringBuffer_, frameSize_, 0),
                    readEnd * frameSize_);
             bufferOffset_ = readEnd;
         }
@@ -159,12 +159,12 @@ namespace uniasset {
         auto writeBegin = (bufferOffset_ + bufferedCount) % bufferSize_;
 
         if (writeBegin >= bufferOffset_) {
-            readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin),
+            readWrappedDecoder(getBufferOffset(ringBuffer_, frameSize_, writeBegin),
                                bufferSize_ - writeBegin);
             writeBegin = 0;
         }
 
-        readWrappedDecoder(getBufferOffset(buffer_, frameSize_, writeBegin),
+        readWrappedDecoder(getBufferOffset(ringBuffer_, frameSize_, writeBegin),
                            bufferOffset_ - writeBegin);
         bufferedFrameEnd_ += willBufferedCount;
     }
