@@ -3,12 +3,13 @@ use std::io::Cursor;
 use anyhow::{Ok, Result, anyhow};
 use image::{ColorType, DynamicImage, GenericImageView, ImageReader};
 
+#[derive(Clone)]
 struct ImageDetails {
     size: (u32, u32),
     color: ColorType,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ImageAsset {
     dyn_image: Option<DynamicImage>,
     details: Option<ImageDetails>,
@@ -84,6 +85,22 @@ impl ImageAsset {
             .crop(l, t, w, h);
 
         self.load(new_image);
+        Ok(())
+    }
+
+    pub fn copy_to(&self, dst: &mut [u8]) -> Result<()> {
+        let image_ref = self
+            .dyn_image
+            .as_ref()
+            .ok_or(anyhow!("Image has not loaded"))?;
+
+        let bytes = image_ref.as_bytes();
+        if bytes.len() != dst.len() {
+            return Err(anyhow!("Buffer size mismatch"));
+        }
+
+        dst.copy_from_slice(&bytes);
+
         Ok(())
     }
 }

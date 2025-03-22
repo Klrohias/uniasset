@@ -2,7 +2,7 @@ use crate::ffi::{clear_error_for_this_thread, set_error_for_this_thread};
 use std::{
     ffi::CStr,
     mem::forget,
-    os::raw::{c_char, c_uint, c_ulong},
+    os::raw::{c_char, c_uchar, c_uint, c_ulong},
     sync::{Arc, RwLock},
 };
 
@@ -130,6 +130,24 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Crop(
 }
 
 #[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_ImageAsset_Resize(obj_ptr: ImageAssetPtr, w: c_uint, h: c_uint) {
+    clear_error_for_this_thread();
+    let obj = unsafe { ImageAssetFFI::from_raw(obj_ptr) };
+
+    {
+        let mut o = obj.write().unwrap();
+        match o.resize(w, h) {
+            Err(e) => {
+                set_error_for_this_thread(e);
+            }
+            Ok(_) => {}
+        };
+    }
+
+    forget(obj);
+}
+
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Unload(obj_ptr: ImageAssetPtr) {
     clear_error_for_this_thread();
     let obj = unsafe { ImageAssetFFI::from_raw(obj_ptr) };
@@ -138,6 +156,43 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Unload(obj_ptr: ImageAssetPtr) {
         let mut o = obj.write().unwrap();
         o.unload();
     }
+
+    forget(obj);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_ImageAsset_Clone(obj_ptr: ImageAssetPtr) -> ImageAssetPtr {
+    clear_error_for_this_thread();
+    let obj = unsafe { ImageAssetFFI::from_raw(obj_ptr) };
+
+    let result = {
+        let o = obj.read().unwrap();
+        ImageAssetFFI::into_raw(ImageAssetFFI::new(RwLock::new(o.clone())))
+    };
+
+    forget(obj);
+
+    result
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_ImageAsset_CopyTo(
+    obj_ptr: ImageAssetPtr,
+    dst: *mut c_uchar,
+    size: c_ulong,
+) {
+    clear_error_for_this_thread();
+    let obj = unsafe { ImageAssetFFI::from_raw(obj_ptr) };
+
+    {
+        let o = obj.read().unwrap();
+        match o.copy_to(unsafe { std::slice::from_raw_parts_mut(dst, size as usize) }) {
+            Err(e) => {
+                set_error_for_this_thread(e);
+            }
+            Ok(_) => {}
+        }
+    };
 
     forget(obj);
 }
