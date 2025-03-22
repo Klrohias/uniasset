@@ -1,0 +1,12 @@
+[package]
+name = "uniasset"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+image = "0.25.5"
+
+[lib]
+name = "uniasset"
+crate-type = ["staticlib", "cdylib"]
