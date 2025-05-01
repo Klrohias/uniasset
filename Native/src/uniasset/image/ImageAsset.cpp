@@ -45,7 +45,7 @@ namespace uniasset {
     ImageAsset::ImageAsset() = default;
 
     ImageAsset::ImageAsset(Buffer&& buffer, int32_t width, int32_t height, int32_t channelCount)
-            : buffer_{std::move(buffer)}, width_{width}, height_{height}, channelCount_{channelCount} {
+            : ringBuffer_{std::move(buffer)}, width_{width}, height_{height}, channelCount_{channelCount} {
     }
 
     std::error_code ImageAsset::load(const std::string_view& path) {
@@ -89,8 +89,8 @@ namespace uniasset {
 
     std::error_code
     ImageAsset::load(uint8_t* pixelData, size_t size, int32_t width, int32_t height, int32_t channelCount) {
-        buffer_ = {new uint8_t[size], default_array_deleter<uint8_t>};
-        memcpy(buffer_.get(), pixelData, size);
+        ringBuffer_ = {new uint8_t[size], default_array_deleter<uint8_t>};
+        memcpy(ringBuffer_.get(), pixelData, size);
 
         width_ = width;
         height_ = height;
@@ -112,8 +112,8 @@ namespace uniasset {
 
     std::error_code ImageAsset::loadFile(const std::string_view& path) {
         stbi_set_flip_vertically_on_load(true);
-        buffer_ = {stbi_load(path.data(), &width_, &height_, &channelCount_, 0), stb_deleter};
-        if (!buffer_) {
+        ringBuffer_ = {stbi_load(path.data(), &width_, &height_, &channelCount_, 0), stb_deleter};
+        if (!ringBuffer_) {
             return {1, stbi_category()};
         }
 
@@ -123,8 +123,8 @@ namespace uniasset {
     std::error_code ImageAsset::loadFile(uint8_t* fileData, size_t size) {
         stbi_set_flip_vertically_on_load(true);
 
-        buffer_ = {stbi_load_from_memory(fileData, size, &width_, &height_, &channelCount_, 0), stb_deleter};
-        if (!buffer_) {
+        ringBuffer_ = {stbi_load_from_memory(fileData, size, &width_, &height_, &channelCount_, 0), stb_deleter};
+        if (!ringBuffer_) {
             return {1, stbi_category()};
         }
 
@@ -138,7 +138,7 @@ namespace uniasset {
 
         channelCount_ = 4;
 
-        buffer_ = {new uint8_t[width_ * height_ * channelCount_], default_array_deleter<uint8_t>};
+        ringBuffer_ = {new uint8_t[width_ * height_ * channelCount_], default_array_deleter<uint8_t>};
         VP8StatusCode statusCode;
         WebPDecoderConfig decoderConfig;
 
@@ -157,7 +157,7 @@ namespace uniasset {
         decoderConfig.output.is_external_memory = true;
         decoderConfig.output.colorspace = MODE_RGBA;
         decoderConfig.output.u.RGBA.stride = -strideSize;
-        decoderConfig.output.u.RGBA.rgba = buffer_.get() + (height_ - 1) * strideSize;
+        decoderConfig.output.u.RGBA.rgba = ringBuffer_.get() + (height_ - 1) * strideSize;
         decoderConfig.output.u.RGBA.size = height_ * strideSize;
         decoderConfig.output.width = width_;
         decoderConfig.output.height = height_;
@@ -256,13 +256,13 @@ namespace uniasset {
             return {tjGetErrorCode(processor.get()), turbojpeg_category()};
         }
 
-        buffer_ = std::move(buffer);
+        ringBuffer_ = std::move(buffer);
 
         return err_ok();
     }
 
     Result<int32_t> ImageAsset::getWidth() {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return std::error_code(kImageNotLoadFail, uniasset_category());
         }
 
@@ -270,7 +270,7 @@ namespace uniasset {
     }
 
     Result<int32_t> ImageAsset::getHeight() {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return std::error_code(kImageNotLoadFail, uniasset_category());
         }
 
@@ -278,7 +278,7 @@ namespace uniasset {
     }
 
     Result<int32_t> ImageAsset::getChannelCount() {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return std::error_code(kImageNotLoadFail, uniasset_category());
         }
 
@@ -286,7 +286,7 @@ namespace uniasset {
     }
 
     std::error_code ImageAsset::crop(int32_t x, int32_t y, int32_t width, int32_t height) {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return {kImageNotLoadFail, uniasset_category()};
         }
 
@@ -309,10 +309,10 @@ namespace uniasset {
 
         for (int iy = 0; iy < height; iy++) {
             memcpy(newBuffer.get() + newStrideSize * iy,
-                   buffer_.get() + srcStrideSize * (iy + startLine) + x * channelCount_, newStrideSize);
+                   ringBuffer_.get() + srcStrideSize * (iy + startLine) + x * channelCount_, newStrideSize);
         }
 
-        buffer_ = std::move(newBuffer);
+        ringBuffer_ = std::move(newBuffer);
         width_ = width;
         height_ = height;
 
@@ -320,7 +320,7 @@ namespace uniasset {
     }
 
     std::error_code ImageAsset::resize(int32_t width, int32_t height) {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return {kImageNotLoadFail, uniasset_category()};
         }
 
@@ -328,11 +328,11 @@ namespace uniasset {
 
         switch (channelCount_) {
             case 3: {
-                ScaleImage<3>(buffer_.get(), newBuffer.get(), width_, height_, width, height);
+                ScaleImage<3>(ringBuffer_.get(), newBuffer.get(), width_, height_, width, height);
                 break;
             }
             case 4: {
-                ScaleImage<4>(buffer_.get(), newBuffer.get(), width_, height_, width, height);
+                ScaleImage<4>(ringBuffer_.get(), newBuffer.get(), width_, height_, width, height);
                 break;
             }
             default:
@@ -342,17 +342,17 @@ namespace uniasset {
         width_ = width;
         height_ = height;
 
-        buffer_ = std::move(newBuffer);
+        ringBuffer_ = std::move(newBuffer);
 
         return err_ok();
     }
 
     std::error_code ImageAsset::unload() {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return {kImageNotLoadFail, uniasset_category()};
         }
 
-        buffer_.reset();
+        ringBuffer_.reset();
         width_ = 0;
         height_ = 0;
         channelCount_ = 0;
@@ -361,24 +361,24 @@ namespace uniasset {
     }
 
     std::error_code ImageAsset::copyTo(void* buffer) {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return {kImageNotLoadFail, uniasset_category()};
         }
 
-        memcpy(buffer, buffer_.get(), width_ * height_ * channelCount_);
+        memcpy(buffer, ringBuffer_.get(), width_ * height_ * channelCount_);
 
         return err_ok();
     }
 
     Result<ImageAsset*> ImageAsset::clone() const {
-        if (!buffer_) {
+        if (!ringBuffer_) {
             return std::error_code{kImageNotLoadFail, uniasset_category()};
         }
 
         auto result = std::make_unique<ImageAsset>();
 
         if (auto err =
-                    result->load(buffer_.get(),
+                    result->load(ringBuffer_.get(),
                                  width_ * height_ * channelCount_,
                                  width_,
                                  height_,
@@ -422,7 +422,7 @@ namespace uniasset {
 
             for (int iy = 0; iy < height; iy++) {
                 memcpy(newBuffer.get() + newStrideSize * iy,
-                       buffer_.get() + srcStrideSize * (iy + startLine) + x * channelCount_, newStrideSize);
+                       ringBuffer_.get() + srcStrideSize * (iy + startLine) + x * channelCount_, newStrideSize);
             }
 
             result.emplace_back(std::move(newBuffer), width, height, channelCount_);

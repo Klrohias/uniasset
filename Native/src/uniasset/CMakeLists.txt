@@ -35,8 +35,6 @@ add_library(uniasset
         image/ImageAsset.hpp
         audio/AudioAsset.cpp
         audio/AudioAsset.hpp
-        audio/AudioPlayer.cpp
-        audio/AudioPlayer.hpp
         audio/IAudioDecoder.cpp
         audio/IAudioDecoder.hpp
         thirdparty/stb_image.c
@@ -70,7 +68,23 @@ add_library(uniasset
         audio/AudioDevice.cpp
         audio/AudioDevice.hpp
         common/Result.hpp
-)
+        audio/player/AudioPlayer.cpp
+        audio/player/AudioPlayer.hpp
+        audio/player/IWaveProvider.cpp
+        audio/player/IWaveProvider.hpp
+        audio/player/AudioMixer.cpp
+        audio/player/AudioMixer.hpp
+        audio/player/PlayingHandler.cpp
+        audio/player/PlayingHandler.hpp
+        common/AudioUtils.hpp
+        audio/player/waves/AdaptWaveProvider.hpp
+        audio/player/waves/AdaptWaveProvider.cpp
+        audio/AudioConfig.hpp
+        audio/player/waves/BufferedWaveProvider.hpp
+        audio/player/waves/BufferedWaveProvider.cpp
+        common/RingQueueBuffer.hpp
+        common/RingQueueBuffer.cpp
+        common/IJob.hpp)
 
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)

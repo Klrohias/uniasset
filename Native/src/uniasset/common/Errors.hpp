@@ -18,6 +18,8 @@ namespace uniasset {
         kRectOverflow = 5,
         kAudioNotLoadFail = 6,
         kNotSupportedFail = 7,
+        kAudioDeviceCreateFail = 8,
+        kAudioDeviceClosed = 9,
     };
 
     const std::error_category& uniasset_category();

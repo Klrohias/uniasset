@@ -15,7 +15,7 @@ namespace uniasset {
     class BufferedAudioDecoder : public IAudioDecoder {
         std::shared_ptr<IAudioDecoder> wrappedAudioDecoder_{};
 
-        std::unique_ptr<uint8_t[]> buffer_{};
+        std::unique_ptr<uint8_t[]> ringBuffer_{};
 
         std::unique_ptr<std::mutex> sync_lock{};
 
