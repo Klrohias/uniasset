@@ -65,32 +65,9 @@ add_library(uniasset
         common/Errors.cpp
         audio/BufferedAudioDecoder.cpp
         audio/BufferedAudioDecoder.hpp
-        audio/AudioDevice.cpp
-        audio/AudioDevice.hpp
         common/Result.hpp
-        audio/player/AudioPlayer.cpp
-        audio/player/AudioPlayer.hpp
-        
-        audio/player/IWaveProvider.hpp
-        audio/player/AudioMixer.cpp
-        audio/player/AudioMixer.hpp
-        audio/player/PlayingHandler.cpp
-        audio/player/PlayingHandler.hpp
+
         common/AudioUtils.hpp
-        audio/player/waves/AdaptWaveProvider.hpp
-        audio/player/waves/AdaptWaveProvider.cpp
-        audio/AudioConfig.hpp
-        audio/player/waves/BufferedWaveProvider.hpp
-        audio/player/waves/BufferedWaveProvider.cpp
-        common/RingQueueBuffer.hpp
-        common/RingQueueBuffer.cpp
-        common/IJob.hpp
-        common/JobScheduler.hpp
-        common/JobScheduler.cpp
-        audio/player/waves/DecoderSourceWaveProvider.hpp
-        audio/player/waves/DecoderSourceWaveProvider.cpp
-        common/ResizableBuffer.hpp
-        common/ResizableBuffer.cpp
         audio/player/AudioEngine.cpp
         audio/player/AudioEngine.hpp
         audio/player/PlaybackInstance.cpp
