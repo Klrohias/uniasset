@@ -259,6 +259,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, 
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
     }
+
     return createInstance<IAudioDecoder>((**result.data()).release());
 }
 

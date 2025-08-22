@@ -13,7 +13,7 @@ namespace uniasset {
 
 		AudioConfig() = default;
 
-		AudioConfig(uint32_t channelNum, SampleFormat sampleFormat, uint32_t sampleRate)
+		AudioConfig(const uint32_t channelNum, const SampleFormat sampleFormat, const uint32_t sampleRate)
 			: channelNum(channelNum), sampleFormat(sampleFormat), sampleRate(sampleRate) { }
 	};
 }

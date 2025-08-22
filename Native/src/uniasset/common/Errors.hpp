@@ -26,6 +26,7 @@ namespace uniasset {
     const std::error_category& vp8_category();
     const std::error_category& stbi_category();
     const std::error_category& turbojpeg_category();
+    const std::error_category& ma_category();
 
     inline std::error_code err_ok() {
         return std::error_code{0, std::generic_category()};

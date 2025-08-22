@@ -70,7 +70,7 @@ add_library(uniasset
         common/Result.hpp
         audio/player/AudioPlayer.cpp
         audio/player/AudioPlayer.hpp
-        audio/player/IWaveProvider.cpp
+        
         audio/player/IWaveProvider.hpp
         audio/player/AudioMixer.cpp
         audio/player/AudioMixer.hpp
@@ -84,7 +84,19 @@ add_library(uniasset
         audio/player/waves/BufferedWaveProvider.cpp
         common/RingQueueBuffer.hpp
         common/RingQueueBuffer.cpp
-        common/IJob.hpp)
+        common/IJob.hpp
+        common/JobScheduler.hpp
+        common/JobScheduler.cpp
+        audio/player/waves/DecoderSourceWaveProvider.hpp
+        audio/player/waves/DecoderSourceWaveProvider.cpp
+        common/ResizableBuffer.hpp
+        common/ResizableBuffer.cpp
+        audio/player/AudioEngine.cpp
+        audio/player/AudioEngine.hpp
+        audio/player/PlaybackInstance.cpp
+        audio/player/PlaybackInstance.h
+        audio/player/DecoderDataSource.cpp
+        audio/player/DecoderDataSource.h)
 
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
