@@ -1,4 +1,4 @@
-﻿#include "DecoderDataSource.h"
+﻿#include "DecoderDataSource.hpp"
 
 #include "uniasset/common/AudioUtils.hpp"
 #include "uniasset/common/Errors.hpp"
@@ -14,17 +14,14 @@ namespace uniasset
         maSetLooping
     };
 
-    Result<std::unique_ptr<DecoderDataSource>> DecoderDataSource::create(std::unique_ptr<IAudioDecoder>&& decoder)
+    Result<std::unique_ptr<DecoderDataSource>> DecoderDataSource::create(const std::shared_ptr<IAudioDecoder>& decoder)
     {
-        const auto data_source = std::make_unique<DecoderDataSource>(std::move(decoder));
-        const auto err = data_source->init();
-
-        if (err != err_ok())
-        {
+        const auto data_source = new DecoderDataSource(decoder);
+        if (const auto err = data_source->init(); err != err_ok()) {
+            delete data_source;
             return err;
         }
-
-        return data_source;
+        return std::unique_ptr<DecoderDataSource>(data_source);
     }
 
     ma_uint32 DecoderDataSource::sampleRate() const
@@ -32,7 +29,7 @@ namespace uniasset
         return decoder_->getSampleRate();
     }
 
-    DecoderDataSource::DecoderDataSource(std::unique_ptr<IAudioDecoder>&& decoder) : decoder_(std::move(decoder))
+    DecoderDataSource::DecoderDataSource(const std::shared_ptr<IAudioDecoder>& decoder) : decoder_(decoder)
     {
         data_source_base_.vtable = nullptr;
     }

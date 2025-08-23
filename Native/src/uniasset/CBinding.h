@@ -98,13 +98,26 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
                 void* tellFunc);
 
 // AudioEngine
-// CBINDING_METHOD(CBINDING_TYPED_PTR(AudioEngine), AudioEngine, Create);
-// CBINDING_METHOD(float, AudioEngine, GetVolume, CBINDING_TYPED_PTR(AudioEngine) self);
-// CBINDING_METHOD(void, AudioEngine, SetVolume, CBINDING_TYPED_PTR(AudioEngine) self, float volume);
-// CBINDING_METHOD(uint64_t, AudioEngine, GetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
-// CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
-// CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlayback,
-//                 CBINDING_TYPED_PTR(AudioEngine) self, CBINDING_TYPED_PTR(IAudioDecoder) decoder);
+CBINDING_METHOD(CBINDING_TYPED_PTR(AudioEngine), AudioEngine, Create);
+CBINDING_METHOD(void, AudioEngine, Destory, CBINDING_TYPED_PTR(AudioEngine) obj);
+CBINDING_METHOD(float, AudioEngine, GetVolume, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(void, AudioEngine, SetVolume, CBINDING_TYPED_PTR(AudioEngine) self, float volume);
+CBINDING_METHOD(uint64_t, AudioEngine, GetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlayback,
+                CBINDING_TYPED_PTR(AudioEngine) self, CBINDING_TYPED_PTR(IAudioDecoder) decoder);
+
+// PlaybackInstance
+CBINDING_METHOD(void, PlaybackInstance, Destory, CBINDING_TYPED_PTR(PlaybackInstance) obj);
+CBINDING_METHOD(float, PlaybackInstance, GetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self, float volume);
+CBINDING_METHOD(float, PlaybackInstance, GetTime, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetTime, CBINDING_TYPED_PTR(PlaybackInstance) self, float time);
+CBINDING_METHOD(void, PlaybackInstance, Play, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, Stop, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsPlaying, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
+CBINDING_METHOD(void, PlaybackInstance, StopScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
 
 #ifdef __cplusplus
 }

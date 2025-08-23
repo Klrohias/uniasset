@@ -5,6 +5,7 @@
 #include "AudioAsset.hpp"
 
 #include <cstring>
+#include <memory>
 
 #include "../common/Errors.hpp"
 #include "../common/MagicNumbers.hpp"

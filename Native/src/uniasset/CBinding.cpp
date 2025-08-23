@@ -15,6 +15,8 @@
 #include "audio/OggDecoder.hpp"
 #include "audio/WavDecoder.hpp"
 #include "audio/ExternalAudioDecoder.hpp"
+#include "audio/player/AudioEngine.hpp"
+#include "common/Errors.hpp"
 
 using namespace uniasset;
 
@@ -343,4 +345,117 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
                                      reinterpret_cast<ExternalAudioDecoder::ReadFunc>(readFunc),
                                      reinterpret_cast<ExternalAudioDecoder::SeekFunc>(seekFunc),
                                      reinterpret_cast<ExternalAudioDecoder::TellFunc>(tellFunc)));
+}
+
+CBINDING_METHOD(CBINDING_TYPED_PTR(AudioEngine), AudioEngine, Create) {
+    auto result = AudioEngine::create();
+    if (const auto err = result.error(); err.has_value()) {
+        currentErrorCodeStore.set(**err);
+        return nullptr;
+    }
+
+    return createInstance<AudioEngine>((*result.data())->release());
+}
+
+CBINDING_METHOD(void, AudioEngine, Destory, CBINDING_TYPED_PTR(AudioEngine) obj) {
+    destroyInstance<AudioEngine>(obj);
+}
+
+CBINDING_METHOD(float, AudioEngine, GetVolume, CBINDING_TYPED_PTR(AudioEngine) self) {
+    return getInstance<AudioEngine>(self)->volume();
+}
+
+CBINDING_METHOD(void, AudioEngine, SetVolume, CBINDING_TYPED_PTR(AudioEngine) self, float volume) {
+    auto err = getInstance<AudioEngine>(self)->setVolume(volume);
+    if (err != err_ok()) {
+        currentErrorCodeStore.set(err);
+    }
+}
+
+CBINDING_METHOD(uint64_t, AudioEngine, GetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self) {
+    return getInstance<AudioEngine>(self)->getTimeInPcmFrames();
+}
+
+CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self) {
+    if (const auto err = getInstance<AudioEngine>(self)->resetTimeInPcmFrames(); err != err_ok()) {
+        currentErrorCodeStore.set(err);
+    }
+}
+
+CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlayback,
+                CBINDING_TYPED_PTR(AudioEngine) self, CBINDING_TYPED_PTR(IAudioDecoder) decoder) {
+    const auto engine = getInstance<AudioEngine>(self);
+    const auto dec = getInstance<IAudioDecoder>(decoder);
+    auto playback = engine->createPlayback(dec);
+
+    if (const auto err = playback.error(); err.has_value()) {
+        currentErrorCodeStore.set(**err);
+        return nullptr;
+    }
+    return createInstance<PlaybackInstance>((**playback.data()).release());
+}
+
+CBINDING_METHOD(void, PlaybackInstance, Destory, CBINDING_TYPED_PTR(PlaybackInstance) obj) {
+    destroyInstance<PlaybackInstance>(obj);
+}
+
+CBINDING_METHOD(float, PlaybackInstance, GetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    auto result = playback->volume();
+    if (const auto err = result.error(); err.has_value()) {
+        currentErrorCodeStore.set(**err);
+        return 0;
+    }
+    return **result.data();
+}
+
+CBINDING_METHOD(void, PlaybackInstance, SetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self, float volume) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    playback->setVolume(volume);
+}
+
+CBINDING_METHOD(float, PlaybackInstance, GetTime, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    auto result = playback->time();
+    if (const auto err = result.error(); err.has_value()) {
+        currentErrorCodeStore.set(**err);
+        return 0;
+    }
+    return **result.data();
+}
+
+CBINDING_METHOD(void, PlaybackInstance, SetTime, CBINDING_TYPED_PTR(PlaybackInstance) self, float time) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    if (const auto err = playback->setTime(time); err != err_ok()) {
+        currentErrorCodeStore.set(err);
+    }
+}
+
+CBINDING_METHOD(void, PlaybackInstance, Play, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    if (const auto err = playback->play(); err != err_ok()) {
+        currentErrorCodeStore.set(err);
+    }
+}
+
+CBINDING_METHOD(void, PlaybackInstance, Stop, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    if (const auto err = playback->stop(); err != err_ok()) {
+        currentErrorCodeStore.set(err);
+    }
+}
+
+CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsPlaying, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    return playback->isPlaying();
+}
+
+CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    playback->playScheduled(frame);
+}
+
+CBINDING_METHOD(void, PlaybackInstance, StopScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {
+    const auto playback = getInstance<PlaybackInstance>(self);
+    playback->stopScheduled(frame);
 }

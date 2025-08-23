@@ -6,19 +6,18 @@
 #include "uniasset/common/Result.hpp"
 
 
-namespace uniasset
-{
+namespace uniasset {
     class DecoderDataSource {
     public:
-        static Result<std::unique_ptr<DecoderDataSource>> create(std::unique_ptr<IAudioDecoder>&& decoder);
+        DecoderDataSource(const std::shared_ptr<IAudioDecoder>& decoder);
+
+        ~DecoderDataSource();
+
+        static Result<std::unique_ptr<DecoderDataSource>> create(const std::shared_ptr<IAudioDecoder>& decoder);
 
         [[nodiscard]] ma_uint32 sampleRate() const;
 
     private:
-        explicit DecoderDataSource(std::unique_ptr<IAudioDecoder>&& decoder);
-
-        ~DecoderDataSource();
-
         std::error_code init();
 
         void uninit();
@@ -31,7 +30,7 @@ namespace uniasset
         static ma_result maSetLooping(ma_data_source* ptr_data_source, ma_bool32 is_looping);
 
         ma_data_source_base data_source_base_{};
-        std::unique_ptr<IAudioDecoder> decoder_;
+        std::shared_ptr<IAudioDecoder> decoder_;
         static ma_data_source_vtable decoder_data_source_vtable_;
     };
 }

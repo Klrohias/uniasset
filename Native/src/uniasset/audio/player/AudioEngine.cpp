@@ -6,29 +6,19 @@ namespace uniasset
 {
     Result<ma_engine*> AudioEngine::engine()
     {
-        if (!is_init_)
-        {
-            return std::error_code{MA_INVALID_OPERATION, ma_category()};
-        }
         return &engine_;
     }
 
-    Result<float> AudioEngine::volume() const
+    float AudioEngine::volume() const
     {
         return volume_;
     }
 
     std::error_code AudioEngine::setVolume(const float volume)
     {
-        if (is_init_)
-        {
-            const auto result = ma_engine_set_volume(&engine_, volume);
-            if (result != MA_SUCCESS)
-            {
-                return std::error_code{result, ma_category()};
-            }
-        }
-        return err_ok();
+        volume_ = volume;
+        const auto result = ma_engine_set_volume(&engine_, volume);
+        return result == MA_SUCCESS ? err_ok() : std::error_code{result, ma_category()};
     }
 
     ma_uint64 AudioEngine::getTimeInPcmFrames() const
@@ -42,14 +32,9 @@ namespace uniasset
         return result == MA_SUCCESS ? err_ok() : std::error_code{result, ma_category()};
     }
 
-    Result<std::unique_ptr<PlaybackInstance>> AudioEngine::createPlayback(std::unique_ptr<IAudioDecoder>&& decoder)
+    Result<std::unique_ptr<PlaybackInstance>> AudioEngine::createPlayback(const std::shared_ptr<IAudioDecoder>& decoder)
     {
-        return PlaybackInstance::create(shared_from_this(), std::move(decoder), 0);
-    }
-
-    AudioEngine::AudioEngine()
-    {
-        engine_config_ = ma_engine_config_init();
+        return PlaybackInstance::create(shared_from_this(), decoder, 0);
     }
 
     AudioEngine::~AudioEngine()
@@ -57,34 +42,21 @@ namespace uniasset
         uninit();
     }
 
-    std::unique_ptr<AudioEngine> AudioEngine::create() {
-        return std::make_unique<AudioEngine>();
+    Result<std::unique_ptr<AudioEngine>> AudioEngine::create() {
+        auto engine = std::make_unique<AudioEngine>();
+        const auto err = engine->init();
+        return err == err_ok() ? Result<std::unique_ptr<AudioEngine>>(std::move(engine)) : Result<std::unique_ptr<AudioEngine>>(err);
     }
 
     std::error_code AudioEngine::init()
     {
-        if (is_init_)
-        {
-            return std::error_code{MA_INVALID_OPERATION, ma_category()};
-        }
-
-        const auto result = ma_engine_init(&engine_config_, &engine_);
-        if (result != MA_SUCCESS)
-        {
-            return { result, ma_category() };
-        }
-
-        is_init_ = true;
-        return err_ok();
+        const auto engine_config = ma_engine_config_init();
+        const auto result = ma_engine_init(&engine_config, &engine_);
+        return result == MA_SUCCESS ? err_ok() : std::error_code{result, ma_category()};
     }
 
     void AudioEngine::uninit()
     {
-        if (!is_init_)
-        {
-            return;
-        }
-
         ma_engine_uninit(&engine_);
     }
 }

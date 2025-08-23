@@ -3,18 +3,20 @@
 #define UNIASSET_PLAYBACKINSTANCE_H
 #include <memory>
 
-#include "DecoderDataSource.h"
+#include "DecoderDataSource.hpp"
 #include "uniasset/audio/IAudioDecoder.hpp"
 #include "uniasset/common/Result.hpp"
 
 namespace uniasset {
     class AudioEngine;
 
-    class PlaybackInstance {
+    class UNIASSET_API PlaybackInstance : public std::enable_shared_from_this<PlaybackInstance> {
     public:
-        static Result<std::unique_ptr<PlaybackInstance>> create(const std::shared_ptr<AudioEngine>& engine, std::unique_ptr<IAudioDecoder>&& decoder, uint32_t flags);
+        static Result<std::unique_ptr<PlaybackInstance>> create(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<IAudioDecoder>& decoder, uint32_t flags);
 
-        static Result<std::unique_ptr<PlaybackInstance>> create(const std::shared_ptr<AudioEngine>& engine, std::unique_ptr<DecoderDataSource>&& source, uint32_t flags);
+        static Result<std::unique_ptr<PlaybackInstance>> create(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<DecoderDataSource>& source, uint32_t flags);
+
+        ~PlaybackInstance();
 
         std::error_code init(uint32_t flags);
 
@@ -39,12 +41,12 @@ namespace uniasset {
         void stopScheduled(ma_uint64 frame);
 
     private:
-        explicit PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, std::unique_ptr<IAudioDecoder>&& decoder);
+        explicit PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<IAudioDecoder>& decoder);
 
-        explicit PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, std::unique_ptr<DecoderDataSource>&& source);
+        explicit PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<DecoderDataSource>& source);
 
         std::shared_ptr<AudioEngine> engine_;
-        std::unique_ptr<DecoderDataSource> source_;
+        std::shared_ptr<DecoderDataSource> source_;
         ma_sound sound_ {};
     };
 } // uniasset

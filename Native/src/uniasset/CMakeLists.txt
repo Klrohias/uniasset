@@ -71,9 +71,9 @@ add_library(uniasset
         audio/player/AudioEngine.cpp
         audio/player/AudioEngine.hpp
         audio/player/PlaybackInstance.cpp
-        audio/player/PlaybackInstance.h
+        audio/player/PlaybackInstance.hpp
         audio/player/DecoderDataSource.cpp
-        audio/player/DecoderDataSource.h)
+        audio/player/DecoderDataSource.hpp)
 
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
