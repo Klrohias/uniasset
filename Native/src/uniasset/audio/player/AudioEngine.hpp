@@ -37,6 +37,8 @@ namespace uniasset {
 
         std::error_code resetTimeInPcmFrames();
 
+        ma_uint32 getSampleRate() const;
+
         Result<std::unique_ptr<PlaybackInstance>> createPlayback(const std::shared_ptr<IAudioDecoder>& decoder);
 
     private:

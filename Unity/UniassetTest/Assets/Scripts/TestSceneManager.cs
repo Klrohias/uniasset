@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Uniasset.Audio;
+using Uniasset.Audio.Player;
 using Uniasset.Image;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,21 +23,25 @@ public class TestSceneManager : MonoBehaviour
     private byte[] _testJpg;
     private byte[] _testPng;
     private byte[] _testWebp;
-    private byte[] _test1080P;
+    // private byte[] _test1080P;
     private byte[] _testMp3;
     private Rect _draggableRect = new(0, 0, 10000, 20);
     private byte[] _testOgg;
+    private AudioEngine _engine;
+    private readonly List<PlaybackInstance> _playbacks = new();
 
     private async void Start()
     {
         _testJpg = await Utils.LoadStreamingAsset("Test.jpg", this);
         _testPng = await Utils.LoadStreamingAsset("Test.png", this);
         _testWebp = await Utils.LoadStreamingAsset("Test.webp", this);
-        _test1080P = await Utils.LoadStreamingAsset("Large.png", this);
+        // _test1080P = await Utils.LoadStreamingAsset("Large.png", this);
 
         _testMp3 = await Utils.LoadStreamingAsset("Test3.mp3", this);
-        _testOgg = await Utils.LoadStreamingAsset("click.ogg", this);
+        // _testOgg = await Utils.LoadStreamingAsset("click.ogg", this);
         // AudioClip.PCMSetPositionCallback
+
+        _engine = new AudioEngine();
     }
 
     private void ImageTestWindow(int id)
@@ -67,7 +75,7 @@ public class TestSceneManager : MonoBehaviour
 
         if (GUILayout.Button("Resize (Async)")) ResizeImageAsync();
 
-        if (GUILayout.Button("Load Large (Async)")) LoadImageAsync(_test1080P, false);
+        // if (GUILayout.Button("Load Large (Async)")) LoadImageAsync(_test1080P, false);
 
         if (GUILayout.Button("Unload")) _imageAsset.Unload();
 
@@ -78,18 +86,37 @@ public class TestSceneManager : MonoBehaviour
     {
         GUI.DragWindow(_draggableRect);
         GUILayout.BeginHorizontal();
-
         if (GUILayout.Button("Load")) _audioAsset.Load(_testMp3);
-
+    
         if (GUILayout.Button("Unload")) _audioAsset.Unload();
-
+    
+        if (GUILayout.Button("Create playback"))
+        {
+            var instance = _engine.CreatePlaybackInstance(_audioAsset.GetAudioDecoder());
+            _playbacks.Add(instance);
+        }
+        GUILayout.EndHorizontal();
+    
+        for (var i = _playbacks.Count - 1; i >= 0; i--)
+        {
+            if (_playbacks[i] != null) 
+                continue;
+            
+            _playbacks.RemoveAt(i);
+            for (var j = 0; j < 10; j++)
+                GC.Collect();
+        }
+        for (var i = 0; i < _playbacks.Count; i++)
+            DrawPlaybackControl(_playbacks[i]);
+        
+        GUILayout.BeginHorizontal();
         if (GUILayout.Button("AudioSourceOpen"))
         {
             var decoder = _audioAsset.GetAudioDecoder(frameBufferSize: _audioAsset.SampleRate * 64);
             var clip = decoder.ToAudioClip();
             source.clip = clip;
         }
-
+    
         if (GUILayout.Button("AudioSourceOpen(Read)"))
         {
             var decoder = _audioAsset.GetAudioDecoder();
@@ -100,14 +127,67 @@ public class TestSceneManager : MonoBehaviour
             clip.SetData(samples, 0);
             source.clip = clip;
         }
-
         GUILayout.EndHorizontal();
-
+    
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("AudioSourcePause")) source.Pause();
         if (GUILayout.Button("AudioSourceResume")) source.Play();
         if (GUILayout.Button("AudioSourceClose")) source.clip = null;
         GUILayout.EndHorizontal();
+    }
+
+    private void DrawPlaybackControl(PlaybackInstance playback)
+    {
+        GUILayout.BeginHorizontal();
+        if (playback.IsPlaying)
+        {
+            if (GUILayout.Button("Stop"))
+                playback.Stop();
+            if (GUILayout.Button("Stop +1s"))
+                playback.StopScheduled(CalculateFrame(_engine, 1f));
+        }
+        else
+        {
+            if (GUILayout.Button("Play"))
+                playback.Play();
+            if (GUILayout.Button("Play +1s"))
+            {
+                playback.StopScheduled(ulong.MaxValue);
+                playback.PlayScheduled(CalculateFrame(_engine, 1f));
+            }
+        }
+
+        GUILayout.BeginVertical();
+        var time = playback.Time;
+        var newTime = GUILayout.HorizontalSlider(time, 0f, _audioAsset.Length);
+        if (!Mathf.Approximately(newTime, time))
+            playback.Time = newTime;
+        GUILayout.Label($"{playback.Time:0.00} / {_audioAsset.Length:0.00} s");
+        GUILayout.EndVertical();
+
+        GUILayout.BeginVertical();
+        var volume = playback.Volume;
+        var newVolume = GUILayout.HorizontalSlider(volume, 0f, 1f);
+        if (!Mathf.Approximately(newVolume, volume))
+            playback.Volume = newVolume;
+        GUILayout.Label($"Volume: {playback.Volume:0.00}");
+        GUILayout.EndVertical();
+
+        if (GUILayout.Button("Dispose"))
+        {
+            var index = _playbacks.IndexOf(playback);
+            _playbacks[index] = null;
+        }
+        
+        GUILayout.EndHorizontal();
+    }
+
+    private static ulong CalculateFrame(AudioEngine engine, float afterSeconds)
+    {
+        var nowFrame = engine.TimeInPcmFrames;
+        var playFrame = engine.TimeInPcmFrames + (ulong)(engine.SampleRate * afterSeconds);
+        Debug.Log($"SampleRate: {engine.SampleRate}, nowFrame: {nowFrame}, playFrame: {playFrame}, afterSeconds: {afterSeconds}");
+        return playFrame;
     }
 
     private void OnGUI()
@@ -183,4 +263,11 @@ public class TestSceneManager : MonoBehaviour
         display.texture = await result[1].ToTexture2DAsync();
         Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
     }
+}
+
+[StructLayout(LayoutKind.Explicit)]
+public struct QWQ {
+    [FieldOffset(0)] public int a;
+    [FieldOffset(2)] public bool owo;
+    [FieldOffset(8)] public string qwq;
 }

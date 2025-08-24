@@ -104,6 +104,7 @@ CBINDING_METHOD(float, AudioEngine, GetVolume, CBINDING_TYPED_PTR(AudioEngine) s
 CBINDING_METHOD(void, AudioEngine, SetVolume, CBINDING_TYPED_PTR(AudioEngine) self, float volume);
 CBINDING_METHOD(uint64_t, AudioEngine, GetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
 CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(uint32_t, AudioEngine, GetSampleRate, CBINDING_TYPED_PTR(AudioEngine) self);
 CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlayback,
                 CBINDING_TYPED_PTR(AudioEngine) self, CBINDING_TYPED_PTR(IAudioDecoder) decoder);
 

@@ -260,6 +260,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, 
 
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
+        return nullptr;
     }
 
     return createInstance<IAudioDecoder>((**result.data()).release());
@@ -382,6 +383,10 @@ CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(Audi
     }
 }
 
+CBINDING_METHOD(uint32_t, AudioEngine, GetSampleRate, CBINDING_TYPED_PTR(AudioEngine) self) {
+    return getInstance<AudioEngine>(self)->getSampleRate();
+}
+
 CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlayback,
                 CBINDING_TYPED_PTR(AudioEngine) self, CBINDING_TYPED_PTR(IAudioDecoder) decoder) {
     const auto engine = getInstance<AudioEngine>(self);
@@ -452,7 +457,9 @@ CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsPlaying, CBINDING_TYPED_PT
 
 CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {
     const auto playback = getInstance<PlaybackInstance>(self);
-    playback->playScheduled(frame);
+    if (const auto err = playback->playScheduled(frame); err != err_ok()) {
+        currentErrorCodeStore.set(err);
+    }
 }
 
 CBINDING_METHOD(void, PlaybackInstance, StopScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {

@@ -36,7 +36,7 @@ namespace uniasset {
 
         [[nodiscard]] bool isPlaying() const;
 
-        void playScheduled(ma_uint64 frame);
+        std::error_code playScheduled(ma_uint64 frame);
 
         void stopScheduled(ma_uint64 frame);
 

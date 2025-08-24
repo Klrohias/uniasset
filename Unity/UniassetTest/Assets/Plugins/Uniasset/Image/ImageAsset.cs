@@ -61,6 +61,8 @@ namespace Uniasset.Image
 
         public Task LoadAsync(byte[] data)
         {
+            if (data == null)
+                throw new ArgumentNullException(nameof(data));
             return Task.Factory.StartNew(() =>
             {
                 lock (this)

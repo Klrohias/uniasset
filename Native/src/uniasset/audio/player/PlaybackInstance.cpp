@@ -58,6 +58,7 @@ namespace uniasset {
     }
 
     std::error_code PlaybackInstance::play() {
+        ma_sound_set_stop_time_in_pcm_frames(&sound_, std::numeric_limits<uint64_t>::max());
         const auto result = ma_sound_start(&sound_);
         if (result != MA_SUCCESS)
             return std::error_code{result, ma_category()};
@@ -75,12 +76,20 @@ namespace uniasset {
         return ma_sound_is_playing(&sound_);
     }
 
-    void PlaybackInstance::playScheduled(const ma_uint64 frame) {
+    std::error_code PlaybackInstance::playScheduled(const ma_uint64 frame) {
+        ma_sound_set_stop_time_in_pcm_frames(&sound_, std::numeric_limits<uint64_t>::max());
         ma_sound_set_start_time_in_pcm_frames(&sound_, frame);
+        auto result = ma_sound_start(&sound_);
+        if (result != MA_SUCCESS)
+            return std::error_code{result, ma_category()};
+        return err_ok();
     }
 
     void PlaybackInstance::stopScheduled(const ma_uint64 frame) {
         ma_sound_set_stop_time_in_pcm_frames(&sound_, frame);
+        // https://github.com/mackron/miniaudio/issues/440
+        // Note that the same does not apply for stopping - scheduling a stop without an explicit ma_sound_stop() should work fine.
+        // ma_sound_stop(&sound_);
     }
 
     PlaybackInstance::PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<IAudioDecoder>& decoder) : engine_(engine), source_(std::move(**DecoderDataSource::create(decoder).data())) {

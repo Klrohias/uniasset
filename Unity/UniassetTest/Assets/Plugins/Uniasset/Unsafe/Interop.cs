@@ -150,5 +150,65 @@ namespace Uniasset.Unsafe
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_ExternalAudioDecoder_Create(void* userData, void* getChannelCountFunc, void* getSampleCountFunc, void* getSampleFormatFunc, void* getSampleRateFunc, void* readFunc, void* seekFunc, void* tellFunc);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void* Uniasset_AudioEngine_Create();
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_AudioEngine_Destory(void* obj);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("float")]
+        public static extern float Uniasset_AudioEngine_GetVolume(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_AudioEngine_SetVolume(void* self, float volume);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("uint64_t")]
+        public static extern ulong Uniasset_AudioEngine_GetTimeInPcmFrames(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_AudioEngine_ResetTimeInPcmFrames(void* self);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("uint32_t")]
+        public static extern uint Uniasset_AudioEngine_GetSampleRate(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void* Uniasset_AudioEngine_CreatePlayback(void* self, void* decoder);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_Destory(void* obj);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("float")]
+        public static extern float Uniasset_PlaybackInstance_GetVolume(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_SetVolume(void* self, float volume);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("float")]
+        public static extern float Uniasset_PlaybackInstance_GetTime(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_SetTime(void* self, float time);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_Play(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_Stop(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("uint8_t")]
+        public static extern byte Uniasset_PlaybackInstance_IsPlaying(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_PlayScheduled(void* self, [NativeTypeName("uint64_t")] ulong frame);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_StopScheduled(void* self, [NativeTypeName("uint64_t")] ulong frame);
     }
 }
