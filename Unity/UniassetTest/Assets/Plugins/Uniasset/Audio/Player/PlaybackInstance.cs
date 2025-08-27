@@ -23,7 +23,19 @@ namespace Uniasset.Audio.Player
             set => UnsafeHandler.SetTime(value);
         }
 
+        public ulong FrameTime
+        {
+            get => UnsafeHandler.GetFrameTime();
+            set => UnsafeHandler.SetFrameTime(value);
+        }
+
         public bool IsPlaying => UnsafeHandler.IsPlaying();
+
+        public bool IsLooping
+        {
+            get => UnsafeHandler.IsLooping();
+            set => UnsafeHandler.SetLooping(value);
+        }
 
         public PlaybackInstance(UnsafePlaybackInstance unsafeHandler)
         {

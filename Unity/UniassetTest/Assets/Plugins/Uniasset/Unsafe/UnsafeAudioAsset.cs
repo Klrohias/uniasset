@@ -30,12 +30,8 @@ namespace Uniasset.Unsafe
 
         public void Load(string path)
         {
-            var pathBytes = Encoding.Default.GetBytes(path);
-            fixed (byte* pathPtr = pathBytes)
-            {
-                Interop.Uniasset_AudioAsset_LoadFile(Instance, (sbyte*)pathPtr);
-                NativeException.ThrowIfNeeded();
-            }
+            Interop.Uniasset_AudioAsset_LoadFile(Instance, path);
+            NativeException.ThrowIfNeeded();
         }
 
         public void Unload()

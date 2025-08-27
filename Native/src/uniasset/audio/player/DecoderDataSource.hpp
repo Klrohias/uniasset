@@ -15,6 +15,8 @@ namespace uniasset {
 
         static Result<std::unique_ptr<DecoderDataSource>> create(const std::shared_ptr<IAudioDecoder>& decoder);
 
+        [[nodiscard]] ma_uint64 sampleCount() const;
+
         [[nodiscard]] ma_uint32 sampleRate() const;
 
     private:

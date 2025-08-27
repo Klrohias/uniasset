@@ -114,11 +114,15 @@ CBINDING_METHOD(float, PlaybackInstance, GetVolume, CBINDING_TYPED_PTR(PlaybackI
 CBINDING_METHOD(void, PlaybackInstance, SetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self, float volume);
 CBINDING_METHOD(float, PlaybackInstance, GetTime, CBINDING_TYPED_PTR(PlaybackInstance) self);
 CBINDING_METHOD(void, PlaybackInstance, SetTime, CBINDING_TYPED_PTR(PlaybackInstance) self, float time);
+CBINDING_METHOD(uint64_t, PlaybackInstance, GetFrameTime, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetFrameTime, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
 CBINDING_METHOD(void, PlaybackInstance, Play, CBINDING_TYPED_PTR(PlaybackInstance) self);
 CBINDING_METHOD(void, PlaybackInstance, Stop, CBINDING_TYPED_PTR(PlaybackInstance) self);
 CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsPlaying, CBINDING_TYPED_PTR(PlaybackInstance) self);
 CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
 CBINDING_METHOD(void, PlaybackInstance, StopScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
+CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsLooping, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetLooping, CBINDING_TYPED_PTR(PlaybackInstance) self, CBINDING_BOOLEAN loop);
 
 #ifdef __cplusplus
 }

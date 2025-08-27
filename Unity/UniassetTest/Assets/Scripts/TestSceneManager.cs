@@ -264,10 +264,3 @@ public class TestSceneManager : MonoBehaviour
         Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
     }
 }
-
-[StructLayout(LayoutKind.Explicit)]
-public struct QWQ {
-    [FieldOffset(0)] public int a;
-    [FieldOffset(2)] public bool owo;
-    [FieldOffset(8)] public string qwq;
-}

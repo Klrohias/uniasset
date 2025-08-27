@@ -26,9 +26,13 @@ namespace uniasset {
 
         void setVolume(float volume);
 
-        [[nodiscard]] Result<float> time() const;
+        [[nodiscard]] float time() const;
 
         std::error_code setTime(float time);
+
+        [[nodiscard]] ma_uint64 frameTime() const;
+
+        std::error_code setFrameTime(ma_uint64 frame);
 
         std::error_code play();
 
@@ -39,6 +43,10 @@ namespace uniasset {
         std::error_code playScheduled(ma_uint64 frame);
 
         void stopScheduled(ma_uint64 frame);
+
+        [[nodiscard]] bool isLooping() const;
+
+        void setLooping(bool loop);
 
     private:
         explicit PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<IAudioDecoder>& decoder);

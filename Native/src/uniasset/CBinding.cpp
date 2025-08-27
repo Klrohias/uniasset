@@ -30,6 +30,11 @@ namespace internal {
             error_ = std::string(instance.category().name()) + ": " + instance.message();;
         }
 
+        void clear() {
+            error_ = {};
+            errorCodeInstance_.reset();
+        }
+
         bool hasError() {
             if (!errorCodeInstance_.has_value())
                 return false;
@@ -76,10 +81,12 @@ UNIASSET_API CBINDING_BOOLEAN Uniasset_HasError() {
 // ImageAsset
 
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Create) {
+    currentErrorCodeStore.clear();
     return createInstance<ImageAsset>(new ImageAsset);
 }
 
 CBINDING_METHOD(void, ImageAsset, Destory, CBINDING_TYPED_PTR(ImageAsset) obj) {
+    currentErrorCodeStore.clear();
     destroyInstance<ImageAsset>(obj);
 }
 
@@ -99,6 +106,8 @@ CBINDING_METHOD(void, ImageAsset, Load, CBINDING_TYPED_PTR(ImageAsset) self, uin
 
 CBINDING_METHOD(int32_t, ImageAsset, GetWidth, CBINDING_TYPED_PTR(ImageAsset) self) {
     auto result = getInstance<ImageAsset>(self)->getWidth();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -109,6 +118,8 @@ CBINDING_METHOD(int32_t, ImageAsset, GetWidth, CBINDING_TYPED_PTR(ImageAsset) se
 
 CBINDING_METHOD(int32_t, ImageAsset, GetHeight, CBINDING_TYPED_PTR(ImageAsset) self) {
     auto result = getInstance<ImageAsset>(self)->getHeight();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -119,6 +130,8 @@ CBINDING_METHOD(int32_t, ImageAsset, GetHeight, CBINDING_TYPED_PTR(ImageAsset) s
 
 CBINDING_METHOD(int32_t, ImageAsset, GetChannelCount, CBINDING_TYPED_PTR(ImageAsset) self) {
     auto result = getInstance<ImageAsset>(self)->getChannelCount();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -136,6 +149,7 @@ CBINDING_METHOD(void, ImageAsset, CropMultiple, CBINDING_TYPED_PTR(ImageAsset) s
                 void** output) {
     auto result = getInstance<ImageAsset>(self)->cropMultiple(std::span(reinterpret_cast<CropOptions*>(items), count));
 
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return;
@@ -164,19 +178,24 @@ CBINDING_METHOD(void, ImageAsset, CopyTo, CBINDING_TYPED_PTR(ImageAsset) self, v
 
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Clone, CBINDING_TYPED_PTR(ImageAsset) self) {
     auto result = getInstance<ImageAsset>(self)->clone();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return nullptr;
     }
+
     return createInstance(**result.data());
 }
 
 // AudioAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create) {
+    currentErrorCodeStore.clear();
     return createInstance<AudioAsset>(new AudioAsset);
 }
 
 CBINDING_METHOD(void, AudioAsset, Destory, CBINDING_TYPED_PTR(AudioAsset) obj) {
+    currentErrorCodeStore.clear();
     destroyInstance<AudioAsset>(obj);
 }
 
@@ -189,11 +208,14 @@ CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uin
 }
 
 CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self) {
+    currentErrorCodeStore.clear();
     getInstance<AudioAsset>(self)->unload();
 }
 
 CBINDING_METHOD(uint32_t, AudioAsset, GetChannelCount, CBINDING_TYPED_PTR(AudioAsset) self) {
     auto result = getInstance<AudioAsset>(self)->getChannelCount();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -204,6 +226,8 @@ CBINDING_METHOD(uint32_t, AudioAsset, GetChannelCount, CBINDING_TYPED_PTR(AudioA
 
 CBINDING_METHOD(uint64_t, AudioAsset, GetSampleCount, CBINDING_TYPED_PTR(AudioAsset) self) {
     auto result = getInstance<AudioAsset>(self)->getSampleCount();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -214,6 +238,8 @@ CBINDING_METHOD(uint64_t, AudioAsset, GetSampleCount, CBINDING_TYPED_PTR(AudioAs
 
 CBINDING_METHOD(uint32_t, AudioAsset, GetSampleRate, CBINDING_TYPED_PTR(AudioAsset) self) {
     auto result = getInstance<AudioAsset>(self)->getSampleRate();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -224,6 +250,8 @@ CBINDING_METHOD(uint32_t, AudioAsset, GetSampleRate, CBINDING_TYPED_PTR(AudioAss
 
 CBINDING_METHOD(float, AudioAsset, GetLength, CBINDING_TYPED_PTR(AudioAsset) self) {
     auto result = getInstance<AudioAsset>(self)->getLength();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
@@ -233,11 +261,14 @@ CBINDING_METHOD(float, AudioAsset, GetLength, CBINDING_TYPED_PTR(AudioAsset) sel
 }
 
 CBINDING_METHOD(uint8_t, AudioAsset, GetLoadType, CBINDING_TYPED_PTR(AudioAsset) self) {
+    currentErrorCodeStore.clear();
     return getInstance<AudioAsset>(self)->getLoadType();
 }
 
 CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetPath, CBINDING_TYPED_PTR(AudioAsset) self) {
     auto result = getInstance<AudioAsset>(self)->getPath();
+
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return nullptr;
@@ -247,10 +278,12 @@ CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetPath, CBINDING_TYPED_PTR(AudioA
 }
 
 CBINDING_METHOD(void*, AudioAsset, GetData, CBINDING_TYPED_PTR(AudioAsset) self) {
+    currentErrorCodeStore.clear();
     return getInstance<AudioAsset>(self)->getData().get();
 }
 
 CBINDING_METHOD(uint64_t, AudioAsset, GetDataLength, CBINDING_TYPED_PTR(AudioAsset) self) {
+    currentErrorCodeStore.clear();
     return getInstance<AudioAsset>(self)->getDataLength();
 }
 
@@ -258,6 +291,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, 
                 uint8_t format, int64_t frameBufferSize) {
     auto result = getInstance<AudioAsset>(self)->getAudioDecoder(static_cast<SampleFormat>(format), frameBufferSize);
 
+    currentErrorCodeStore.clear();
     if (auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return nullptr;
@@ -268,41 +302,50 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), AudioAsset, GetAudioDecoder, 
 
 // IAudioDecoder
 CBINDING_METHOD(void, IAudioDecoder, Destory, CBINDING_TYPED_PTR(IAudioDecoder) obj) {
+    currentErrorCodeStore.clear();
     destroyInstance<IAudioDecoder>(obj);
 }
 
 CBINDING_METHOD(uint8_t, IAudioDecoder, GetSampleFormat, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->getSampleFormat();
 }
 
 CBINDING_METHOD(uint32_t, IAudioDecoder, GetChannelCount, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->getChannelCount();
 }
 
 CBINDING_METHOD(uint64_t, IAudioDecoder, GetSampleCount, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->getSampleCount();
 }
 
 CBINDING_METHOD(uint32_t, IAudioDecoder, GetSampleRate, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->getSampleRate();
 }
 
 CBINDING_METHOD(uint32_t, IAudioDecoder, Read, CBINDING_TYPED_PTR(IAudioDecoder) self, void* buffer,
                 uint32_t count) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->read(buffer, count);
 }
 
 CBINDING_METHOD(CBINDING_BOOLEAN, IAudioDecoder, Seek, CBINDING_TYPED_PTR(IAudioDecoder) self, int64_t pos) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->seek(pos);
 }
 
 CBINDING_METHOD(int64_t, IAudioDecoder, Tell, CBINDING_TYPED_PTR(IAudioDecoder) self) {
+    currentErrorCodeStore.clear();
     return getInstance<IAudioDecoder>(self)->tell();
 }
 
 // FlacDecoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
                 uint8_t format) {
+    currentErrorCodeStore.clear();
     return createInstance<IAudioDecoder>(new FlacDecoder(getInstance<AudioAsset>(asset),
                                                          static_cast<SampleFormat>(format)));
 }
@@ -310,6 +353,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), FlacDecoder, Create, CBINDING
 // OggDecoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
                 uint8_t format) {
+    currentErrorCodeStore.clear();
     return createInstance<IAudioDecoder>(new OggDecoder(getInstance<AudioAsset>(asset),
                                                         static_cast<SampleFormat>(format)));
 }
@@ -317,6 +361,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), OggDecoder, Create, CBINDING_
 // WavDecoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
                 uint8_t format) {
+    currentErrorCodeStore.clear();
     return createInstance<IAudioDecoder>(new WavDecoder(getInstance<AudioAsset>(asset),
                                                         static_cast<SampleFormat>(format)));
 }
@@ -324,6 +369,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), WavDecoder, Create, CBINDING_
 // Mp3Decoder
 CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), Mp3Decoder, Create, CBINDING_TYPED_PTR(AudioAsset) asset,
                 uint8_t format) {
+    currentErrorCodeStore.clear();
     return createInstance<IAudioDecoder>(new Mp3Decoder(getInstance<AudioAsset>(asset),
                                                         static_cast<SampleFormat>(format)));
 }
@@ -337,6 +383,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
                 void* readFunc,
                 void* seekFunc,
                 void* tellFunc) {
+    currentErrorCodeStore.clear();
     return createInstance<IAudioDecoder>(
             new ExternalAudioDecoder(userData,
                                      reinterpret_cast<ExternalAudioDecoder::GetChannelCountFunc>(getChannelCountFunc),
@@ -350,6 +397,8 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
 
 CBINDING_METHOD(CBINDING_TYPED_PTR(AudioEngine), AudioEngine, Create) {
     auto result = AudioEngine::create();
+
+    currentErrorCodeStore.clear();
     if (const auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return nullptr;
@@ -359,31 +408,30 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(AudioEngine), AudioEngine, Create) {
 }
 
 CBINDING_METHOD(void, AudioEngine, Destory, CBINDING_TYPED_PTR(AudioEngine) obj) {
+    currentErrorCodeStore.clear();
     destroyInstance<AudioEngine>(obj);
 }
 
 CBINDING_METHOD(float, AudioEngine, GetVolume, CBINDING_TYPED_PTR(AudioEngine) self) {
+    currentErrorCodeStore.clear();
     return getInstance<AudioEngine>(self)->volume();
 }
 
 CBINDING_METHOD(void, AudioEngine, SetVolume, CBINDING_TYPED_PTR(AudioEngine) self, float volume) {
-    auto err = getInstance<AudioEngine>(self)->setVolume(volume);
-    if (err != err_ok()) {
-        currentErrorCodeStore.set(err);
-    }
+    currentErrorCodeStore.set(getInstance<AudioEngine>(self)->setVolume(volume));
 }
 
 CBINDING_METHOD(uint64_t, AudioEngine, GetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self) {
+    currentErrorCodeStore.clear();
     return getInstance<AudioEngine>(self)->getTimeInPcmFrames();
 }
 
 CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self) {
-    if (const auto err = getInstance<AudioEngine>(self)->resetTimeInPcmFrames(); err != err_ok()) {
-        currentErrorCodeStore.set(err);
-    }
+    currentErrorCodeStore.set(getInstance<AudioEngine>(self)->resetTimeInPcmFrames());
 }
 
 CBINDING_METHOD(uint32_t, AudioEngine, GetSampleRate, CBINDING_TYPED_PTR(AudioEngine) self) {
+    currentErrorCodeStore.clear();
     return getInstance<AudioEngine>(self)->getSampleRate();
 }
 
@@ -393,6 +441,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlaybac
     const auto dec = getInstance<IAudioDecoder>(decoder);
     auto playback = engine->createPlayback(dec);
 
+    currentErrorCodeStore.clear();
     if (const auto err = playback.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return nullptr;
@@ -401,58 +450,66 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlaybac
 }
 
 CBINDING_METHOD(void, PlaybackInstance, Destory, CBINDING_TYPED_PTR(PlaybackInstance) obj) {
+    currentErrorCodeStore.clear();
     destroyInstance<PlaybackInstance>(obj);
 }
 
 CBINDING_METHOD(float, PlaybackInstance, GetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self) {
     const auto playback = getInstance<PlaybackInstance>(self);
     auto result = playback->volume();
+
+    currentErrorCodeStore.clear();
     if (const auto err = result.error(); err.has_value()) {
         currentErrorCodeStore.set(**err);
         return 0;
     }
+
     return **result.data();
 }
 
 CBINDING_METHOD(void, PlaybackInstance, SetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self, float volume) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    playback->setVolume(volume);
+    currentErrorCodeStore.clear();
+    getInstance<PlaybackInstance>(self)->setVolume(volume);
 }
 
 CBINDING_METHOD(float, PlaybackInstance, GetTime, CBINDING_TYPED_PTR(PlaybackInstance) self) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    auto result = playback->time();
-    if (const auto err = result.error(); err.has_value()) {
-        currentErrorCodeStore.set(**err);
-        return 0;
-    }
-    return **result.data();
+    currentErrorCodeStore.clear();
+    return getInstance<PlaybackInstance>(self)->time();
 }
 
 CBINDING_METHOD(void, PlaybackInstance, SetTime, CBINDING_TYPED_PTR(PlaybackInstance) self, float time) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    if (const auto err = playback->setTime(time); err != err_ok()) {
+    currentErrorCodeStore.set(getInstance<PlaybackInstance>(self)->setTime(time));
+}
+
+CBINDING_METHOD(uint64_t, PlaybackInstance, GetFrameTime, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    currentErrorCodeStore.clear();
+    return getInstance<PlaybackInstance>(self)->frameTime();
+}
+
+CBINDING_METHOD(void, PlaybackInstance, SetFrameTime, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {
+    currentErrorCodeStore.clear();
+    if (const auto err = getInstance<PlaybackInstance>(self)->setFrameTime(frame); err != err_ok()) {
         currentErrorCodeStore.set(err);
     }
 }
 
 CBINDING_METHOD(void, PlaybackInstance, Play, CBINDING_TYPED_PTR(PlaybackInstance) self) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    if (const auto err = playback->play(); err != err_ok()) {
+    currentErrorCodeStore.clear();
+    if (const auto err = getInstance<PlaybackInstance>(self)->play(); err != err_ok()) {
         currentErrorCodeStore.set(err);
     }
 }
 
 CBINDING_METHOD(void, PlaybackInstance, Stop, CBINDING_TYPED_PTR(PlaybackInstance) self) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    if (const auto err = playback->stop(); err != err_ok()) {
+    currentErrorCodeStore.clear();
+    if (const auto err = getInstance<PlaybackInstance>(self)->stop(); err != err_ok()) {
         currentErrorCodeStore.set(err);
     }
 }
 
 CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsPlaying, CBINDING_TYPED_PTR(PlaybackInstance) self) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    return playback->isPlaying();
+    currentErrorCodeStore.clear();
+    return getInstance<PlaybackInstance>(self)->isPlaying();
 }
 
 CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {
@@ -463,6 +520,16 @@ CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(Playba
 }
 
 CBINDING_METHOD(void, PlaybackInstance, StopScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame) {
-    const auto playback = getInstance<PlaybackInstance>(self);
-    playback->stopScheduled(frame);
+    currentErrorCodeStore.clear();
+    getInstance<PlaybackInstance>(self)->stopScheduled(frame);
+}
+
+CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsLooping, CBINDING_TYPED_PTR(PlaybackInstance) self) {
+    currentErrorCodeStore.clear();
+    return getInstance<PlaybackInstance>(self)->isLooping();
+}
+
+CBINDING_METHOD(void, PlaybackInstance, SetLooping, CBINDING_TYPED_PTR(PlaybackInstance) self, CBINDING_BOOLEAN loop) {
+    currentErrorCodeStore.clear();
+    getInstance<PlaybackInstance>(self)->setLooping(loop);
 }

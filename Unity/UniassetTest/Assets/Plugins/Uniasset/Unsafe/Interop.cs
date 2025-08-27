@@ -18,8 +18,8 @@ namespace Uniasset.Unsafe
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_ImageAsset_Destory(void* obj);
 
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_LoadFile(void* self, [NativeTypeName("const char *")] sbyte* path);
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
+        public static extern void Uniasset_ImageAsset_LoadFile(void* self, [NativeTypeName("const char *")] string path);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_ImageAsset_LoadPixels(void* self, [NativeTypeName("uint8_t *")] byte* pixels, [NativeTypeName("uint64_t")] ulong size, [NativeTypeName("int32_t")] int width, [NativeTypeName("int32_t")] int height, [NativeTypeName("int32_t")] int channelCount);
@@ -63,8 +63,8 @@ namespace Uniasset.Unsafe
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_AudioAsset_Destory(void* obj);
 
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] sbyte* path);
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
+        public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] string path);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_AudioAsset_Load(void* self, [NativeTypeName("uint8_t *")] byte* data, [NativeTypeName("uint64_t")] ulong size);
@@ -196,6 +196,13 @@ namespace Uniasset.Unsafe
         public static extern void Uniasset_PlaybackInstance_SetTime(void* self, float time);
         
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("uint64_t")]
+        public static extern ulong Uniasset_PlaybackInstance_GetFrameTime(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_SetFrameTime(void* self, [NativeTypeName("uint64_t")] ulong frame);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_PlaybackInstance_Play(void* self);
         
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
@@ -210,5 +217,12 @@ namespace Uniasset.Unsafe
         
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_PlaybackInstance_StopScheduled(void* self, [NativeTypeName("uint64_t")] ulong frame);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("uint8_t")]
+        public static extern byte Uniasset_PlaybackInstance_IsLooping(void* self);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_PlaybackInstance_SetLooping(void* self, byte looping);
     }
 }

@@ -45,14 +45,25 @@ namespace uniasset {
         ma_sound_set_volume(&sound_, volume);
     }
 
-    Result<float> PlaybackInstance::time() const {
+    float PlaybackInstance::time() const {
+        if (ma_sound_at_end(&sound_)) {
+            return static_cast<float>(source_->sampleCount()) / static_cast<float>(source_->sampleRate());
+        }
         return static_cast<float>(ma_sound_get_time_in_milliseconds(&sound_)) / 1000.0f;
     }
 
     std::error_code PlaybackInstance::setTime(const float time) {
         const auto pcm_frame = static_cast<ma_uint64>(time * static_cast<float>(source_->sampleRate()));
-        const auto result = ma_sound_seek_to_pcm_frame(&sound_, pcm_frame);
-        if (result != MA_SUCCESS)
+        return setFrameTime(pcm_frame);
+
+    }
+
+    ma_uint64 PlaybackInstance::frameTime() const {
+        return ma_sound_get_time_in_pcm_frames(&sound_);
+    }
+
+    std::error_code PlaybackInstance::setFrameTime(const ma_uint64 frame) {
+        if (const auto result = ma_sound_seek_to_pcm_frame(&sound_, frame); result != MA_SUCCESS)
             return std::error_code{result, ma_category()};
         return err_ok();
     }
@@ -73,6 +84,9 @@ namespace uniasset {
     }
 
     bool PlaybackInstance::isPlaying() const {
+        if (ma_sound_at_end(&sound_)) {
+            return false;
+        }
         return ma_sound_is_playing(&sound_);
     }
 
@@ -90,6 +104,14 @@ namespace uniasset {
         // https://github.com/mackron/miniaudio/issues/440
         // Note that the same does not apply for stopping - scheduling a stop without an explicit ma_sound_stop() should work fine.
         // ma_sound_stop(&sound_);
+    }
+
+    bool PlaybackInstance::isLooping() const {
+        return ma_sound_is_looping(&sound_) != 0;
+    }
+
+    void PlaybackInstance::setLooping(const bool loop) {
+        ma_sound_set_looping(&sound_, loop ? MA_TRUE : MA_FALSE);
     }
 
     PlaybackInstance::PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<IAudioDecoder>& decoder) : engine_(engine), source_(std::move(**DecoderDataSource::create(decoder).data())) {

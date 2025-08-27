@@ -41,6 +41,19 @@ namespace Uniasset.Unsafe
             Interop.Uniasset_PlaybackInstance_SetTime(Instance, time);
             NativeException.ThrowIfNeeded();
         }
+
+        public ulong GetFrameTime()
+        {
+            var frame = Interop.Uniasset_PlaybackInstance_GetFrameTime(Instance);
+            NativeException.ThrowIfNeeded();
+            return frame;
+        }
+
+        public void SetFrameTime(ulong frame)
+        {
+            Interop.Uniasset_PlaybackInstance_SetFrameTime(Instance, frame);
+            NativeException.ThrowIfNeeded();
+        }
         
         public void Play()
         {
@@ -70,6 +83,19 @@ namespace Uniasset.Unsafe
         public void StopScheduled(ulong frame)
         {
             Interop.Uniasset_PlaybackInstance_StopScheduled(Instance, frame);
+            NativeException.ThrowIfNeeded();
+        }
+
+        public bool IsLooping()
+        {
+            var isLooping = Interop.Uniasset_PlaybackInstance_IsLooping(Instance);
+            NativeException.ThrowIfNeeded();
+            return Convert.ToBoolean(isLooping);
+        }
+        
+        public void SetLooping(bool looping)
+        {
+            Interop.Uniasset_PlaybackInstance_SetLooping(Instance, Convert.ToByte(looping));
             NativeException.ThrowIfNeeded();
         }
     }
