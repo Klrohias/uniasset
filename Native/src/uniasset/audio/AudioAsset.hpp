@@ -52,6 +52,8 @@ namespace uniasset {
     public:
         explicit AudioAsset();
 
+        std::error_code load(std::unique_ptr<uint8_t[]>&& data, size_t size);
+
         std::error_code load(const std::span<uint8_t>& data);
 
         std::error_code load(const std::string_view& path);

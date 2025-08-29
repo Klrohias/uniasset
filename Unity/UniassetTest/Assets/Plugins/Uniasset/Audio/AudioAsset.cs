@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Buffers;
+using System.Runtime.InteropServices;
+
 using Uniasset.Unsafe;
 
 namespace Uniasset.Audio
@@ -21,6 +24,22 @@ namespace Uniasset.Audio
         public void Load(Span<byte> data)
         {
             UnsafeHandle.Load(data.ToArray());
+        }
+
+        public void LoadAdopt(NativeMemoryManager manager)
+        {
+            if (manager == null)
+                throw new ArgumentNullException(nameof(manager));
+            
+            if (!manager.Release(out var addr, out var length))
+                throw new ObjectDisposedException("NativeMemoryManager is invalid");
+            
+            UnsafeHandle.LoadAdopt(addr, (ulong)length);
+        }
+
+        public void LoadAdoptUnsafe(uint addr, int size)
+        {
+            UnsafeHandle.LoadAdopt((nint)addr, (ulong)size);
         }
 
         public void Unload()

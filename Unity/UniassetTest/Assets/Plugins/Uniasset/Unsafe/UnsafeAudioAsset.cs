@@ -27,6 +27,12 @@ namespace Uniasset.Unsafe
                 NativeException.ThrowIfNeeded();
             }
         }
+        
+        public void LoadAdopt(nint data, ulong size)
+        {
+            Interop.Uniasset_AudioAsset_LoadAdopt(Instance, (byte*)data, size);
+            NativeException.ThrowIfNeeded();
+        }
 
         public void Load(string path)
         {

@@ -5,6 +5,7 @@
 #pragma once
 #ifndef UNIASSET_TEMPLATES_HPP
 #define UNIASSET_TEMPLATES_HPP
+#include <cstdlib>
 
 namespace uniasset {
     // from https://stackoverflow.com/questions/13816850/is-it-possible-to-develop-static-for-loop-in-c
@@ -33,6 +34,12 @@ namespace uniasset {
     template<typename T>
     inline void default_array_deleter(const T* buffer) {
         delete[] buffer;
+    }
+
+    template<typename T>
+    inline void default_free_deleter(const T* buffer) {
+        static_assert(std::is_trivially_destructible<T>::value, "Objects with non-trivial destructors should not be freed using `free`.");
+        free(reinterpret_cast<void*>(const_cast<T*>(buffer)));
     }
 
     template<typename NumType>

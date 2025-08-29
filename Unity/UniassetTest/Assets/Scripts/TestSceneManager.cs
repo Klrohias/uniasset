@@ -6,6 +6,8 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using Uniasset.Audio;
 using Uniasset.Audio.Player;
 using Uniasset.Image;
+using Uniasset.Unsafe;
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -86,7 +88,10 @@ public class TestSceneManager : MonoBehaviour
     {
         GUI.DragWindow(_draggableRect);
         GUILayout.BeginHorizontal();
+        
         if (GUILayout.Button("Load")) _audioAsset.Load(_testMp3);
+
+        if (GUILayout.Button("Load Adopt")) LoadAudioAdopt();
     
         if (GUILayout.Button("Unload")) _audioAsset.Unload();
     
@@ -262,5 +267,12 @@ public class TestSceneManager : MonoBehaviour
         s.Restart();
         display.texture = await result[1].ToTexture2DAsync();
         Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
+    }
+
+    private void LoadAudioAdopt()
+    {
+        var mem = NativeMemoryManager.Allocate(_testMp3.Length);
+        _testMp3.AsSpan().CopyTo(mem.GetSpan());
+        _audioAsset.LoadAdopt(mem);
     }
 }

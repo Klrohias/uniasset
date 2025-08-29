@@ -17,6 +17,22 @@
 #include "BufferedAudioDecoder.hpp"
 
 namespace uniasset {
+    static bool tryIdentifyFormat(uint8_t* ptr, size_t length, DataFormat& outFormat) {
+        if (isMp3FileData(ptr, length)) {
+            outFormat = DataFormat_Mp3;
+        } else if (isFlacFileData(ptr, length)) {
+            outFormat = DataFormat_Flac;
+        } else if (isOggFileData(ptr, length)) {
+            outFormat = DataFormat_Ogg;
+        } else if (isWavFileData(ptr, length)) {
+            outFormat = DataFormat_Wav;
+        } else {
+            outFormat = DataFormat_Pcm;
+            return false;
+        }
+        return true;
+    }
+
     Result<std::unique_ptr<IAudioDecoder>> AudioAsset::getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize) {
         if (type_ == LoadType_None) {
             return std::error_code{kAudioNotLoadFail, uniasset_category()};
@@ -45,26 +61,34 @@ namespace uniasset {
         return std::unique_ptr<IAudioDecoder>(new BufferedAudioDecoder{sharedRawDecoder, frameBufferSize});
     }
 
+    std::error_code AudioAsset::load(std::unique_ptr<uint8_t[]>&& data, size_t size) {
+        if (!tryIdentifyFormat(data.get(), size, format_)) {
+            return {kNotSupportedFail, uniasset_category()};
+        }
+
+        type_ = LoadType_Memory;
+        data_ = {data.release(), default_free_deleter<uint8_t>};
+        dataLength_ = size;
+
+        if (const auto err = loadMetadata(); err.value()) {
+            return err;
+        }
+
+        return err_ok();
+    }
+
     std::error_code AudioAsset::load(const std::span<uint8_t>& data) {
         auto content = data.data();
         auto len = data.size();
 
-        if (isMp3FileData(data.data(), len)) {
-            format_ = DataFormat_Mp3;
-        } else if (isFlacFileData(data.data(), len)) {
-            format_ = DataFormat_Flac;
-        } else if (isOggFileData(data.data(), len)) {
-            format_ = DataFormat_Ogg;
-        } else if (isWavFileData(data.data(), len)) {
-            format_ = DataFormat_Wav;
-        } else {
+        if (!tryIdentifyFormat(content, len, format_)) {
             return {kNotSupportedFail, uniasset_category()};
         }
 
         type_ = LoadType_Memory;
         data_ = {new uint8_t[len], default_array_deleter<uint8_t>};
         dataLength_ = len;
-        memcpy(data_.get(), data.data(), len);
+        memcpy(data_.get(), content, len);
 
         if (auto err = loadMetadata(); err.value()) {
             return err;
@@ -99,15 +123,7 @@ namespace uniasset {
         }
 
         // Check magic number
-        if (isMp3FileData(buffer, readSize)) {
-            format_ = DataFormat_Mp3;
-        } else if (isFlacFileData(buffer, readSize)) {
-            format_ = DataFormat_Flac;
-        } else if (isOggFileData(buffer, readSize)) {
-            format_ = DataFormat_Ogg;
-        } else if (isWavFileData(buffer, readSize)) {
-            format_ = DataFormat_Wav;
-        } else {
+        if (!tryIdentifyFormat(buffer, readSize, format_)) {
             return {kNotSupportedFail, uniasset_category()};
         }
 

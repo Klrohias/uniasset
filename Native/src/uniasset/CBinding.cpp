@@ -207,6 +207,10 @@ CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uin
     currentErrorCodeStore.set(getInstance<AudioAsset>(self)->load(std::span<uint8_t>(data, size)));
 }
 
+CBINDING_METHOD(void, AudioAsset, LoadAdopt, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
+    currentErrorCodeStore.set(getInstance<AudioAsset>(self)->load(std::unique_ptr<uint8_t[]>(data), size));
+}
+
 CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self) {
     currentErrorCodeStore.clear();
     getInstance<AudioAsset>(self)->unload();
