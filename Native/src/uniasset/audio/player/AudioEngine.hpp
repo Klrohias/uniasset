@@ -27,7 +27,7 @@ namespace uniasset {
 
         void uninit();
 
-        Result<ma_engine*> engine();
+        ma_engine* engine();
 
         float volume() const;
 

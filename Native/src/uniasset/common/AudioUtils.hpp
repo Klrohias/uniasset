@@ -34,16 +34,6 @@ namespace uniasset {
         }
         return ma_format_u8;
     }
-
-    inline SampleFormat toSampleFormat(ma_format format) {
-        switch (format) {
-        case ma_format_f32:
-            return SampleFormat_Float;
-        case ma_format_s16:
-            return SampleFormat_Int16;
-        }
-        // IDK how to handle other case
-    }
 }
 
 #endif // UNIASSET_AUDIOUTILS_HPP

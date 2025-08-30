@@ -26,7 +26,7 @@ namespace uniasset {
 
         void setVolume(float volume);
 
-        [[nodiscard]] float time() const;
+        [[nodiscard]] float time();
 
         std::error_code setTime(float time);
 
@@ -56,6 +56,7 @@ namespace uniasset {
         std::shared_ptr<AudioEngine> engine_;
         std::shared_ptr<DecoderDataSource> source_;
         ma_sound sound_ {};
+        float length_ {};
     };
 } // uniasset
 

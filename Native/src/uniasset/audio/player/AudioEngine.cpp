@@ -3,7 +3,7 @@
 #include "uniasset/common/Errors.hpp"
 
 namespace uniasset {
-    Result<ma_engine*> AudioEngine::engine() {
+    ma_engine* AudioEngine::engine() {
         return &engine_;
     }
 

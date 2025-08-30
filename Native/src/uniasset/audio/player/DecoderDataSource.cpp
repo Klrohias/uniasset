@@ -22,12 +22,16 @@ namespace uniasset {
         return std::unique_ptr<DecoderDataSource>(data_source);
     }
 
-    ma_uint64 DecoderDataSource::sampleCount() const {
+    ma_uint64 DecoderDataSource::getSampleCount() const {
         return decoder_->getSampleCount();
     }
 
-    ma_uint32 DecoderDataSource::sampleRate() const {
+    ma_uint32 DecoderDataSource::getSampleRate() const {
         return decoder_->getSampleRate();
+    }
+
+    ma_uint32 DecoderDataSource::getChannelCount() const {
+        return decoder_->getChannelCount();
     }
 
     DecoderDataSource::DecoderDataSource(const std::shared_ptr<IAudioDecoder>& decoder) : decoder_(decoder) {

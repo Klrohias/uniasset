@@ -15,9 +15,11 @@ namespace uniasset {
 
         static Result<std::unique_ptr<DecoderDataSource>> create(const std::shared_ptr<IAudioDecoder>& decoder);
 
-        [[nodiscard]] ma_uint64 sampleCount() const;
+        [[nodiscard]] ma_uint64 getSampleCount() const;
 
-        [[nodiscard]] ma_uint32 sampleRate() const;
+        [[nodiscard]] ma_uint32 getSampleRate() const;
+
+        [[nodiscard]] ma_uint32 getChannelCount() const;
 
     private:
         std::error_code init();

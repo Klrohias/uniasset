@@ -29,7 +29,7 @@ namespace uniasset {
     }
 
     std::error_code PlaybackInstance::init(const uint32_t flags) {
-        const auto result = ma_sound_init_from_data_source(**engine_->engine().data(), source_.get(), flags, nullptr, &sound_);
+        const auto result = ma_sound_init_from_data_source(engine_->engine(), source_.get(), flags, nullptr, &sound_);
         return result == MA_SUCCESS ? err_ok() : std::error_code{result, ma_category()};
     }
 
@@ -45,17 +45,24 @@ namespace uniasset {
         ma_sound_set_volume(&sound_, volume);
     }
 
-    float PlaybackInstance::time() const {
+    float PlaybackInstance::time() {
         if (ma_sound_at_end(&sound_)) {
-            return static_cast<float>(source_->sampleCount()) / static_cast<float>(source_->sampleRate());
+            return length_;
         }
-        return static_cast<float>(ma_sound_get_time_in_milliseconds(&sound_)) / 1000.0f;
+
+        float time = 0.0f;
+        const auto result = ma_sound_get_cursor_in_seconds(&sound_, &time);
+        if (result != MA_SUCCESS) {
+            return 0.0f;
+        }
+        return time;
     }
 
     std::error_code PlaybackInstance::setTime(const float time) {
-        const auto pcm_frame = static_cast<ma_uint64>(time * static_cast<float>(source_->sampleRate()));
-        return setFrameTime(pcm_frame);
-
+        const auto result = ma_sound_seek_to_second(&sound_, time);
+        if (result != MA_SUCCESS)
+            return std::error_code{result, ma_category()};
+        return err_ok();
     }
 
     ma_uint64 PlaybackInstance::frameTime() const {
@@ -115,8 +122,10 @@ namespace uniasset {
     }
 
     PlaybackInstance::PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<IAudioDecoder>& decoder) : engine_(engine), source_(std::move(**DecoderDataSource::create(decoder).data())) {
+        length_ = static_cast<float>(decoder->getSampleCount() / decoder->getChannelCount()) / static_cast<float>(decoder->getSampleRate());
     }
 
     PlaybackInstance::PlaybackInstance(const std::shared_ptr<AudioEngine>& engine, const std::shared_ptr<DecoderDataSource>& source) : engine_(engine), source_(source) {
+        length_ = static_cast<float>(source->getSampleCount() / source->getChannelCount()) / static_cast<float>(source->getSampleRate());
     }
 } // uniasset
