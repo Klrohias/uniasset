@@ -17,10 +17,12 @@ libtool -static -o $OUTPUT_DIR/libuniasset_merge.a $OUTPUT_DIR/libuniasset_raw.a
   $BINARY_DIR/vcpkg_installed/$TRIPLET/lib/libwebpdecoder.a
 
 
-
 # detect symbols
-nm -j $OUTPUT_DIR/libuniasset_raw.a | grep "_Uniasset_" > $SCRIPT_DIR/export-symbols.txt
-echo "[iOS-build] Export symbols"
+echo "[iOS-build] Generate export symbols"
+nm $OUTPUT_DIR/libuniasset_raw.a \
+  | awk '/ [TDS] _Uniasset_/ {print $3}' \
+  > $SCRIPT_DIR/export-symbols.txt
+
 cat $SCRIPT_DIR/export-symbols.txt
 
 # link objects
