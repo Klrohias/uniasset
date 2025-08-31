@@ -16,6 +16,7 @@
 #include "WavDecoder.hpp"
 #include "OggDecoder.hpp"
 #include "BufferedAudioDecoder.hpp"
+#include "uniasset/common/Templates.hpp"
 
 namespace uniasset {
     static bool tryIdentifyFormat(uint8_t* ptr, size_t length, DataFormat& outFormat) {
