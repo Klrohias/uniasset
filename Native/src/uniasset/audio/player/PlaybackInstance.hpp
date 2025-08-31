@@ -26,7 +26,7 @@ namespace uniasset {
 
         void setVolume(float volume);
 
-        [[nodiscard]] float time();
+        float time();
 
         std::error_code setTime(float time);
 

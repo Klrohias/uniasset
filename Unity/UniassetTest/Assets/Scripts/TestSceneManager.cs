@@ -39,7 +39,7 @@ public class TestSceneManager : MonoBehaviour
         _testWebp = await Utils.LoadStreamingAsset("Test.webp", this);
         // _test1080P = await Utils.LoadStreamingAsset("Large.png", this);
 
-        _testMp3 = await Utils.LoadStreamingAsset("Test3.mp3", this);
+        _testMp3 = await Utils.LoadStreamingAsset("音乐.ogg", this);
         // _testOgg = await Utils.LoadStreamingAsset("click.ogg", this);
         // AudioClip.PCMSetPositionCallback
 
@@ -90,6 +90,16 @@ public class TestSceneManager : MonoBehaviour
         GUILayout.BeginHorizontal();
         
         if (GUILayout.Button("Load")) _audioAsset.Load(_testMp3);
+
+        if (GUILayout.Button("Load File"))
+        {
+            if (Application.platform == RuntimePlatform.Android)
+                throw new PlatformNotSupportedException("Couldn't load streaming asset from file on Android.");
+            
+            var path = System.IO.Path.Combine(Application.streamingAssetsPath, "测试3.mp3");
+            _audioAsset.Load(path);
+            Debug.Log("Loaded Path: " + _audioAsset.Path);
+        }
 
         if (GUILayout.Button("Load Adopt")) LoadAudioAdopt();
     

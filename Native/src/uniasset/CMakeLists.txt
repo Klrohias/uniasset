@@ -87,6 +87,10 @@ if (BUILD_SHARED_LIBS)
     target_compile_definitions(uniasset PRIVATE UNIASSET_SHARED)
 endif ()
 
+if(MSVC)
+    target_compile_options(uniasset PRIVATE /utf-8)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # enable bitcode
     list(APPEND UNIASSET_COMPILE_FLAGS "-fembed-bitcode")

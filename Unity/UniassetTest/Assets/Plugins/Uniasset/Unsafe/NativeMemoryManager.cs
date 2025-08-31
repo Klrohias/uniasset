@@ -49,8 +49,7 @@ namespace Uniasset.Unsafe
                 length = 0;
                 return false;
             }
-
-            addr = _addr;
+            
             length = _length;
             _addr = IntPtr.Zero;
             _length = 0;

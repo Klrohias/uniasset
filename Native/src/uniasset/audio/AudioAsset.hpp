@@ -7,13 +7,11 @@
 #define UNIASSET_AUDIOASSET_HPP
 
 #include <memory>
-#include <vector>
 #include <span>
-#include <cmath>
+#include <filesystem>
 
 #include "uniasset/Foundation.hpp"
 #include "uniasset/common/Buffer.hpp"
-#include "uniasset/common/Templates.hpp"
 #include "uniasset/audio/SampleFormat.hpp"
 #include "uniasset/common/Result.hpp"
 
@@ -43,7 +41,7 @@ namespace uniasset {
         uint32_t sampleRate_{0};
         uint32_t channelCount_{0};
 
-        std::string path_{};
+        std::filesystem::path path_{};
         Buffer data_{};
         size_t dataLength_{0};
 
@@ -52,11 +50,11 @@ namespace uniasset {
     public:
         explicit AudioAsset();
 
-        std::error_code load(std::unique_ptr<uint8_t[]>&& data, size_t size);
+        std::error_code load(Buffer&& data, size_t size);
 
         std::error_code load(const std::span<uint8_t>& data);
 
-        std::error_code load(const std::string_view& path);
+        std::error_code load(const std::filesystem::path& path);
 
         void unload();
 
@@ -72,7 +70,7 @@ namespace uniasset {
 
         LoadType getLoadType();
 
-        Result<const std::string_view> getPath();
+        [[nodiscard]] Result<const std::filesystem::path&> getPath() const;
 
         const Buffer& getData();
 

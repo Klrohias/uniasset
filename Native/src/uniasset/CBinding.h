@@ -22,6 +22,7 @@ extern "C" {
 
 UNIASSET_API CBINDING_CSTRING Uniasset_GetError();
 UNIASSET_API CBINDING_BOOLEAN Uniasset_HasError();
+UNIASSET_API void Uniasset_DestroyTempU8String(char* str);
 
 // ImageAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Create);

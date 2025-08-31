@@ -18,6 +18,12 @@
 #include "audio/player/AudioEngine.hpp"
 #include "common/Errors.hpp"
 
+#ifdef _WIN32
+    #define U8_STRDUP _strdup
+#else
+    #define U8_STRDUP strdup
+#endif
+
 using namespace uniasset;
 
 namespace internal {
@@ -76,6 +82,10 @@ UNIASSET_API CBINDING_CSTRING Uniasset_GetError() {
 
 UNIASSET_API CBINDING_BOOLEAN Uniasset_HasError() {
     return currentErrorCodeStore.hasError();
+}
+
+UNIASSET_API void Uniasset_DestroyTempU8String(char* str) {
+    free(str);
 }
 
 // ImageAsset
@@ -200,7 +210,11 @@ CBINDING_METHOD(void, AudioAsset, Destory, CBINDING_TYPED_PTR(AudioAsset) obj) {
 }
 
 CBINDING_METHOD(void, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path) {
+#if _WIN32
+    currentErrorCodeStore.set(getInstance<AudioAsset>(self)->load(reinterpret_cast<const char8_t*>(path)));
+#else
     currentErrorCodeStore.set(getInstance<AudioAsset>(self)->load(path));
+#endif
 }
 
 CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
@@ -208,7 +222,7 @@ CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uin
 }
 
 CBINDING_METHOD(void, AudioAsset, LoadAdopt, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size) {
-    currentErrorCodeStore.set(getInstance<AudioAsset>(self)->load(std::unique_ptr<uint8_t[]>(data), size));
+    currentErrorCodeStore.set(getInstance<AudioAsset>(self)->load({data, default_free_deleter<uint8_t>}, size));
 }
 
 CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self) {
@@ -278,7 +292,8 @@ CBINDING_METHOD(CBINDING_CSTRING, AudioAsset, GetPath, CBINDING_TYPED_PTR(AudioA
         return nullptr;
     }
 
-    return (**result.data()).data();
+    const auto u8Path = (*result.data())->generic_u8string();
+    return U8_STRDUP(reinterpret_cast<char const*>(u8Path.c_str()));
 }
 
 CBINDING_METHOD(void*, AudioAsset, GetData, CBINDING_TYPED_PTR(AudioAsset) self) {

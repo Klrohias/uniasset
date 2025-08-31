@@ -20,10 +20,16 @@ namespace uniasset {
         return result;
     }
 
-    inline c_unique_ptr<drwav, drwav_deleter> createDrwavDecoder(const std::string_view& path) {
+    inline c_unique_ptr<drwav, drwav_deleter> createDrwavDecoder(const std::filesystem::path& path) {
         auto result{make_c_unique<drwav, drwav_deleter>(new drwav{})};
 
-        if (!drwav_init_file(result.get(), path.data(), nullptr)) {
+
+#if _WIN32
+        const auto inited = drwav_init_file_w(result.get(), path.c_str(), nullptr);
+#else
+        const auto inited = drwav_init_file(result.get(), path.c_str(), nullptr);
+#endif
+        if (!inited) {
             result.reset();
         }
 
@@ -39,8 +45,8 @@ namespace uniasset {
             auto len = asset_->getDataLength();
             decoder_ = createDrwavDecoder(std::span<uint8_t>(data.get(), len));
         } else if (loadType == LoadType_File) {
-            auto& path = **asset_->getPath().data();
-            decoder_ = createDrwavDecoder(path);
+            auto result = asset_->getPath();
+            decoder_ = createDrwavDecoder(**result.data());
         }
     }
 

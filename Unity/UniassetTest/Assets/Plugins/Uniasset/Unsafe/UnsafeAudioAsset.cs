@@ -80,6 +80,16 @@ namespace Uniasset.Unsafe
             NativeException.ThrowIfNeeded();
             return result;
         }
+
+        public string GetPath()
+        {
+            var result = Interop.Uniasset_AudioAsset_GetPath(Instance);
+            NativeException.ThrowIfNeeded();
+
+            var str = Marshal.PtrToStringUTF8((IntPtr)result);
+            Interop.Uniasset_DestroyTempU8String(result);
+            return str ?? string.Empty;
+        }
         
         public UnsafeAudioDecoder GetAudioDecoder(SampleFormat format, long frameBufferSize)
         {

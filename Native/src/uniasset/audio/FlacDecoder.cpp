@@ -18,9 +18,15 @@ namespace uniasset {
             auto len = asset_->getDataLength();
             decoder_ = make_c_unique<drflac, drflac_deleter>(drflac_open_memory(data.get(), len, nullptr));
         } else if (loadType == LoadType_File) {
-            auto& path = **asset_->getPath().data();
+            auto result = asset_->getPath();
 
-            decoder_ = make_c_unique<drflac, drflac_deleter>(drflac_open_file(path.data(), nullptr));
+#if _WIN32
+            const auto file = drflac_open_file_w((*result.data())->c_str(), nullptr);
+#else
+            const auto file = drflac_open_file((*result.data())->c_str(), nullptr);
+#endif
+
+            decoder_ = make_c_unique<drflac, drflac_deleter>(file);
         }
     }
 

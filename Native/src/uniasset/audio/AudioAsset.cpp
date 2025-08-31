@@ -5,6 +5,7 @@
 #include "AudioAsset.hpp"
 
 #include <cstring>
+#include <fstream>
 #include <memory>
 
 #include "../common/Errors.hpp"
@@ -61,13 +62,13 @@ namespace uniasset {
         return std::unique_ptr<IAudioDecoder>(new BufferedAudioDecoder{sharedRawDecoder, frameBufferSize});
     }
 
-    std::error_code AudioAsset::load(std::unique_ptr<uint8_t[]>&& data, size_t size) {
+    std::error_code AudioAsset::load(Buffer&& data, size_t size) {
         if (!tryIdentifyFormat(data.get(), size, format_)) {
             return {kNotSupportedFail, uniasset_category()};
         }
 
         type_ = LoadType_Memory;
-        data_ = {data.release(), default_free_deleter<uint8_t>};
+        data_ = std::move(data);
         dataLength_ = size;
 
         if (const auto err = loadMetadata(); err.value()) {
@@ -103,27 +104,34 @@ namespace uniasset {
         data_.reset();
     }
 
-    std::error_code AudioAsset::load(const std::string_view& path) {
-        // Read
-        FILE* file = fopen(path.data(), "rb");
+    std::error_code AudioAsset::load(const std::filesystem::path& path) {
+        // Check if the file exists and is a regular file
+        if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+            return err_errno(); // Or a more specific error
+        }
 
+        // Use std::ifstream for C++ stream-based file reading
+        std::ifstream file(path, std::ios::binary);
         if (!file) {
             return err_errno();
         }
 
-        uint8_t buffer[32] = {0};
-        size_t readSize = fread(buffer, 1, 32, file);
+        // Read the first 32 bytes
+        std::vector<uint8_t> buffer(32);
+        file.read(reinterpret_cast<char*>(buffer.data()), static_cast<int64_t>(buffer.size()));
 
+        // Check for read errors and if any bytes were read
+        if (!file.good() && !file.eof()) {
+            return err_errno();
+        }
+
+        const size_t readSize = file.gcount();
         if (readSize == 0) {
             return err_errno();
         }
 
-        if (fclose(file) != 0) {
-            return err_errno();
-        }
-
         // Check magic number
-        if (!tryIdentifyFormat(buffer, readSize, format_)) {
+        if (!tryIdentifyFormat(buffer.data(), readSize, format_)) {
             return {kNotSupportedFail, uniasset_category()};
         }
 
@@ -188,12 +196,12 @@ namespace uniasset {
         return type_;
     }
 
-    Result<const std::string_view> AudioAsset::getPath() {
+    Result<const std::filesystem::path&> AudioAsset::getPath() const {
         if (type_ == LoadType_None) {
             return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
-        return std::string_view{path_};
+        return path_;
     }
 
     const Buffer& AudioAsset::getData() {

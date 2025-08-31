@@ -9,12 +9,22 @@ namespace Uniasset.Audio
     public sealed class AudioAsset : IDisposable
     {
         private bool _disposed = false;
+        private string _path = null;
+        
         public UnsafeAudioAsset UnsafeHandle { get; } = UnsafeAudioAsset.Create();
 
         public int SampleRate => UnsafeHandle.GetSampleRate();
         public long SampleCount => UnsafeHandle.GetSampleCountLong();
         public int ChannelCount => UnsafeHandle.GetChannelCount();
         public float Length => UnsafeHandle.GetLength();
+
+        public string Path
+        {
+            get
+            {
+                return _path ??= UnsafeHandle.GetPath();
+            }
+        }
 
         public void Load(string path)
         {
@@ -45,6 +55,7 @@ namespace Uniasset.Audio
         public void Unload()
         {
             UnsafeHandle.Unload();
+            _path = null;
         }
         
         public NativeAudioDecoder GetAudioDecoder(SampleFormat format = SampleFormat.Float, long frameBufferSize = -1)

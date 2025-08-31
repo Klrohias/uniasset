@@ -11,6 +11,9 @@ namespace Uniasset.Unsafe
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: NativeTypeName("uint8_t")]
         public static extern byte Uniasset_HasError();
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_DestroyTempU8String([NativeTypeName("const char *")] sbyte* str);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_ImageAsset_Create();
@@ -20,6 +23,9 @@ namespace Uniasset.Unsafe
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
         public static extern void Uniasset_ImageAsset_LoadFile(void* self, [NativeTypeName("const char *")] string path);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
+        public static extern void Uniasset_ImageAsset_LoadFileUtf8(void* self, [NativeTypeName("const char *")] [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_ImageAsset_LoadPixels(void* self, [NativeTypeName("uint8_t *")] byte* pixels, [NativeTypeName("uint64_t")] ulong size, [NativeTypeName("int32_t")] int width, [NativeTypeName("int32_t")] int height, [NativeTypeName("int32_t")] int channelCount);
@@ -65,6 +71,9 @@ namespace Uniasset.Unsafe
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
         public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] string path);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
+        public static extern void Uniasset_AudioAsset_LoadFileUtf8(void* self, [NativeTypeName("const char *")] [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_AudioAsset_Load(void* self, [NativeTypeName("uint8_t *")] byte* data, [NativeTypeName("uint64_t")] ulong size);

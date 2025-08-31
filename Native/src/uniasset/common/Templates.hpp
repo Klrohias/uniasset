@@ -37,9 +37,8 @@ namespace uniasset {
     }
 
     template<typename T>
-    inline void default_free_deleter(const T* buffer) {
-        static_assert(std::is_trivially_destructible<T>::value, "Objects with non-trivial destructors should not be freed using `free`.");
-        free(reinterpret_cast<void*>(const_cast<T*>(buffer)));
+    inline void default_free_deleter(T* buffer) {
+        free(reinterpret_cast<void*>(buffer));
     }
 
     template<typename NumType>
