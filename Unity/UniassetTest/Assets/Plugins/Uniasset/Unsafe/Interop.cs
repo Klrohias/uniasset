@@ -24,9 +24,6 @@ namespace Uniasset.Unsafe
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
         public static extern void Uniasset_ImageAsset_LoadFile(void* self, [NativeTypeName("const char *")] string path);
 
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
-        public static extern void Uniasset_ImageAsset_LoadFileUtf8(void* self, [NativeTypeName("const char *")] [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
-
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_ImageAsset_LoadPixels(void* self, [NativeTypeName("uint8_t *")] byte* pixels, [NativeTypeName("uint64_t")] ulong size, [NativeTypeName("int32_t")] int width, [NativeTypeName("int32_t")] int height, [NativeTypeName("int32_t")] int channelCount);
 
@@ -70,10 +67,7 @@ namespace Uniasset.Unsafe
         public static extern void Uniasset_AudioAsset_Destory(void* obj);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
-        public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] string path);
-        
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, CharSet = CharSet.Ansi)]
-        public static extern void Uniasset_AudioAsset_LoadFileUtf8(void* self, [NativeTypeName("const char *")] [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
+        public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_AudioAsset_Load(void* self, [NativeTypeName("uint8_t *")] byte* data, [NativeTypeName("uint64_t")] ulong size);
