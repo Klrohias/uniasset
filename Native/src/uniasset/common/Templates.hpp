@@ -5,6 +5,7 @@
 #pragma once
 #ifndef UNIASSET_TEMPLATES_HPP
 #define UNIASSET_TEMPLATES_HPP
+#include <cstdlib>
 
 namespace uniasset {
     // from https://stackoverflow.com/questions/13816850/is-it-possible-to-develop-static-for-loop-in-c
@@ -33,6 +34,11 @@ namespace uniasset {
     template<typename T>
     inline void default_array_deleter(const T* buffer) {
         delete[] buffer;
+    }
+
+    template<typename T>
+    inline void default_free_deleter(T* buffer) {
+        free(reinterpret_cast<void*>(buffer));
     }
 
     template<typename NumType>

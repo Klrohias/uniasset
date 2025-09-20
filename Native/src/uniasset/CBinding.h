@@ -22,6 +22,7 @@ extern "C" {
 
 UNIASSET_API CBINDING_CSTRING Uniasset_GetError();
 UNIASSET_API CBINDING_BOOLEAN Uniasset_HasError();
+UNIASSET_API void Uniasset_DestroyTempU8String(char* str);
 
 // ImageAsset
 CBINDING_METHOD(CBINDING_TYPED_PTR(ImageAsset), ImageAsset, Create);
@@ -48,6 +49,7 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(AudioAsset), AudioAsset, Create);
 CBINDING_METHOD(void, AudioAsset, Destory, CBINDING_TYPED_PTR(AudioAsset) obj);
 CBINDING_METHOD(void, AudioAsset, LoadFile, CBINDING_TYPED_PTR(AudioAsset) self, CBINDING_CSTRING path);
 CBINDING_METHOD(void, AudioAsset, Load, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size);
+CBINDING_METHOD(void, AudioAsset, LoadAdopt, CBINDING_TYPED_PTR(AudioAsset) self, uint8_t* data, uint64_t size);
 CBINDING_METHOD(void, AudioAsset, Unload, CBINDING_TYPED_PTR(AudioAsset) self);
 CBINDING_METHOD(uint32_t, AudioAsset, GetChannelCount, CBINDING_TYPED_PTR(AudioAsset) self);
 CBINDING_METHOD(uint64_t, AudioAsset, GetSampleCount, CBINDING_TYPED_PTR(AudioAsset) self);
@@ -96,6 +98,33 @@ CBINDING_METHOD(CBINDING_TYPED_PTR(IAudioDecoder), ExternalAudioDecoder, Create,
                 void* readFunc,
                 void* seekFunc,
                 void* tellFunc);
+
+// AudioEngine
+CBINDING_METHOD(CBINDING_TYPED_PTR(AudioEngine), AudioEngine, Create);
+CBINDING_METHOD(void, AudioEngine, Destory, CBINDING_TYPED_PTR(AudioEngine) obj);
+CBINDING_METHOD(float, AudioEngine, GetVolume, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(void, AudioEngine, SetVolume, CBINDING_TYPED_PTR(AudioEngine) self, float volume);
+CBINDING_METHOD(uint64_t, AudioEngine, GetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(void, AudioEngine, ResetTimeInPcmFrames, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(uint32_t, AudioEngine, GetSampleRate, CBINDING_TYPED_PTR(AudioEngine) self);
+CBINDING_METHOD(CBINDING_TYPED_PTR(PlaybackInstance), AudioEngine, CreatePlayback,
+                CBINDING_TYPED_PTR(AudioEngine) self, CBINDING_TYPED_PTR(IAudioDecoder) decoder);
+
+// PlaybackInstance
+CBINDING_METHOD(void, PlaybackInstance, Destory, CBINDING_TYPED_PTR(PlaybackInstance) obj);
+CBINDING_METHOD(float, PlaybackInstance, GetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetVolume, CBINDING_TYPED_PTR(PlaybackInstance) self, float volume);
+CBINDING_METHOD(float, PlaybackInstance, GetTime, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetTime, CBINDING_TYPED_PTR(PlaybackInstance) self, float time);
+CBINDING_METHOD(uint64_t, PlaybackInstance, GetFrameTime, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetFrameTime, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
+CBINDING_METHOD(void, PlaybackInstance, Play, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, Stop, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsPlaying, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, PlayScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
+CBINDING_METHOD(void, PlaybackInstance, StopScheduled, CBINDING_TYPED_PTR(PlaybackInstance) self, uint64_t frame);
+CBINDING_METHOD(CBINDING_BOOLEAN, PlaybackInstance, IsLooping, CBINDING_TYPED_PTR(PlaybackInstance) self);
+CBINDING_METHOD(void, PlaybackInstance, SetLooping, CBINDING_TYPED_PTR(PlaybackInstance) self, CBINDING_BOOLEAN loop);
 
 #ifdef __cplusplus
 }

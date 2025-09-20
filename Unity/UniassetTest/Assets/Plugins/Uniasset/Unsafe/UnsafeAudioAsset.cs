@@ -27,15 +27,17 @@ namespace Uniasset.Unsafe
                 NativeException.ThrowIfNeeded();
             }
         }
+        
+        public void LoadAdopt(nint data, ulong size)
+        {
+            Interop.Uniasset_AudioAsset_LoadAdopt(Instance, (byte*)data, size);
+            NativeException.ThrowIfNeeded();
+        }
 
         public void Load(string path)
         {
-            var pathBytes = Encoding.Default.GetBytes(path);
-            fixed (byte* pathPtr = pathBytes)
-            {
-                Interop.Uniasset_AudioAsset_LoadFile(Instance, (sbyte*)pathPtr);
-                NativeException.ThrowIfNeeded();
-            }
+            Interop.Uniasset_AudioAsset_LoadFile(Instance, path);
+            NativeException.ThrowIfNeeded();
         }
 
         public void Unload()
@@ -77,6 +79,16 @@ namespace Uniasset.Unsafe
             var result = Interop.Uniasset_AudioAsset_GetLength(Instance);
             NativeException.ThrowIfNeeded();
             return result;
+        }
+
+        public string GetPath()
+        {
+            var result = Interop.Uniasset_AudioAsset_GetPath(Instance);
+            NativeException.ThrowIfNeeded();
+
+            var str = Marshal.PtrToStringUTF8((IntPtr)result);
+            Interop.Uniasset_DestroyTempU8String(result);
+            return str ?? string.Empty;
         }
         
         public UnsafeAudioDecoder GetAudioDecoder(SampleFormat format, long frameBufferSize)

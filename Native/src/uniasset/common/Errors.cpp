@@ -3,6 +3,8 @@
 //
 
 #include "Errors.hpp"
+
+#include <miniaudio.h>
 #include <stb_image.h>
 #include <string>
 
@@ -47,6 +49,16 @@ namespace uniasset {
                 return std::to_string(ev);
             }
         };
+
+        class ma_error_category : public std::error_category {
+            [[nodiscard]] const char* name() const noexcept override {
+                return "Miniaudio";
+            }
+
+            [[nodiscard]] std::string message(int ev) const override {
+                return ma_result_description(static_cast<ma_result>(ev));
+            }
+        };
     }
 
     const std::error_category& uniasset_category() {
@@ -66,6 +78,12 @@ namespace uniasset {
 
     const std::error_category& turbojpeg_category() {
         static internal::turbojpeg_error_category instance;
+        return instance;
+    }
+
+    const std::error_category& ma_category()
+    {
+        static internal::ma_error_category instance;
         return instance;
     }
 }

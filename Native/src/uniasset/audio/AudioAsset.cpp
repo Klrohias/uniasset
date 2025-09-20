@@ -5,6 +5,8 @@
 #include "AudioAsset.hpp"
 
 #include <cstring>
+#include <fstream>
+#include <memory>
 
 #include "../common/Errors.hpp"
 #include "../common/MagicNumbers.hpp"
@@ -14,8 +16,25 @@
 #include "WavDecoder.hpp"
 #include "OggDecoder.hpp"
 #include "BufferedAudioDecoder.hpp"
+#include "uniasset/common/Templates.hpp"
 
 namespace uniasset {
+    static bool tryIdentifyFormat(uint8_t* ptr, size_t length, DataFormat& outFormat) {
+        if (isMp3FileData(ptr, length)) {
+            outFormat = DataFormat_Mp3;
+        } else if (isFlacFileData(ptr, length)) {
+            outFormat = DataFormat_Flac;
+        } else if (isOggFileData(ptr, length)) {
+            outFormat = DataFormat_Ogg;
+        } else if (isWavFileData(ptr, length)) {
+            outFormat = DataFormat_Wav;
+        } else {
+            outFormat = DataFormat_Pcm;
+            return false;
+        }
+        return true;
+    }
+
     Result<std::unique_ptr<IAudioDecoder>> AudioAsset::getAudioDecoder(SampleFormat sampleFormat, int64_t frameBufferSize) {
         if (type_ == LoadType_None) {
             return std::error_code{kAudioNotLoadFail, uniasset_category()};
@@ -44,26 +63,34 @@ namespace uniasset {
         return std::unique_ptr<IAudioDecoder>(new BufferedAudioDecoder{sharedRawDecoder, frameBufferSize});
     }
 
+    std::error_code AudioAsset::load(Buffer&& data, size_t size) {
+        if (!tryIdentifyFormat(data.get(), size, format_)) {
+            return {kNotSupportedFail, uniasset_category()};
+        }
+
+        type_ = LoadType_Memory;
+        data_ = std::move(data);
+        dataLength_ = size;
+
+        if (const auto err = loadMetadata(); err.value()) {
+            return err;
+        }
+
+        return err_ok();
+    }
+
     std::error_code AudioAsset::load(const std::span<uint8_t>& data) {
         auto content = data.data();
         auto len = data.size();
 
-        if (isMp3FileData(data.data(), len)) {
-            format_ = DataFormat_Mp3;
-        } else if (isFlacFileData(data.data(), len)) {
-            format_ = DataFormat_Flac;
-        } else if (isOggFileData(data.data(), len)) {
-            format_ = DataFormat_Ogg;
-        } else if (isWavFileData(data.data(), len)) {
-            format_ = DataFormat_Wav;
-        } else {
+        if (!tryIdentifyFormat(content, len, format_)) {
             return {kNotSupportedFail, uniasset_category()};
         }
 
         type_ = LoadType_Memory;
         data_ = {new uint8_t[len], default_array_deleter<uint8_t>};
         dataLength_ = len;
-        memcpy(data_.get(), data.data(), len);
+        memcpy(data_.get(), content, len);
 
         if (auto err = loadMetadata(); err.value()) {
             return err;
@@ -78,35 +105,34 @@ namespace uniasset {
         data_.reset();
     }
 
-    std::error_code AudioAsset::load(const std::string_view& path) {
-        // Read
-        FILE* file = fopen(path.data(), "rb");
+    std::error_code AudioAsset::load(const std::filesystem::path& path) {
+        // Check if the file exists and is a regular file
+        if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
+            return err_errno(); // Or a more specific error
+        }
 
+        // Use std::ifstream for C++ stream-based file reading
+        std::ifstream file(path, std::ios::binary);
         if (!file) {
             return err_errno();
         }
 
-        uint8_t buffer[32] = {0};
-        size_t readSize = fread(buffer, 1, 32, file);
+        // Read the first 32 bytes
+        std::vector<uint8_t> buffer(32);
+        file.read(reinterpret_cast<char*>(buffer.data()), static_cast<int64_t>(buffer.size()));
 
+        // Check for read errors and if any bytes were read
+        if (!file.good() && !file.eof()) {
+            return err_errno();
+        }
+
+        const size_t readSize = file.gcount();
         if (readSize == 0) {
             return err_errno();
         }
 
-        if (fclose(file) != 0) {
-            return err_errno();
-        }
-
         // Check magic number
-        if (isMp3FileData(buffer, readSize)) {
-            format_ = DataFormat_Mp3;
-        } else if (isFlacFileData(buffer, readSize)) {
-            format_ = DataFormat_Flac;
-        } else if (isOggFileData(buffer, readSize)) {
-            format_ = DataFormat_Ogg;
-        } else if (isWavFileData(buffer, readSize)) {
-            format_ = DataFormat_Wav;
-        } else {
+        if (!tryIdentifyFormat(buffer.data(), readSize, format_)) {
             return {kNotSupportedFail, uniasset_category()};
         }
 
@@ -171,12 +197,12 @@ namespace uniasset {
         return type_;
     }
 
-    Result<const std::string_view> AudioAsset::getPath() {
+    Result<const std::filesystem::path&> AudioAsset::getPath() const {
         if (type_ == LoadType_None) {
             return std::error_code{kAudioNotLoadFail, uniasset_category()};
         }
 
-        return std::string_view{path_};
+        return path_;
     }
 
     const Buffer& AudioAsset::getData() {

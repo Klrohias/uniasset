@@ -47,12 +47,8 @@ namespace Uniasset.Unsafe
 
         public void LoadFile(string path)
         {
-            var pathBytes = Encoding.Default.GetBytes(path);
-            fixed (byte* pathPtr = pathBytes)
-            {
-                Interop.Uniasset_ImageAsset_LoadFile(Instance, (sbyte*)pathPtr);
-                NativeException.ThrowIfNeeded();
-            }
+            Interop.Uniasset_ImageAsset_LoadFile(Instance, path);
+            NativeException.ThrowIfNeeded();
         }
 
         public void LoadMemory(Span<byte> data)

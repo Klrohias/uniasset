@@ -115,15 +115,15 @@ namespace uniasset {
 
         auto remain = count;
         while (remain > 0) {
-            auto bufferedCount = bufferedFrameEnd_ - bufferedFrameBegin_;
+            const auto bufferedCount = bufferedFrameEnd_ - bufferedFrameBegin_;
+            const auto bufferOffset = (count - remain) * frameSize_;
 
             if (bufferedCount > remain) {
-                readInternal(buffer, remain);
+                readInternal(ptr_offset(buffer, bufferOffset), remain);
                 bufferedFrameBegin_ += remain;
-                remain -= remain;
+                remain = 0;
                 generateBuffer();
             } else {
-                auto bufferOffset = (count - remain) * frameSize_;
                 readInternal(ptr_offset(buffer, bufferOffset), bufferedCount);
                 bufferedFrameBegin_ += bufferedCount;
                 remain -= bufferedCount;

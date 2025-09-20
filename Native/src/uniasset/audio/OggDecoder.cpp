@@ -18,10 +18,13 @@ namespace uniasset {
             decoder_ = make_c_unique<stb_vorbis, stb_vorbis_deleter>(
                     stb_vorbis_open_memory(data.get(), len, &loadError_, nullptr));
         } else if (loadType == LoadType_File) {
-            auto& path = **asset_->getPath().data();
+            auto result = asset_->getPath();
+            auto& path = **result.data();
+            const auto u8Path = path.u8string();
+            const auto u8PathPtr = reinterpret_cast<const char*>(u8Path.c_str());
 
             decoder_ = make_c_unique<stb_vorbis, stb_vorbis_deleter>(
-                    stb_vorbis_open_filename(path.data(), &loadError_, nullptr));
+                    stb_vorbis_open_filename(u8PathPtr, &loadError_, nullptr));
         }
 
         if (decoder_) {

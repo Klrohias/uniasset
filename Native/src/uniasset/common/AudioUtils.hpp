@@ -1,14 +1,14 @@
 #pragma once
-#ifndef UNIASSET_AUDIOUTILS_H
-#define UNIASSET_AUDIOUTILS_H
+#ifndef UNIASSET_AUDIOUTILS_HPP
+#define UNIASSET_AUDIOUTILS_HPP
 
 #include <cstdint>
 #include <miniaudio.h>
 #include "uniasset/audio/SampleFormat.hpp"
 
 namespace uniasset {
-    inline uint32_t time2FrameOffset(float time, uint32_t sampleRate) {
-        return static_cast<uint32_t>(time * sampleRate);
+    inline uint64_t time2FrameOffset(float time, uint64_t sampleRate) {
+        return static_cast<uint64_t>(time * sampleRate);
     }
 
     inline size_t calcSampleSize(SampleFormat format) {
@@ -34,16 +34,6 @@ namespace uniasset {
         }
         return ma_format_u8;
     }
-
-    inline SampleFormat toSampleFormat(ma_format format) {
-        switch (format) {
-        case ma_format_f32:
-            return SampleFormat_Float;
-        case ma_format_s16:
-            return SampleFormat_Int16;
-        }
-        // IDK how to handle other case
-    }
 }
 
-#endif // UNIASSET_AUDIOUTILS_H
+#endif // UNIASSET_AUDIOUTILS_HPP

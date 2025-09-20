@@ -21,12 +21,18 @@ namespace uniasset {
         return result;
     }
 
-    inline c_unique_ptr<drmp3, drmp3_deleter> createDrmp3Decoder(const std::string_view& path) {
+    inline c_unique_ptr<drmp3, drmp3_deleter> createDrmp3Decoder(const std::filesystem::path& path) {
         auto result{make_c_unique<drmp3, drmp3_deleter>(new drmp3{})};
 
-        if (!drmp3_init_file(result.get(), path.data(), nullptr)) {
+#if _WIN32
+        const auto inited = drmp3_init_file_w(result.get(), path.c_str(), nullptr);
+#else
+        const auto inited = drmp3_init_file(result.get(), path.c_str(), nullptr);
+#endif
+        if (!inited) {
             result.reset();
         }
+
 
         return result;
     }
@@ -40,8 +46,8 @@ namespace uniasset {
             auto len = asset_->getDataLength();
             decoder_ = createDrmp3Decoder(std::span<uint8_t>(data.get(), len));
         } else if (loadType == LoadType_File) {
-            auto& path = **asset_->getPath().data();
-            decoder_ = createDrmp3Decoder(path);
+            auto result = asset_->getPath();
+            decoder_ = createDrmp3Decoder(**result.data());
         }
     }
 

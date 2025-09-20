@@ -65,26 +65,15 @@ add_library(uniasset
         common/Errors.cpp
         audio/BufferedAudioDecoder.cpp
         audio/BufferedAudioDecoder.hpp
-        audio/AudioDevice.cpp
-        audio/AudioDevice.hpp
         common/Result.hpp
-        audio/player/AudioPlayer.cpp
-        audio/player/AudioPlayer.hpp
-        audio/player/IWaveProvider.cpp
-        audio/player/IWaveProvider.hpp
-        audio/player/AudioMixer.cpp
-        audio/player/AudioMixer.hpp
-        audio/player/PlayingHandler.cpp
-        audio/player/PlayingHandler.hpp
+
         common/AudioUtils.hpp
-        audio/player/waves/AdaptWaveProvider.hpp
-        audio/player/waves/AdaptWaveProvider.cpp
-        audio/AudioConfig.hpp
-        audio/player/waves/BufferedWaveProvider.hpp
-        audio/player/waves/BufferedWaveProvider.cpp
-        common/RingQueueBuffer.hpp
-        common/RingQueueBuffer.cpp
-        common/IJob.hpp)
+        audio/player/AudioEngine.cpp
+        audio/player/AudioEngine.hpp
+        audio/player/PlaybackInstance.cpp
+        audio/player/PlaybackInstance.hpp
+        audio/player/DecoderDataSource.cpp
+        audio/player/DecoderDataSource.hpp)
 
 target_compile_features(uniasset PUBLIC cxx_std_20)
 target_compile_definitions(uniasset PRIVATE UNIASSET_BUILD)
@@ -97,6 +86,10 @@ set(UNIASSET_LINK_FLAGS "")
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(uniasset PRIVATE UNIASSET_SHARED)
 endif ()
+
+if(MSVC)
+    target_compile_options(uniasset PRIVATE /utf-8)
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # enable bitcode
