@@ -8,6 +8,7 @@ libwebp-sys = "0.13"
 stb_image = "0.3.0"
 fast_image_resize = "6.0.0"
 anyhow = "1.0.102"
+zune-jpeg = "0.5.12"
 
 [lib]
 name = "uniasset"
