@@ -1,3 +1,10 @@
+use std::{
+    ffi::{c_uchar, c_void},
+    slice,
+};
+
+use stb_image::stb_image;
+
 pub enum ImageBuffer {
     Stbi(*mut c_uchar, usize),
     Alloc(Box<[u8]>),
@@ -38,7 +45,7 @@ impl AsRef<[u8]> for ImageBuffer {
 impl AsMut<[u8]> for ImageBuffer {
     fn as_mut(&mut self) -> &mut [u8] {
         match self {
-            ImageBuffer::Stbi(_, _) => unsafe { slice::from_raw_parts_mut(*ptr, *size) },
+            ImageBuffer::Stbi(ptr, size) => unsafe { slice::from_raw_parts_mut(*ptr, *size) },
             ImageBuffer::Alloc(items) => items,
         }
     }
@@ -47,15 +54,10 @@ impl AsMut<[u8]> for ImageBuffer {
 impl Drop for ImageBuffer {
     fn drop(&mut self) {
         match &self {
-            ImageBuffer::Stbi(ptr, _) => {
-                let ptr = *ptr;
-                unsafe {
-                    stbi_image_free(ptr as *mut c_void);
-                }
-            }
-            ImageBuffer::Alloc(items) => {
-                drop(items);
-            }
+            ImageBuffer::Stbi(ptr, _) => unsafe {
+                stb_image::stbi_image_free(*ptr as *mut c_void);
+            },
+            ImageBuffer::Alloc(_) => {}
         }
     }
 }

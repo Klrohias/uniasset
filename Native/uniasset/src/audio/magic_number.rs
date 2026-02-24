@@ -15,3 +15,7 @@ pub fn is_flac(data: &[u8]) -> bool {
 pub fn is_wav(data: &[u8]) -> bool {
     data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WAVE"
 }
+
+pub fn is_ogg(data: &[u8]) -> bool {
+    data.len() >= 14 && data.starts_with(OGG_MAGIC_NUMBER)
+}

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, error::Error, ffi::CString};
+use std::{cell::RefCell, ffi::CString, fmt::Display};
 
 thread_local! {
     static ERROR_INFO: RefCell<Option<ErrorInfo>> = RefCell::new(None);
@@ -17,7 +17,7 @@ pub fn with_error<T>(f: impl FnOnce(&Option<ErrorInfo>) -> T) -> T {
     ERROR_INFO.with_borrow(|it| f(it))
 }
 
-pub fn set_error(error: impl Error) {
+pub fn set_error(error: impl Display) {
     let message = CString::new(format!("{error}")).unwrap();
     ERROR_INFO.replace(Some(ErrorInfo { msg: message }));
 }
