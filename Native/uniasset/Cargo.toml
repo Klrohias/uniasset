@@ -4,12 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-anyhow = "1.0"
-image = "0.25.5"
+libwebp-sys = "0.13"
+stb_image = "0.3.0"
 
 [lib]
 name = "uniasset"
 crate-type = ["staticlib", "cdylib"]
 
 [target.'cfg(target_os = "ios")']
-rustflags = ["-C", "link_arg=-miphoneos-version-min=10.0", "llvm-args=\"-fembed-bitcode\""]
+rustflags = [
+    "-C",
+    "link_arg=-miphoneos-version-min=10.0",
+    "llvm-args=\"-fembed-bitcode\"",
+]

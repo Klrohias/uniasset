@@ -1,45 +1,26 @@
 use std::{
-    cell::RefCell,
-    ffi::CString,
     os::raw::{c_char, c_uchar},
     ptr::null,
 };
 
-use anyhow::Error;
-
-thread_local! {
-    static ERROR: RefCell<Option<anyhow::Error>> = RefCell::new(None);
-    static ERROR_MSG: RefCell<Option<CString>> = RefCell::new(None);
-}
+use crate::error::{has_error, with_error};
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_HasError() -> c_uchar {
-    ERROR.with_borrow(|x| if x.is_none() { 0 } else { 1 })
+    if has_error() { 1 } else { 0 }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_GetError() -> *const c_char {
-    if ERROR.with_borrow(|x| x.is_none()) {
+    if !has_error() {
         return null();
     }
 
-    ERROR_MSG.with_borrow_mut(|x| {
-        if x.is_none() {
-            if let Ok(y) = CString::new(ERROR.with_borrow(|y| y.as_ref().unwrap().to_string())) {
-                *x = Some(y);
-            }
+    with_error(|it| {
+        if let Some(error_info) = it {
+            error_info.msg.as_ptr()
+        } else {
+            null()
         }
-    });
-
-    ERROR_MSG.with_borrow(|x| x.as_ref().unwrap().as_ptr())
-}
-
-pub fn clear_error_for_this_thread() {
-    ERROR.replace(None);
-    ERROR_MSG.replace(None);
-}
-
-pub fn set_error_for_this_thread(err: Error) {
-    ERROR_MSG.replace(None);
-    ERROR.replace(Some(err));
+    })
 }
