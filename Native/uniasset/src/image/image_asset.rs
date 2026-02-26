@@ -11,18 +11,37 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use fast_image_resize as fr;
 use libwebp_sys::{
     VP8StatusCode, WEBP_CSP_MODE, WebPBitstreamFeatures, WebPDecode, WebPDecoderConfig,
-    WebPFreeDecBuffer, WebPGetInfo,
+    WebPFreeDecBuffer, WebPGetInfo, WebPIAppend, WebPIDecode, WebPIDelete,
 };
 use stb_image::stb_image;
 use zune_jpeg::{JpegDecoder, zune_core::bytestream::ZCursor};
 
 use crate::{
-    image::{ImageBuffer, is_jpeg, is_webp},
+    image::{
+        ImageBuffer, is_jpeg, is_webp,
+        resizer::{ResizeFilter, resize},
+    },
     native::{NativeHandle, NativeHandleExts},
 };
+
+fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels: usize) {
+    let row_size = width * channels;
+    let mut low = 0;
+    let mut high = height - 1;
+
+    while low < high {
+        let (low_part, high_part) = data.split_at_mut(high * row_size);
+        let row_low = &mut low_part[low * row_size..(low + 1) * row_size];
+        let row_high = &mut high_part[0..row_size];
+
+        row_low.swap_with_slice(row_high);
+
+        low += 1;
+        high -= 1;
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct ImageAsset(ManuallyDrop<Box<Arc<RwLock<ImageAssetState>>>>);
@@ -64,7 +83,7 @@ impl ImageAsset {
         // Check magic number and decode
         let (buffer, info) = if is_webp(&magic_number_buffer) {
             // WebP
-            todo!()
+            Self::load_webp_io(stream, expected_width, expected_height)?
         } else if is_jpeg(&magic_number_buffer) {
             // JPEG
             Self::load_jpeg_io(stream)?
@@ -93,11 +112,129 @@ impl ImageAsset {
     }
 
     fn load_webp_io(
-        data: &[u8],
+        mut stream: impl Read + Seek,
         expected_width: u32,
         expected_height: u32,
     ) -> Result<(ImageBuffer, ImageInfo), ImageOperationError> {
-        todo!()
+        // Read image metadata
+        let mut temp_buffer = [0u8; 4096];
+        let mut read_size = stream.read(&mut temp_buffer[0..512])?;
+
+        let mut original_width: i32 = 0;
+        let mut original_height: i32 = 0;
+
+        // Get info, ensure the given data is WebP.
+        if unsafe {
+            WebPGetInfo(
+                &temp_buffer as *const _,
+                read_size,
+                &mut original_width as *mut i32,
+                &mut original_height as *mut i32,
+            )
+        } == 0
+        {
+            return Err(ImageOperationError::UnsupportedImage);
+        }
+
+        // Get features, check if the image have alpha channel
+        let mut features = MaybeUninit::<WebPBitstreamFeatures>::uninit();
+        let status_code = unsafe {
+            libwebp_sys::WebPGetFeatures(&temp_buffer as *const _, read_size, features.as_mut_ptr())
+        };
+        if status_code != VP8StatusCode::VP8_STATUS_OK {
+            return Err(ImageOperationError::WebPError(status_code));
+        }
+
+        let features = unsafe { features.assume_init() };
+        let has_alpha_channel = features.has_alpha != 0;
+        let target_channel_count = if has_alpha_channel { 4 } else { 3 };
+        let use_scaling = expected_width > 0 && expected_height > 0;
+
+        let target_width = if use_scaling {
+            expected_width
+        } else {
+            original_width as u32
+        };
+
+        let target_height = if use_scaling {
+            expected_height
+        } else {
+            original_height as u32
+        };
+
+        let stride_size = target_channel_count * target_width;
+
+        // Allocate buffer
+        let mut buffer =
+            ImageBuffer::new((target_width * target_height * target_channel_count + 4) as usize);
+
+        // Fill decode config
+        let mut decoder_config = WebPDecoderConfig::new()
+            .map_err(|_| ImageOperationError::WebPDecoderInitializationError)?;
+
+        decoder_config.input = features;
+
+        decoder_config.options.use_threads = 1;
+
+        let use_scaling = expected_height > 0 && expected_width > 0;
+        if use_scaling {
+            decoder_config.options.use_scaling = 1;
+            decoder_config.options.scaled_width = expected_width as _;
+            decoder_config.options.scaled_height = expected_height as _;
+        }
+
+        decoder_config.output.is_external_memory = 1;
+        decoder_config.output.colorspace = if has_alpha_channel {
+            WEBP_CSP_MODE::MODE_RGBA
+        } else {
+            WEBP_CSP_MODE::MODE_RGB
+        };
+        decoder_config.output.u.RGBA.stride = -(stride_size as i32);
+        decoder_config.output.u.RGBA.rgba = buffer
+            .as_mut()
+            .as_mut_ptr()
+            .wrapping_add(((target_height - 1) * stride_size) as usize);
+        decoder_config.output.u.RGBA.size = (target_height * stride_size) as usize;
+        decoder_config.output.width = target_width as i32;
+        decoder_config.output.height = target_height as i32;
+
+        // Decode it
+        let decoder = unsafe { WebPIDecode(null_mut(), 0, &mut decoder_config as *mut _) };
+        if decoder.is_null() {
+            return Err(ImageOperationError::WebPDecoderInitializationError);
+        }
+
+        loop {
+            let status = unsafe { WebPIAppend(decoder, temp_buffer.as_ptr(), read_size) };
+            if status != VP8StatusCode::VP8_STATUS_OK
+                && status != VP8StatusCode::VP8_STATUS_SUSPENDED
+            {
+                unsafe { WebPIDelete(decoder) };
+                return Err(ImageOperationError::WebPError(status));
+            }
+
+            read_size = stream.read(&mut temp_buffer)?;
+            if read_size == 0 {
+                break;
+            }
+        }
+
+        unsafe {
+            WebPIDelete(decoder);
+            WebPFreeDecBuffer(&mut decoder_config.output as *mut _);
+        };
+
+        let info = ImageInfo {
+            width: target_width,
+            height: target_height,
+            pixel_type: if has_alpha_channel {
+                PixelType::RGBA
+            } else {
+                PixelType::RGB
+            },
+        };
+
+        Ok((buffer, info))
     }
 
     fn load_jpeg_io(
@@ -113,6 +250,14 @@ impl ImageAsset {
             (output_width * output_height) as usize * target_pixel_size.get_size(),
         );
         decoder.decode_into(buffer.as_mut())?;
+
+        // Y-Flip
+        flip_vertical_inplace(
+            buffer.as_mut(),
+            output_width as usize,
+            output_height as usize,
+            3,
+        );
 
         // Fill image info
         let info = ImageInfo {
@@ -149,7 +294,7 @@ impl ImageAsset {
             )
         };
 
-        if data == null_mut() {
+        if data.is_null() {
             return Err(ImageOperationError::UnsupportedImage);
         }
 
@@ -232,6 +377,14 @@ impl ImageAsset {
         );
         decoder.decode_into(buffer.as_mut())?;
 
+        // Y-Flip
+        flip_vertical_inplace(
+            buffer.as_mut(),
+            output_width as usize,
+            output_height as usize,
+            3,
+        );
+
         // Fill image info
         let info = ImageInfo {
             width: output_width,
@@ -294,7 +447,7 @@ impl ImageAsset {
         // Decode it
         // Allocate buffer
         let mut buffer =
-            ImageBuffer::new((target_width * target_height * target_channel_count) as usize);
+            ImageBuffer::new((target_width * target_height * target_channel_count + 4) as usize);
 
         // Fill decoder config
         let mut decoder_config = WebPDecoderConfig::new()
@@ -306,7 +459,6 @@ impl ImageAsset {
             decoder_config.options.scaled_width = expected_width as i32;
             decoder_config.options.scaled_height = expected_height as i32;
         }
-        decoder_config.options.use_scaling = if use_scaling { 1 } else { 0 };
 
         decoder_config.input = features;
 
@@ -501,38 +653,22 @@ impl ImageAsset {
         }
 
         let old_info = state.info.take().unwrap();
-        let mut old_buffer = state.buffer.take().unwrap();
-        let fr_pixel_type = old_info.pixel_type.get_resizer_pixel_type();
+        let old_buffer = state.buffer.take().unwrap();
 
         // Resize
         let mut new_buffer =
             ImageBuffer::new((new_width * new_height) as usize * old_info.pixel_type.get_size());
-        let old_image = fr::images::Image::from_slice_u8(
+
+        resize(
+            old_buffer.as_ref(),
+            new_buffer.as_mut(),
             old_info.width,
             old_info.height,
-            old_buffer.as_mut(),
-            fr_pixel_type,
-        )?;
-        let mut new_image = fr::images::Image::from_slice_u8(
             new_width,
             new_height,
-            new_buffer.as_mut(),
-            fr_pixel_type,
-        )?;
-        let mut resizer = fr::Resizer::new();
-        resizer.resize(
-            &old_image,
-            &mut new_image,
-            &fr::ResizeOptions {
-                algorithm: match filter_type {
-                    ResizeFilter::Nearest => fr::ResizeAlg::Nearest,
-                    ResizeFilter::Box => fr::ResizeAlg::Convolution(fr::FilterType::Box),
-                    ResizeFilter::Lanczos3 => fr::ResizeAlg::Convolution(fr::FilterType::Lanczos3),
-                    ResizeFilter::Gaussian => fr::ResizeAlg::Convolution(fr::FilterType::Gaussian),
-                },
-                ..Default::default()
-            },
-        )?;
+            old_info.pixel_type.get_size() as u32,
+            filter_type,
+        );
 
         // Fill new info
         let mut new_info = old_info.clone();
@@ -559,7 +695,12 @@ impl ImageAsset {
     pub fn copy_pixel(&self, target: &mut [u8]) -> Result<(), ImageOperationError> {
         let state = self.0.read().unwrap();
         if let Some(buffer) = state.buffer.as_ref() {
-            target.copy_from_slice(buffer.as_ref());
+            if target.len() < buffer.len() {
+                target.copy_from_slice(&buffer.as_ref()[..target.len()]);
+            } else {
+                // target.len() >= buffer.len()
+                target[..buffer.len()].copy_from_slice(buffer.as_ref());
+            }
             Ok(())
         } else {
             Err(ImageOperationError::Unavailable)
@@ -584,29 +725,12 @@ impl PixelType {
             PixelType::Grey => 1,
         }
     }
-
-    fn get_resizer_pixel_type(&self) -> fr::PixelType {
-        match self {
-            PixelType::RGBA => fr::PixelType::U8x4,
-            PixelType::ARGB => fr::PixelType::U8x4,
-            PixelType::RGB => fr::PixelType::U8x3,
-            PixelType::Grey => fr::PixelType::U8,
-        }
-    }
 }
 
 impl Into<i32> for PixelType {
     fn into(self) -> i32 {
         self as i32
     }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum ResizeFilter {
-    Nearest,
-    Box,
-    Lanczos3,
-    Gaussian,
 }
 
 #[derive(Clone)]
@@ -626,8 +750,8 @@ struct ImageAssetState {
 pub enum ImageOperationError {
     Unavailable,
     Overflow,
-    ImageBufferError(fr::ImageBufferError),
-    ResizeError(fr::ResizeError),
+    // ImageBufferError(fr::ImageBufferError),
+    // ResizeError(fr::ResizeError),
     UnsupportPixelType,
     UnsupportedImage,
     WebPError(VP8StatusCode),
@@ -640,8 +764,8 @@ impl Display for ImageOperationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ImageOperationError::Unavailable => write!(f, "No image asset is available"),
-            ImageOperationError::ImageBufferError(e) => write!(f, "ImageBufferError: {}", e),
-            ImageOperationError::ResizeError(e) => write!(f, "ResizeError: {}", e),
+            // ImageOperationError::ImageBufferError(e) => write!(f, "ImageBufferError: {}", e),
+            // ImageOperationError::ResizeError(e) => write!(f, "ResizeError: {}", e),
             ImageOperationError::Overflow => write!(f, "Out of the origin image resolution"),
             ImageOperationError::UnsupportPixelType => write!(f, "The pixel type is not supported"),
             ImageOperationError::UnsupportedImage => {
@@ -659,17 +783,17 @@ impl Display for ImageOperationError {
 
 impl Error for ImageOperationError {}
 
-impl From<fr::ImageBufferError> for ImageOperationError {
-    fn from(value: fr::ImageBufferError) -> Self {
-        Self::ImageBufferError(value)
-    }
-}
+// impl From<fr::ImageBufferError> for ImageOperationError {
+//     fn from(value: fr::ImageBufferError) -> Self {
+//         Self::ImageBufferError(value)
+//     }
+// }
 
-impl From<fr::ResizeError> for ImageOperationError {
-    fn from(value: fr::ResizeError) -> Self {
-        Self::ResizeError(value)
-    }
-}
+// impl From<fr::ResizeError> for ImageOperationError {
+//     fn from(value: fr::ResizeError) -> Self {
+//         Self::ResizeError(value)
+//     }
+// }
 
 impl From<zune_jpeg::errors::DecodeErrors> for ImageOperationError {
     fn from(value: zune_jpeg::errors::DecodeErrors) -> Self {

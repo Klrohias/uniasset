@@ -6,3 +6,5 @@ mod magic_number;
 pub use magic_number::*;
 mod buffer;
 pub use buffer::*;
+
+pub mod resizer;

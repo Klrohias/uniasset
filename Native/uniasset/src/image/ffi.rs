@@ -1,5 +1,6 @@
 use std::{
-    ffi::{c_int, c_uchar, c_uint, c_ulong},
+    ffi::{CStr, c_char, c_uchar, c_uint, c_ulong},
+    path::PathBuf,
     slice,
 };
 
@@ -7,8 +8,8 @@ use anyhow::anyhow;
 
 use crate::{
     error::{clear_error, set_error},
-    image::{ImageAsset, ResizeFilter},
-    native::{NativeHandle, NativeHandleExts, failible_to_native},
+    image::{ImageAsset, resizer::ResizeFilter},
+    native::{NativeHandle, NativeHandleExts, NativeIOProvider, failible_to_native},
 };
 
 #[unsafe(no_mangle)]
@@ -46,25 +47,50 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Load(
     )
 }
 
-// #[unsafe(no_mangle)]
-// pub unsafe extern "C" fn Uniasset_ImageAsset_LoadFile(obj_ptr: ImageAssetPtr, path: *const c_char) {
-//     clear_error();
-//     let obj = unsafe { ImageAssetFFI::from_raw(obj_ptr) };
-//     let path = unsafe { CStr::from_ptr(path) };
-//     let path = String::from_utf8_lossy(path.to_bytes());
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_ImageAsset_LoadFile(
+    handle: NativeHandle,
+    path: *const c_char,
+    expected_width: c_uint,
+    expected_height: c_uint,
+) {
+    clear_error();
+    let obj = ImageAsset::from_handle(handle);
+    let path_slice = unsafe { CStr::from_ptr(path) };
+    let path_str = path_slice.to_string_lossy();
+    let path_buf = PathBuf::from(path_str.as_ref());
 
-//     {
-//         let mut w = obj.write().unwrap();
-//         match w.load_from_file(&path) {
-//             Err(e) => {
-//                 set_error_for_this_thread(e);
-//             }
-//             Ok(_) => {}
-//         };
-//     }
+    failible_to_native(
+        || obj.load_file(path_buf, expected_width, expected_height),
+        || (),
+    )
+}
 
-//     forget(obj);
-// }
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_ImageAsset_LoadIO(
+    handle: NativeHandle,
+    provider: *mut NativeIOProvider,
+    expected_width: c_uint,
+    expected_height: c_uint,
+) {
+    clear_error();
+
+    if provider.is_null() {
+        set_error(anyhow!("Invaild IO provider"));
+    }
+
+    let obj = ImageAsset::from_handle(handle);
+    failible_to_native(
+        || {
+            obj.load_io(
+                unsafe { &mut *provider },
+                expected_width as u32,
+                expected_height as u32,
+            )
+        },
+        || (),
+    )
+}
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetWidth(handle: NativeHandle) -> c_uint {
@@ -81,10 +107,10 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_GetHeight(handle: NativeHandle) -> 
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Uniasset_ImageAsset_PixelType(handle: NativeHandle) -> c_int {
+pub unsafe extern "C" fn Uniasset_ImageAsset_GetPixelType(handle: NativeHandle) -> c_uint {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(|| obj.get_pixel_type().map(|x| x.into()), || 0)
+    failible_to_native(|| obj.get_pixel_type().map(|x| x as _), || 0)
 }
 
 #[unsafe(no_mangle)]
@@ -111,10 +137,10 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Resize(
     let obj = ImageAsset::from_handle(handle);
     let filter = match filter {
         0 => ResizeFilter::Nearest,
-        1 => ResizeFilter::Lanczos3,
-        2 => ResizeFilter::Gaussian,
-        3 => ResizeFilter::Box,
-        4_u32..=u32::MAX => {
+        1 => ResizeFilter::Box,
+        2 => ResizeFilter::Lanczos3,
+        3 => ResizeFilter::Gaussian,
+        _ => {
             set_error(anyhow!("Unsupported filter {}", filter));
             return;
         }

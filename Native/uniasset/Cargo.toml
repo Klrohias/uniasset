@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 libwebp-sys = "0.13"
 stb_image = "0.3.0"
-fast_image_resize = "6.0.0"
+# fast_image_resize = { version = "6.0.0" }
 anyhow = "1.0.102"
 zune-jpeg = "0.5.12"
 
@@ -20,3 +20,9 @@ rustflags = [
     "link_arg=-miphoneos-version-min=10.0",
     "llvm-args=\"-fembed-bitcode\"",
 ]
+
+[profile.release]
+lto = "thin"
+opt-level = 'z'
+panic = "abort"
+strip = "symbols"
