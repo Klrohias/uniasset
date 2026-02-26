@@ -4,7 +4,7 @@ use std::{
     fmt::Display,
     fs::File,
     io::{self, BufReader, Read, Seek, SeekFrom},
-    mem::{ManuallyDrop, MaybeUninit},
+    mem::MaybeUninit,
     path::Path,
     ptr::null_mut,
     slice,
@@ -44,7 +44,7 @@ fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels:
 }
 
 #[derive(Clone, Default)]
-pub struct ImageAsset(ManuallyDrop<Box<Arc<RwLock<ImageAssetState>>>>);
+pub struct ImageAsset(Box<Arc<RwLock<ImageAssetState>>>);
 
 impl NativeHandleExts for ImageAsset {
     fn into_handle(self) -> NativeHandle {
@@ -53,10 +53,6 @@ impl NativeHandleExts for ImageAsset {
 
     fn from_handle(handle: NativeHandle) -> Self {
         Self(NativeHandleExts::from_handle(handle))
-    }
-
-    fn destory(self) {
-        self.0.destory();
     }
 }
 
@@ -750,8 +746,7 @@ struct ImageAssetState {
 pub enum ImageOperationError {
     Unavailable,
     Overflow,
-    // ImageBufferError(fr::ImageBufferError),
-    // ResizeError(fr::ResizeError),
+    InvaildSize,
     UnsupportPixelType,
     UnsupportedImage,
     WebPError(VP8StatusCode),
@@ -764,8 +759,6 @@ impl Display for ImageOperationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ImageOperationError::Unavailable => write!(f, "No image asset is available"),
-            // ImageOperationError::ImageBufferError(e) => write!(f, "ImageBufferError: {}", e),
-            // ImageOperationError::ResizeError(e) => write!(f, "ResizeError: {}", e),
             ImageOperationError::Overflow => write!(f, "Out of the origin image resolution"),
             ImageOperationError::UnsupportPixelType => write!(f, "The pixel type is not supported"),
             ImageOperationError::UnsupportedImage => {
@@ -777,23 +770,12 @@ impl Display for ImageOperationError {
             }
             ImageOperationError::JpegDecodeError(e) => write!(f, "Jpeg Error: {e}"),
             ImageOperationError::IOError(e) => write!(f, "IO Error: {e}"),
+            ImageOperationError::InvaildSize => write!(f, "Invaild size"),
         }
     }
 }
 
 impl Error for ImageOperationError {}
-
-// impl From<fr::ImageBufferError> for ImageOperationError {
-//     fn from(value: fr::ImageBufferError) -> Self {
-//         Self::ImageBufferError(value)
-//     }
-// }
-
-// impl From<fr::ResizeError> for ImageOperationError {
-//     fn from(value: fr::ResizeError) -> Self {
-//         Self::ResizeError(value)
-//     }
-// }
 
 impl From<zune_jpeg::errors::DecodeErrors> for ImageOperationError {
     fn from(value: zune_jpeg::errors::DecodeErrors) -> Self {

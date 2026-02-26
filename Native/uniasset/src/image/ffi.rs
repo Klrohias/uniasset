@@ -1,5 +1,6 @@
 use std::{
     ffi::{CStr, c_char, c_uchar, c_uint, c_ulong},
+    mem::forget,
     path::PathBuf,
     slice,
 };
@@ -21,7 +22,7 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Create() -> NativeHandle {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Destory(handle: NativeHandle) {
     clear_error();
-    ImageAsset::from_handle(handle).destory();
+    drop(ImageAsset::from_handle(handle));
 }
 
 #[unsafe(no_mangle)]
@@ -35,7 +36,8 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Load(
     clear_error();
 
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(
+
+    let result = failible_to_native(
         || {
             obj.load_memory(
                 unsafe { slice::from_raw_parts(data, size as usize) },
@@ -44,7 +46,10 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Load(
             )
         },
         || (),
-    )
+    );
+
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
@@ -60,10 +65,12 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadFile(
     let path_str = path_slice.to_string_lossy();
     let path_buf = PathBuf::from(path_str.as_ref());
 
-    failible_to_native(
+    _ = failible_to_native(
         || obj.load_file(path_buf, expected_width, expected_height),
         || (),
-    )
+    );
+
+    forget(obj);
 }
 
 #[unsafe(no_mangle)]
@@ -80,7 +87,7 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadIO(
     }
 
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(
+    _ = failible_to_native(
         || {
             obj.load_io(
                 unsafe { &mut *provider },
@@ -89,28 +96,36 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadIO(
             )
         },
         || (),
-    )
+    );
+
+    forget(obj);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetWidth(handle: NativeHandle) -> c_uint {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(|| obj.get_width(), || 0)
+    let result = failible_to_native(|| obj.get_width(), || 0);
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetHeight(handle: NativeHandle) -> c_uint {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(|| obj.get_height(), || 0)
+    let result = failible_to_native(|| obj.get_height(), || 0);
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetPixelType(handle: NativeHandle) -> c_uint {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(|| obj.get_pixel_type().map(|x| x as _), || 0)
+    let result = failible_to_native(|| obj.get_pixel_type().map(|x| x as _), || 0);
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
@@ -123,7 +138,9 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Crop(
 ) {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(|| obj.crop(l, t, w, h), || ())
+    let result = failible_to_native(|| obj.crop(l, t, w, h), || ());
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
@@ -145,7 +162,9 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Resize(
             return;
         }
     };
-    failible_to_native(|| obj.resize(w, h, filter), || ())
+    let result = failible_to_native(|| obj.resize(w, h, filter), || ());
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
@@ -153,13 +172,16 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Unload(handle: NativeHandle) {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
     obj.unload();
+    forget(obj);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Clone(handle: NativeHandle) -> NativeHandle {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    obj.deep_clone().into_handle()
+    let result = obj.deep_clone().into_handle();
+    forget(obj);
+    result
 }
 
 #[unsafe(no_mangle)]
@@ -170,8 +192,9 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_CopyTo(
 ) {
     clear_error();
     let obj = ImageAsset::from_handle(handle);
-    failible_to_native(
+    _ = failible_to_native(
         || obj.copy_pixel(unsafe { std::slice::from_raw_parts_mut(dst, size as usize) }),
         || (),
-    )
+    );
+    forget(obj);
 }
