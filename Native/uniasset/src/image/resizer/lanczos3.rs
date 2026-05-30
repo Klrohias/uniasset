@@ -1,6 +1,3 @@
-#[cfg(target_arch = "aarch64")]
-use std::arch::aarch64::*;
-
 pub fn lanczos3_dispatch(
     input: &[u8],
     output: &mut [u8],
@@ -10,13 +7,28 @@ pub fn lanczos3_dispatch(
     dest_height: u32,
     pixel_size: u32,
 ) {
-    #[cfg(target_arch = "aarch64")]
-    {
-        use std::arch::is_aarch64_feature_detected;
+    // Only pixel sizes {1, 3, 4} are considered for SIMD fast paths.
+    match pixel_size {
+        1 | 3 | 4 => {}
+        _ => {
+            lanczos3_generic(
+                input,
+                output,
+                origin_width,
+                origin_height,
+                dest_width,
+                dest_height,
+                pixel_size,
+            );
+            return;
+        }
+    }
 
-        if is_aarch64_feature_detected!("neon") {
-            return unsafe {
-                resize_neon(
+    #[cfg(all(target_arch = "aarch64"))]
+    {
+        if std::arch::is_aarch64_feature_detected!("neon") {
+            unsafe {
+                if lanczos3_neon(
                     input,
                     output,
                     origin_width,
@@ -24,12 +36,14 @@ pub fn lanczos3_dispatch(
                     dest_width,
                     dest_height,
                     pixel_size,
-                )
-            };
+                ) {
+                    return;
+                }
+            }
         }
     }
 
-    resize_fallback(
+    lanczos3_generic(
         input,
         output,
         origin_width,
@@ -40,8 +54,7 @@ pub fn lanczos3_dispatch(
     );
 }
 
-#[cfg(target_arch = "aarch64")]
-unsafe fn resize_neon(
+fn lanczos3_generic(
     input: &[u8],
     output: &mut [u8],
     src_w: u32,
@@ -50,82 +63,15 @@ unsafe fn resize_neon(
     dst_h: u32,
     pixel_size: u32,
 ) {
-    if pixel_size != 4 {
-        return resize_fallback(input, output, src_w, src_h, dst_w, dst_h, pixel_size);
-    }
-
-    let w_contribs = precompute_weights(src_w, dst_w);
-    let h_contribs = precompute_weights(src_h, dst_h);
-    let src_stride = (src_w * 4) as usize;
-    let dst_stride = (dst_w * 4) as usize;
-
-    for y in 0..dst_h {
-        let h_contrib = &h_contribs[y as usize];
-        let dst_row_ptr = unsafe { output.as_mut_ptr().add(y as usize * dst_stride) };
-
-        for x in 0..dst_w {
-            let w_contrib = &w_contribs[x as usize];
-
-            let mut acc = unsafe { vdupq_n_f32(0.0) };
-
-            for ky in 0..6 {
-                let py = h_contrib.start + ky;
-                let wy = unsafe { vdupq_n_f32(h_contrib.weights[ky]) };
-                let src_row_ptr = unsafe { input.as_ptr().add(py * src_stride) };
-
-                for kx in 0..6 {
-                    let px = w_contrib.start + kx;
-                    let wx = unsafe { vdupq_n_f32(w_contrib.weights[kx]) };
-
-                    let combined_weight = unsafe { vmulq_f32(wy, wx) };
-
-                    let pixel_ptr = unsafe { src_row_ptr.add(px * 4) };
-                    let raw_pixel = unsafe { vld1_u8(pixel_ptr) };
-
-                    let u16_pixel = unsafe { vmovl_u8(raw_pixel) };
-                    let u32_pixel = unsafe { vmovl_u16(vget_low_u16(u16_pixel)) };
-
-                    let f32_pixel = unsafe { vcvtq_f32_u32(u32_pixel) };
-
-                    acc = unsafe { vfmaq_f32(acc, f32_pixel, combined_weight) };
-                }
-            }
-
-            let res_u32 = unsafe { vcvtq_u32_f32(acc) };
-            let res_u16 = unsafe { vqmovn_u32(res_u32) };
-            let res_u8 = unsafe { vqmovn_u16(vcombine_u16(res_u16, res_u16)) };
-
-            let out_pixel_ptr = unsafe { dst_row_ptr.add(x as usize * 4) } as *mut u32;
-            unsafe {
-                std::ptr::write_unaligned(
-                    out_pixel_ptr,
-                    vget_lane_u32(vreinterpret_u32_u8(res_u8), 0),
-                )
-            };
-        }
+    match pixel_size as usize {
+        1 => resize_const::<1>(input, output, src_w, src_h, dst_w, dst_h),
+        3 => resize_const::<3>(input, output, src_w, src_h, dst_w, dst_h),
+        4 => resize_const::<4>(input, output, src_w, src_h, dst_w, dst_h),
+        _ => resize_dynamic(input, output, src_w, src_h, dst_w, dst_h, pixel_size),
     }
 }
 
-fn resize_fallback(
-    input: &[u8],
-    output: &mut [u8],
-    src_w: u32,
-    src_h: u32,
-    dst_w: u32,
-    dst_h: u32,
-    pixel_size: u32,
-) {
-    match pixel_size {
-        1 => resize_generic::<1>(input, output, src_w, src_h, dst_w, dst_h),
-        3 => resize_generic::<3>(input, output, src_w, src_h, dst_w, dst_h),
-        4 => resize_generic::<4>(input, output, src_w, src_h, dst_w, dst_h),
-        _ => {
-            resize_dynamic(input, output, src_w, src_h, dst_w, dst_h, pixel_size);
-        }
-    }
-}
-
-fn resize_generic<const PS: usize>(
+fn resize_const<const PS: usize>(
     input: &[u8],
     output: &mut [u8],
     src_w: u32,
@@ -207,7 +153,6 @@ fn resize_dynamic(
                     let weight = wy * wx;
 
                     let src_pixel_ptr = src_row_ptr + (px * channels);
-
                     for c in 0..channels {
                         active_sums[c] += input[src_pixel_ptr + c] as f32 * weight;
                     }
@@ -269,3 +214,77 @@ fn precompute_weights(src_size: u32, dst_size: u32) -> Vec<Contribution> {
         })
         .collect()
 }
+
+// ----------------------------- aarch64 NEON -----------------------------
+#[cfg(target_arch = "aarch64")]
+mod arm_neon {
+    use super::precompute_weights;
+    use std::arch::aarch64::*;
+
+    #[target_feature(enable = "neon")]
+    pub unsafe fn lanczos3_neon(
+        input: &[u8],
+        output: &mut [u8],
+        src_w: u32,
+        src_h: u32,
+        dst_w: u32,
+        dst_h: u32,
+        pixel_size: u32,
+    ) -> bool {
+        if pixel_size != 4 {
+            return false;
+        }
+
+        let w_contribs = precompute_weights(src_w, dst_w);
+        let h_contribs = precompute_weights(src_h, dst_h);
+        let src_stride = (src_w * 4) as usize;
+        let dst_stride = (dst_w * 4) as usize;
+
+        for y in 0..dst_h {
+            let h_contrib = &h_contribs[y as usize];
+            let dst_row_ptr = unsafe { output.as_mut_ptr().add(y as usize * dst_stride) };
+
+            for x in 0..dst_w {
+                let w_contrib = &w_contribs[x as usize];
+                let mut acc = vdupq_n_f32(0.0);
+
+                for ky in 0..6 {
+                    let py = h_contrib.start + ky;
+                    let wy = vdupq_n_f32(h_contrib.weights[ky]);
+                    let src_row_ptr = unsafe { input.as_ptr().add(py * src_stride) };
+
+                    for kx in 0..6 {
+                        let px = w_contrib.start + kx;
+                        let wx = vdupq_n_f32(w_contrib.weights[kx]);
+                        let combined_weight = vmulq_f32(wy, wx);
+
+                        let pixel_ptr = unsafe { src_row_ptr.add(px * 4) };
+                        let raw_pixel = unsafe { vld1_u8(pixel_ptr) };
+
+                        let u16_pixel = vmovl_u8(raw_pixel);
+                        let u32_pixel = vmovl_u16(vget_low_u16(u16_pixel));
+                        let f32_pixel = vcvtq_f32_u32(u32_pixel);
+
+                        acc = vfmaq_f32(acc, f32_pixel, combined_weight);
+                    }
+                }
+
+                let res_u32 = vcvtq_u32_f32(acc);
+                let res_u16 = vqmovn_u32(res_u32);
+                let res_u8 = vqmovn_u16(vcombine_u16(res_u16, res_u16));
+
+                let out_pixel_ptr = unsafe { dst_row_ptr.add(x as usize * 4) } as *mut u32;
+                unsafe {
+                    std::ptr::write_unaligned(
+                        out_pixel_ptr,
+                        vget_lane_u32(vreinterpret_u32_u8(res_u8), 0),
+                    )
+                };
+            }
+        }
+        true
+    }
+}
+
+#[cfg(target_arch = "aarch64")]
+use arm_neon::lanczos3_neon;
