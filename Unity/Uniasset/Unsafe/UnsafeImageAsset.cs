@@ -7,8 +7,25 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Uniasset.Unsafe
 {
-    public readonly unsafe struct UnsafeImageAsset
+    public readonly unsafe partial struct UnsafeImageAsset
     {
+        private enum PixelType : uint
+        {
+            Unknown = 0,
+            RGBA = 1,
+            ARGB = 2,
+            RGB = 3,
+            Grey = 4,
+        }
+
+        public enum ResizeFilter : uint
+        {
+            Nearest = 0,
+            Box = 1,
+            Lanczos3 = 2,
+            Gaussian = 3,
+        }
+
         public readonly void* Instance;
 
         public static UnsafeImageAsset Create()
@@ -28,48 +45,50 @@ namespace Uniasset.Unsafe
         {
             var result = Interop.Uniasset_ImageAsset_GetWidth(Instance);
             NativeException.ThrowIfNeeded();
-            return result;
+            return checked((int)result);
         }
 
         public int GetHeight()
         {
             var result = Interop.Uniasset_ImageAsset_GetHeight(Instance);
             NativeException.ThrowIfNeeded();
-            return result;
+            return checked((int)result);
         }
 
         public int GetChannelCount()
         {
-            var result = Interop.Uniasset_ImageAsset_GetChannelCount(Instance);
+            var pixelType = (PixelType)Interop.Uniasset_ImageAsset_GetPixelType(Instance);
             NativeException.ThrowIfNeeded();
-            return result;
+            return pixelType switch
+            {
+                PixelType.RGB => 3,
+                PixelType.RGBA => 4,
+                PixelType.ARGB => 4,
+                PixelType.Grey => 1,
+                _ => 0,
+            };
         }
 
-        public void LoadFile(string path)
+        public void LoadFile(string path, uint expectedWidth = 0, uint expectedHeight = 0)
         {
             var pathBytes = Encoding.Default.GetBytes(path);
             fixed (byte* pathPtr = pathBytes)
             {
-                Interop.Uniasset_ImageAsset_LoadFile(Instance, (sbyte*)pathPtr);
+                Interop.Uniasset_ImageAsset_LoadFile(Instance, (sbyte*)pathPtr, expectedWidth, expectedHeight);
                 NativeException.ThrowIfNeeded();
             }
         }
 
-        public void LoadMemory(Span<byte> data)
+        public void LoadMemory(Span<byte> data, uint expectedWidth = 0, uint expectedHeight = 0)
         {
             fixed (byte* imageData = &data.GetPinnableReference())
             {
-                Interop.Uniasset_ImageAsset_Load(Instance, imageData, Convert.ToUInt64(data.Length));
-                NativeException.ThrowIfNeeded();
-            }
-        }
-
-        public void LoadPixels(Span<byte> data, int width, int height, int channelCount)
-        {
-            fixed (byte* imageData = &data.GetPinnableReference())
-            {
-                Interop.Uniasset_ImageAsset_LoadPixels(Instance, imageData, Convert.ToUInt64(data.Length),
-                    width, height, channelCount);
+                Interop.Uniasset_ImageAsset_Load(
+                    Instance,
+                    imageData,
+                    Convert.ToUInt64(data.Length),
+                    expectedWidth,
+                    expectedHeight);
                 NativeException.ThrowIfNeeded();
             }
         }
@@ -89,16 +108,21 @@ namespace Uniasset.Unsafe
 
         public void Crop(int x, int y, int width, int height)
         {
-            Interop.Uniasset_ImageAsset_Crop(Instance, x, y, width, height);
+            Interop.Uniasset_ImageAsset_Crop(
+                Instance,
+                checked((uint)x),
+                checked((uint)y),
+                checked((uint)width),
+                checked((uint)height));
             NativeException.ThrowIfNeeded();
         }
-        
+
         public UnsafeImageAsset[] CropMultiple(CropOptions[] optionsArray)
         {
             fixed (CropOptions* options = optionsArray)
             fixed (void** result = new void*[optionsArray.Length])
             {
-                Interop.Uniasset_ImageAsset_CropMultiple(Instance, options, (short)optionsArray.Length, result);
+                Interop.Uniasset_ImageAsset_CropMultiple(Instance, options, (uint)optionsArray.Length, result);
                 NativeException.ThrowIfNeeded();
 
                 var handleResult = new UnsafeImageAsset[optionsArray.Length];
@@ -110,17 +134,31 @@ namespace Uniasset.Unsafe
                 return handleResult;
             }
         }
-
+        
         public void Resize(int width, int height)
         {
-            Interop.Uniasset_ImageAsset_Resize(Instance, width, height);
+            Interop.Uniasset_ImageAsset_Resize(
+                Instance,
+                checked((uint)width),
+                checked((uint)height),
+                (uint)ResizeFilter.Lanczos3);
+            NativeException.ThrowIfNeeded();
+        }
+
+        public void Resize(int width, int height, ResizeFilter filter)
+        {
+            Interop.Uniasset_ImageAsset_Resize(
+                Instance,
+                checked((uint)width),
+                checked((uint)height),
+                (uint)filter);
             NativeException.ThrowIfNeeded();
         }
 
         public void CopyTo(NativeArray<byte> dest)
         {
-            var arrayPtr = dest.GetUnsafePtr();
-            Interop.Uniasset_ImageAsset_CopyTo(Instance, arrayPtr);
+            var arrayPtr = (byte*)dest.GetUnsafePtr();
+            Interop.Uniasset_ImageAsset_CopyTo(Instance, arrayPtr, (ulong)dest.Length);
             NativeException.ThrowIfNeeded();
         }
 

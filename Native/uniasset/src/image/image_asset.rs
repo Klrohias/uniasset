@@ -688,6 +688,21 @@ impl ImageAsset {
         new_instance
     }
 
+    pub fn crop_multiple(
+        &self,
+        items: &[crate::image::CropOptions],
+    ) -> Result<Vec<ImageAsset>, ImageOperationError> {
+        let mut results = Vec::with_capacity(items.len());
+
+        for item in items {
+            let cloned = self.deep_clone();
+            cloned.crop(item.x, item.y, item.width, item.height)?;
+            results.push(cloned);
+        }
+
+        Ok(results)
+    }
+
     pub fn copy_pixel(&self, target: &mut [u8]) -> Result<(), ImageOperationError> {
         let state = self.0.read().unwrap();
         if let Some(buffer) = state.buffer.as_ref() {

@@ -4,6 +4,7 @@ namespace Uniasset.Unsafe
 {
     public static unsafe partial class Interop
     {
+        // Core error handling
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: NativeTypeName("const char *")]
         public static extern sbyte* Uniasset_GetError();
@@ -12,6 +13,7 @@ namespace Uniasset.Unsafe
         [return: NativeTypeName("uint8_t")]
         public static extern byte Uniasset_HasError();
 
+        // ImageAsset
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_ImageAsset_Create();
 
@@ -19,44 +21,75 @@ namespace Uniasset.Unsafe
         public static extern void Uniasset_ImageAsset_Destory(void* obj);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_LoadFile(void* self, [NativeTypeName("const char *")] sbyte* path);
+        public static extern void Uniasset_ImageAsset_LoadFile(
+            void* self,
+            [NativeTypeName("const char *")] sbyte* path,
+            [NativeTypeName("uint32_t")] uint expectedWidth,
+            [NativeTypeName("uint32_t")] uint expectedHeight);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_LoadPixels(void* self, [NativeTypeName("uint8_t *")] byte* pixels, [NativeTypeName("uint64_t")] ulong size, [NativeTypeName("int32_t")] int width, [NativeTypeName("int32_t")] int height, [NativeTypeName("int32_t")] int channelCount);
+        public static extern void Uniasset_ImageAsset_Load(
+            void* self,
+            [NativeTypeName("const uint8_t *")] byte* data,
+            [NativeTypeName("uint64_t")] ulong size,
+            [NativeTypeName("uint32_t")] uint expectedWidth,
+            [NativeTypeName("uint32_t")] uint expectedHeight);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_Load(void* self, [NativeTypeName("uint8_t *")] byte* data, [NativeTypeName("uint64_t")] ulong size);
+        public static extern void Uniasset_ImageAsset_LoadIO(
+            void* self,
+            NativeIOProvider* provider,
+            [NativeTypeName("uint32_t")] uint expectedWidth,
+            [NativeTypeName("uint32_t")] uint expectedHeight);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("int32_t")]
-        public static extern int Uniasset_ImageAsset_GetWidth(void* self);
+        [return: NativeTypeName("uint32_t")]
+        public static extern uint Uniasset_ImageAsset_GetWidth(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("int32_t")]
-        public static extern int Uniasset_ImageAsset_GetHeight(void* self);
+        [return: NativeTypeName("uint32_t")]
+        public static extern uint Uniasset_ImageAsset_GetHeight(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("int32_t")]
-        public static extern int Uniasset_ImageAsset_GetChannelCount(void* self);
+        [return: NativeTypeName("uint32_t")]
+        public static extern uint Uniasset_ImageAsset_GetPixelType(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_Crop(void* self, [NativeTypeName("int32_t")] int x, [NativeTypeName("int32_t")] int y, [NativeTypeName("int32_t")] int width, [NativeTypeName("int32_t")] int height);
+        public static extern void Uniasset_ImageAsset_Crop(
+            void* self,
+            [NativeTypeName("uint32_t")] uint l,
+            [NativeTypeName("uint32_t")] uint t,
+            [NativeTypeName("uint32_t")] uint w,
+            [NativeTypeName("uint32_t")] uint h);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_Resize(void* self, [NativeTypeName("int32_t")] int width, [NativeTypeName("int32_t")] int height);
+        public static extern void Uniasset_ImageAsset_Resize(
+            void* self,
+            [NativeTypeName("uint32_t")] uint w,
+            [NativeTypeName("uint32_t")] uint h,
+            [NativeTypeName("uint32_t")] uint filter);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_ImageAsset_Unload(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_CopyTo(void* self, void* dest);
+        public static extern void Uniasset_ImageAsset_CopyTo(
+            void* self,
+            [NativeTypeName("uint8_t *")] byte* dest,
+            [NativeTypeName("uint64_t")] ulong size);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_ImageAsset_Clone(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_ImageAsset_CropMultiple(void* self, void* items, [NativeTypeName("int16_t")] short count, void** output);
+        public static extern void Uniasset_ImageAsset_CropMultiple(
+            void* self,
+            void* items,
+            [NativeTypeName("uint32_t")] uint count,
+            void** output);
 
+        // Audio bindings intentionally left unchanged for now (per request),
+        // but note: the current Rust FFI no longer exports these symbols.
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_AudioAsset_Create();
 

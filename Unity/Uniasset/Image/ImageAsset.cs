@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Uniasset;
 using Uniasset.Unsafe;
 using UnityEngine;
 
@@ -38,53 +40,55 @@ namespace Uniasset.Image
             UnsafeHandle.Destroy();
         }
 
-        public void Load(string path)
+        public void Load(string path, int expectedWidth = 0, int expectedHeight = 0)
         {
-            UnsafeHandle.LoadFile(path);
+            if (expectedWidth < 0) throw new ArgumentOutOfRangeException(nameof(expectedWidth));
+            if (expectedHeight < 0) throw new ArgumentOutOfRangeException(nameof(expectedHeight));
+            UnsafeHandle.LoadFile(path, (uint)expectedWidth, (uint)expectedHeight);
         }
 
-        public Task LoadAsync(string path)
+        public Task LoadAsync(string path, int expectedWidth = 0, int expectedHeight = 0)
         {
             return Task.Factory.StartNew(() =>
             {
                 lock (this)
                 {
-                    Load(path);
+                    Load(path, expectedWidth, expectedHeight);
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
-        public void Load(Span<byte> data)
+        public void Load(Span<byte> data, int expectedWidth = 0, int expectedHeight = 0)
         {
-            UnsafeHandle.LoadMemory(data);
+            if (expectedWidth < 0) throw new ArgumentOutOfRangeException(nameof(expectedWidth));
+            if (expectedHeight < 0) throw new ArgumentOutOfRangeException(nameof(expectedHeight));
+            UnsafeHandle.LoadMemory(data, (uint)expectedWidth, (uint)expectedHeight);
         }
 
-        public Task LoadAsync(byte[] data)
+        public void LoadIO(IUniassetStream stream, int expectedWidth = 0, int expectedHeight = 0)
+        {
+            if (expectedWidth < 0) throw new ArgumentOutOfRangeException(nameof(expectedWidth));
+            if (expectedHeight < 0) throw new ArgumentOutOfRangeException(nameof(expectedHeight));
+            UnsafeHandle.LoadIO(stream, (uint)expectedWidth, (uint)expectedHeight);
+        }
+
+        public void LoadIO(Stream stream, int expectedWidth = 0, int expectedHeight = 0)
+        {
+            LoadIO(new StreamWrapper(stream), expectedWidth, expectedHeight);
+        }
+
+        public Task LoadAsync(byte[] data, int expectedWidth = 0, int expectedHeight = 0)
         {
             return Task.Factory.StartNew(() =>
             {
                 lock (this)
                 {
-                    Load(data);
+                    Load(data, expectedWidth, expectedHeight);
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
-        public void Load(Span<byte> data, int width, int height, int channelCount)
-        {
-            UnsafeHandle.LoadPixels(data, width, height, channelCount);
-        }
-
-        public Task LoadAsync(byte[] data, int width, int height, int channelCount)
-        {
-            return Task.Factory.StartNew(() =>
-            {
-                lock (this)
-                {
-                    Load(data, width, height, channelCount);
-                }
-            }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-        }
+        // Removed: LoadPixels-style API. New native FFI only supports loading encoded image bytes.
 
         public void Unload()
         {

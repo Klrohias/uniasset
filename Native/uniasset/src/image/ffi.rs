@@ -9,7 +9,7 @@ use anyhow::anyhow;
 
 use crate::{
     error::{clear_error, set_error},
-    image::{ImageAsset, resizer::ResizeFilter},
+    image::{CropOptions, ImageAsset, resizer::ResizeFilter},
     native::{NativeHandle, NativeHandleExts, NativeIOProvider, failible_to_native},
 };
 
@@ -196,5 +196,39 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_CopyTo(
         || obj.copy_pixel(unsafe { std::slice::from_raw_parts_mut(dst, size as usize) }),
         || (),
     );
+    forget(obj);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_ImageAsset_CropMultiple(
+    handle: NativeHandle,
+    items: *const CropOptions,
+    count: c_uint,
+    output: *mut NativeHandle,
+) {
+    clear_error();
+
+    if items.is_null() || output.is_null() {
+        set_error(anyhow!("Invaild crop options/output"));
+        return;
+    }
+
+    let obj = ImageAsset::from_handle(handle);
+
+    _ = failible_to_native(
+        || {
+            let items = unsafe { slice::from_raw_parts(items, count as usize) };
+            let output = unsafe { slice::from_raw_parts_mut(output, count as usize) };
+
+            let results = obj.crop_multiple(items)?;
+            for (i, asset) in results.into_iter().enumerate() {
+                output[i] = asset.into_handle();
+            }
+
+            Ok::<(), crate::image::ImageOperationError>(())
+        },
+        || (),
+    );
+
     forget(obj);
 }

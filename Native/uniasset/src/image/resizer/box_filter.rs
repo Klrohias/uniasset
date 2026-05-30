@@ -64,10 +64,39 @@ fn box_resize_generic(
     pixel_size: u32,
 ) {
     match pixel_size as usize {
-        1 => box_resize_const::<1>(input, output, origin_width, origin_height, dest_width, dest_height),
-        3 => box_resize_const::<3>(input, output, origin_width, origin_height, dest_width, dest_height),
-        4 => box_resize_const::<4>(input, output, origin_width, origin_height, dest_width, dest_height),
-        _ => box_resize_dynamic(input, output, origin_width, origin_height, dest_width, dest_height, pixel_size),
+        1 => box_resize_const::<1>(
+            input,
+            output,
+            origin_width,
+            origin_height,
+            dest_width,
+            dest_height,
+        ),
+        3 => box_resize_const::<3>(
+            input,
+            output,
+            origin_width,
+            origin_height,
+            dest_width,
+            dest_height,
+        ),
+        4 => box_resize_const::<4>(
+            input,
+            output,
+            origin_width,
+            origin_height,
+            dest_width,
+            dest_height,
+        ),
+        _ => box_resize_dynamic(
+            input,
+            output,
+            origin_width,
+            origin_height,
+            dest_width,
+            dest_height,
+            pixel_size,
+        ),
     }
 }
 
@@ -179,13 +208,34 @@ mod arm_neon {
     ) -> bool {
         match pixel_size {
             1 => unsafe {
-                box_neon_const::<1>(input, output, origin_width, origin_height, dest_width, dest_height)
+                box_neon_const::<1>(
+                    input,
+                    output,
+                    origin_width,
+                    origin_height,
+                    dest_width,
+                    dest_height,
+                )
             },
             3 => unsafe {
-                box_neon_const::<3>(input, output, origin_width, origin_height, dest_width, dest_height)
+                box_neon_const::<3>(
+                    input,
+                    output,
+                    origin_width,
+                    origin_height,
+                    dest_width,
+                    dest_height,
+                )
             },
             4 => unsafe {
-                box_neon_const::<4>(input, output, origin_width, origin_height, dest_width, dest_height)
+                box_neon_const::<4>(
+                    input,
+                    output,
+                    origin_width,
+                    origin_height,
+                    dest_width,
+                    dest_height,
+                )
             },
             _ => false,
         }

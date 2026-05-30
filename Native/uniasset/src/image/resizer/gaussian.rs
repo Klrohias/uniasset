@@ -95,8 +95,7 @@ fn gaussian_generic(
                 let mut sum = 0.0f32;
                 for i in 0..weight_info.weights.len() {
                     let src_y = (weight_info.start + i as i32).clamp(0, src_h as i32 - 1);
-                    let val =
-                        intermediate[((src_y as u32 * dst_w + x) * pixel_size + c) as usize];
+                    let val = intermediate[((src_y as u32 * dst_w + x) * pixel_size + c) as usize];
                     sum += val * weight_info.weights[i];
                 }
                 output[out_ptr + c as usize] = sum.clamp(0.0, 255.0) as u8;
@@ -137,7 +136,7 @@ fn precompute_gaussian_weights(src_dim: u32, dst_dim: u32, sigma: f32) -> Vec<We
 // ----------------------------- aarch64 NEON -----------------------------
 #[cfg(target_arch = "aarch64")]
 mod arm_neon {
-    use super::{precompute_gaussian_weights, WeightInfo};
+    use super::{WeightInfo, precompute_gaussian_weights};
     use std::arch::aarch64::*;
 
     #[target_feature(enable = "neon")]

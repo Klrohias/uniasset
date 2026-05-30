@@ -5,17 +5,17 @@ namespace Uniasset.Image
     [StructLayout(LayoutKind.Sequential)]
     public struct CropOptions
     {
-        public int X;
-        public int Y;
-        public int Width;
-        public int Height;
+        public uint X;
+        public uint Y;
+        public uint Width;
+        public uint Height;
 
         public CropOptions(int x, int y, int width, int height)
         {
-            X = x;
-            Y = y;
-            Width = width;
-            Height = height;
+            X = checked((uint)x);
+            Y = checked((uint)y);
+            Width = checked((uint)width);
+            Height = checked((uint)height);
         }
     }
 }

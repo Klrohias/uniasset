@@ -212,7 +212,14 @@ mod x86_sse2 {
     ) -> bool {
         match pixel_size {
             4 => unsafe {
-                nearest_ps4(input, output, origin_width, origin_height, dest_width, dest_height)
+                nearest_ps4(
+                    input,
+                    output,
+                    origin_width,
+                    origin_height,
+                    dest_width,
+                    dest_height,
+                )
             },
             _ => false,
         }
@@ -287,7 +294,14 @@ mod arm_neon {
     ) -> bool {
         match pixel_size {
             4 => unsafe {
-                nearest_ps4(input, output, origin_width, origin_height, dest_width, dest_height)
+                nearest_ps4(
+                    input,
+                    output,
+                    origin_width,
+                    origin_height,
+                    dest_width,
+                    dest_height,
+                )
             },
             _ => false,
         }
@@ -356,15 +370,7 @@ use arm_neon::nearest_resize_neon;
 mod tests {
     use super::nearest_resize_dispatch;
 
-    fn reference(
-        input: &[u8],
-        output: &mut [u8],
-        ow: u32,
-        oh: u32,
-        dw: u32,
-        dh: u32,
-        ps: u32,
-    ) {
+    fn reference(input: &[u8], output: &mut [u8], ow: u32, oh: u32, dw: u32, dh: u32, ps: u32) {
         let psu = ps as usize;
         let scale_x = ow as f32 / dw as f32;
         let scale_y = oh as f32 / dh as f32;
