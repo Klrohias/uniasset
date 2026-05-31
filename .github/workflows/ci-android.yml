@@ -14,7 +14,12 @@ jobs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
-        target: armv7-linux-androideabi,aarch64-linux-android,i686-linux-android,x86_64-linux-android
+        target: aarch64-linux-android
+
+    - name: Ensure Rust targets installed
+      if: '!cancelled()'
+      run: |
+        rustup target add armv7-linux-androideabi aarch64-linux-android i686-linux-android x86_64-linux-android
 
     - name: Setup Android NDK
       uses: android-actions/setup-android@v3
@@ -51,30 +56,36 @@ jobs:
         cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
         popd
 
+    - name: List Android build outputs
+      if: '!cancelled()'
+      run: |
+        ls -R "${{github.workspace}}/Native/target/android-build" || true
+        ls -R "${{github.workspace}}/Native/target" || true
+
     - name: Upload Artifact (arm-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-arm-neon-android
-        path: ${{github.workspace}}/Native/target/android-build/armeabi-v7a/release/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/armeabi-v7a/libuniasset.so
 
     - name: Upload Artifact (aarch64-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-aarch64-android
-        path: ${{github.workspace}}/Native/target/android-build/arm64-v8a/release/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/arm64-v8a/libuniasset.so
 
     - name: Upload Artifact (x86-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-x86-android
-        path: ${{github.workspace}}/Native/target/android-build/x86/release/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/x86/libuniasset.so
 
     - name: Upload Artifact (x64-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-x64-android
-        path: ${{github.workspace}}/Native/target/android-build/x86_64/release/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/x86_64/libuniasset.so
