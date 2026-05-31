@@ -4,54 +4,36 @@ on:
   workflow_dispatch: {}
   workflow_call: {}
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build-darwin:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install vcpkg and dependencies
-      run: |
-        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
-        pushd ~/vcpkg-ci
-        ./bootstrap-vcpkg.sh
-        popd
-      
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        cp ${{github.workspace}}/Native/scripts/arm64-ios-bitcode.cmake $VCPKG_INSTALLATION_ROOT/triplets/community/
+    - uses: actions/checkout@v4
 
-    - name: Build macOS (x64-osx)
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+        targets: |
+          x86_64-apple-darwin
+          aarch64-apple-darwin
+          aarch64-apple-ios
+
+    - name: Build macOS (x86_64-apple-darwin)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET='x64-osx'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_SHARED_LIBS=YES -DCMAKE_OSX_ARCHITECTURES=x86_64
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-apple-darwin
 
-    - name: Build macOS (arm64-osx)
+    - name: Build macOS (aarch64-apple-darwin)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET='arm64-osx'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DBUILD_SHARED_LIBS=YES -DCMAKE_OSX_ARCHITECTURES=arm64
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --target uniasset --config ${{env.BUILD_TYPE}}
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target aarch64-apple-darwin
 
-    - name: Build iOS (ios-osx)
+    - name: Build iOS (aarch64-apple-ios)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET='arm64-ios-bitcode'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --target uniasset --config ${{env.BUILD_TYPE}}
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target aarch64-apple-ios
 
 
     - name: Upload Artifact (x64-osx)
@@ -59,19 +41,18 @@ jobs:
       if: '!cancelled()'
       with:
         name: libuniasset-x64-osx
-        path: ${{github.workspace}}/Native/build-x64-osx/src/uniasset/libuniasset.dylib
+        path: ${{github.workspace}}/Native/target/x86_64-apple-darwin/release/libuniasset.dylib
 
     - name: Upload Artifact (arm64-osx)
       uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
         name: libuniasset-arm64-osx
-        path: ${{github.workspace}}/Native/build-arm64-osx/src/uniasset/libuniasset.dylib
+        path: ${{github.workspace}}/Native/target/aarch64-apple-darwin/release/libuniasset.dylib
 
-    - name: Upload Artifact (arm64-ios-bitcode)
+    - name: Upload Artifact (arm64-ios)
       uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-arm64-ios-bitcode
-        path: ${{github.workspace}}/Native/build-arm64-ios-bitcode/src/uniasset/libuniasset.a
-
+        name: libuniasset-arm64-ios
+        path: ${{github.workspace}}/Native/target/aarch64-apple-ios/release/libuniasset.a
