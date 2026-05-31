@@ -311,7 +311,7 @@ impl ImageAsset {
 
         let buffer = ImageBuffer::from_stbi(
             data,
-            (output_height * output_height) as usize * pixel_type.get_size(),
+            (output_width * output_height) as usize * pixel_type.get_size(),
         );
 
         let info = ImageInfo {
@@ -540,7 +540,7 @@ impl ImageAsset {
 
         let buffer = ImageBuffer::from_stbi(
             data,
-            (output_height * output_height) as usize * pixel_type.get_size(),
+            (output_width * output_height) as usize * pixel_type.get_size(),
         );
 
         let info = ImageInfo {
