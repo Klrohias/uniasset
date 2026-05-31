@@ -10,7 +10,8 @@ use anyhow::anyhow;
 use crate::{
     error::{clear_error, set_error},
     image::{CropOptions, ImageAsset, resizer::ResizeFilter},
-    native::{NativeHandle, NativeHandleExts, NativeIOProvider, failible_to_native},
+    io::NativeIOProvider,
+    native::{NativeHandle, NativeHandleExts, failible_to_native},
 };
 
 #[unsafe(no_mangle)]

@@ -1,9 +1,18 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    io::{Read, Seek},
+    sync::{Arc, RwLock},
+};
 
 use crate::native::{NativeHandle, NativeHandleExts};
 
 #[derive(Default)]
 pub struct AudioAsset(Box<Arc<RwLock<AudioAssetState>>>);
+
+impl AudioAsset {
+    pub fn load_file(&self, path: String) {}
+    pub fn load_memory(&self, data: impl AsRef<u8>) {}
+    pub fn load_io(&self, stream: impl Read + Seek) {}
+}
 
 impl NativeHandleExts for AudioAsset {
     fn into_handle(self) -> NativeHandle {
