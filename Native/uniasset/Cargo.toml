@@ -1,0 +1,15 @@
+[package]
+name = "uniasset"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+libwebp-sys = "0.13"
+stb_image = "0.3.0"
+# fast_image_resize = { version = "6.0.0" }
+anyhow = "1.0.102"
+zune-jpeg = "0.5.12"
+
+[lib]
+name = "uniasset"
+crate-type = ["staticlib", "cdylib"]

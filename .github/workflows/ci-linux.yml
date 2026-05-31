@@ -4,39 +4,25 @@ on:
   workflow_dispatch: {}
   workflow_call: {}
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build-linux:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Configure environment
-      run: |
-        sudo apt install -y git build-essential "gobjc++"
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-unknown-linux-gnu
 
-    - name: Install vcpkg
+    - name: Build (x86_64-unknown-linux-gnu)
       run: |
-        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
-        pushd ~/vcpkg-ci
-        ./bootstrap-vcpkg.sh
-        popd
-
-    - name: Configure and build
-      run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET="x64-linux"
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake -DBUILD_SHARED_LIBS=YES
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-unknown-linux-gnu
 
     - name: Upload Artifact (x64-linux)
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-x64-linux
-        path: ${{github.workspace}}/Native/build-x64-linux/src/uniasset/libuniasset.so
+        path: ${{github.workspace}}/Native/target/x86_64-unknown-linux-gnu/release/libuniasset.so

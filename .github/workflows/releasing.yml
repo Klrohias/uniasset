@@ -26,7 +26,7 @@ jobs:
     if: '!cancelled()'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -44,8 +44,8 @@ jobs:
       - name: Package unity scripts
         if: '!cancelled()'
         run: |
-          pushd "${{github.workspace}}/Unity/UniassetTest/Assets"
-          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "Plugins/"
+          pushd "${{github.workspace}}/Unity"
+          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "Uniasset/"
           popd
 
       - name: Upload binaries to release

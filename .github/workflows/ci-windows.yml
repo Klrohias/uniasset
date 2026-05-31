@@ -5,60 +5,26 @@ on:
   workflow_call: {}
 
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build-win:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Install vcpkg
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-pc-windows-msvc
+
+    - name: Build (x86_64-pc-windows-msvc)
       run: |
-        git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg-ci"
-        pushd ~/vcpkg-ci
-        ./bootstrap-vcpkg.sh
-        popd
-
-    - name: Build x64-windows
-      if: '!cancelled()'
-      run: |
-        $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
-        $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
-        $TRIPLET='x64-windows';
-        
-        cd "${{github.workspace}}/Native"
-        $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
-        cmake -B $BUILD_ROOT -A x64 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
-        cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
-
-
-    - name: Build x86-windows
-      if: '!cancelled()'
-      run: |
-        $env:VCPKG_INSTALLATION_ROOT="$HOME/vcpkg-ci";
-        $VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT;
-        $TRIPLET='x86-windows';
-        
-        cd "${{github.workspace}}/Native"
-        $BUILD_ROOT="${{github.workspace}}/Native/build-$TRIPLET";
-        cmake -B $BUILD_ROOT -A Win32 "-DVCPKG_TARGET_TRIPLET=$TRIPLET" "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" "-DBUILD_SHARED_LIBS=YES"
-        cmake --build $BUILD_ROOT --config ${{env.BUILD_TYPE}}
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-pc-windows-msvc
 
     - name: Upload Artifact (x64-windows)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: uniasset-x64-windows
-        path: ${{github.workspace}}/Native/build-x64-windows/src/uniasset/Release/*.dll
-
-    - name: Upload Artifact (x86-windows)
-      if: '!cancelled()'
-      uses: actions/upload-artifact@v4
-      with:
-        name: uniasset-x86-windows
-        path: ${{github.workspace}}/Native/build-x86-windows/src/uniasset/Release/*.dll
-
-
+        path: ${{github.workspace}}/Native/target/x86_64-pc-windows-msvc/release/*.dll

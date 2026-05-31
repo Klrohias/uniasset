@@ -1,4 +1,0 @@
-{
-  global: _*uniasset*; Uniasset_*;
-  local: *;
-};

@@ -4,104 +4,88 @@ on:
   workflow_dispatch: {}
   workflow_call: {}
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    env:
-      ANDROID_NDK: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
-      ANDROID_NDK_HOME: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
-      ANDROID_NDK_LATEST_HOME: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
-      ANDROID_NDK_ROOT: "/usr/local/lib/android/sdk/ndk/24.0.8215888"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - name: Configure environment
-      run: |
-        sudo apt install -y git build-essential ninja-build
+    - name: Setup Rust
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: stable
+        target: aarch64-linux-android
 
-    - name: Install vcpkg
+    - name: Ensure Rust targets installed
+      if: '!cancelled()'
       run: |
-        git clone https://github.com/microsoft/vcpkg ~/vcpkg-ci
-        pushd ~/vcpkg-ci
-        ./bootstrap-vcpkg.sh
-        popd
+        rustup target add armv7-linux-androideabi aarch64-linux-android i686-linux-android x86_64-linux-android
+
+    - name: Setup Android NDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install cargo-ndk
+      run: |
+        cargo install cargo-ndk --locked
 
     - name: Build (Android armeabi-v7a)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        CFG_FLAGS=('-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}' '-DBUILD_SHARED_LIBS=YES' '-DVCPKG_CMAKE_SYSTEM_NAME=Android' '-DCMAKE_SYSTEM_NAME=Android' "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake")
-        cd "${{github.workspace}}/Native"
-
-        TRIPLET='arm-neon-android'
-        ABI='armeabi-v7a'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        pushd Native
+        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Build (Android arm64-v8a)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        CFG_FLAGS=('-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}' '-DBUILD_SHARED_LIBS=YES' '-DVCPKG_CMAKE_SYSTEM_NAME=Android' '-DCMAKE_SYSTEM_NAME=Android' "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake")
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET='arm64-android'
-        ABI='arm64-v8a'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
-        
+        pushd Native
+        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Build (Android x86)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        CFG_FLAGS=('-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}' '-DBUILD_SHARED_LIBS=YES' '-DVCPKG_CMAKE_SYSTEM_NAME=Android' '-DCMAKE_SYSTEM_NAME=Android' "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake")
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET='x86-android'
-        ABI='x86'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        pushd Native
+        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Build (Android x86_64)
       if: '!cancelled()'
       run: |
-        VCPKG_INSTALLATION_ROOT=~/vcpkg-ci
-        CFG_FLAGS=('-DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}' '-DBUILD_SHARED_LIBS=YES' '-DVCPKG_CMAKE_SYSTEM_NAME=Android' '-DCMAKE_SYSTEM_NAME=Android' "-DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake")
-        cd "${{github.workspace}}/Native"
-        
-        TRIPLET='x64-android'
-        ABI='x86_64'
-        cmake -B ${{github.workspace}}/Native/build-$TRIPLET -DVCPKG_TARGET_TRIPLET=$TRIPLET -DANDROID_ABI=$ABI "${CFG_FLAGS[@]}"
-        cmake --build ${{github.workspace}}/Native/build-$TRIPLET --config ${{env.BUILD_TYPE}}
+        pushd Native
+        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
+
+    - name: List Android build outputs
+      if: '!cancelled()'
+      run: |
+        ls -R "${{github.workspace}}/Native/target/android-build" || true
+        ls -R "${{github.workspace}}/Native/target" || true
 
     - name: Upload Artifact (arm-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-arm-neon-android
-        path: ${{github.workspace}}/Native/build-arm-neon-android/src/uniasset/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/armeabi-v7a/libuniasset.so
 
-    - name: Upload Artifact (arm64-android)
+    - name: Upload Artifact (aarch64-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
-        name: libuniasset-arm64-android
-        path: ${{github.workspace}}/Native/build-arm64-android/src/uniasset/libuniasset.so
+        name: libuniasset-aarch64-android
+        path: ${{github.workspace}}/Native/target/android-build/arm64-v8a/libuniasset.so
 
     - name: Upload Artifact (x86-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-x86-android
-        path: ${{github.workspace}}/Native/build-x86-android/src/uniasset/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/x86/libuniasset.so
 
     - name: Upload Artifact (x64-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v4
       with:
         name: libuniasset-x64-android
-        path: ${{github.workspace}}/Native/build-x64-android/src/uniasset/libuniasset.so
+        path: ${{github.workspace}}/Native/target/android-build/x86_64/libuniasset.so
