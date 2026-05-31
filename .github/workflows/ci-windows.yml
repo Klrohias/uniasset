@@ -16,7 +16,7 @@ jobs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
-        targets: x86_64-pc-windows-msvc
+        target: x86_64-pc-windows-msvc
 
     - name: Build (x86_64-pc-windows-msvc)
       run: |
@@ -28,4 +28,3 @@ jobs:
       with:
         name: uniasset-x64-windows
         path: ${{github.workspace}}/Native/target/x86_64-pc-windows-msvc/release/*.dll
-

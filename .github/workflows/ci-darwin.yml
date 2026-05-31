@@ -15,15 +15,7 @@ jobs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
-        targets: |
-          x86_64-apple-darwin
-          aarch64-apple-darwin
-          aarch64-apple-ios
-    
-    - name: Ensure Rust targets installed
-      if: '!cancelled()'
-      run: |
-        rustup target add x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios
+        target: x86_64-apple-darwin,aarch64-apple-darwin,aarch64-apple-ios
 
     - name: Build macOS (x86_64-apple-darwin)
       if: '!cancelled()'
@@ -38,7 +30,10 @@ jobs:
     - name: Build iOS (aarch64-apple-ios)
       if: '!cancelled()'
       run: |
-        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target aarch64-apple-ios
+        # iOS does not support dylib outputs; build staticlib only.
+        # Also set deployment target for C deps compiled via `cc` crate.
+        export IPHONEOS_DEPLOYMENT_TARGET=10.0
+        cargo rustc --manifest-path Native/Cargo.toml -p uniasset --release --target aarch64-apple-ios --lib -- --crate-type staticlib
 
 
     - name: Upload Artifact (x64-osx)

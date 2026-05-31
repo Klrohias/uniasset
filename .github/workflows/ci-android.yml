@@ -14,11 +14,7 @@ jobs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
-        targets: |
-          armv7-linux-androideabi
-          aarch64-linux-android
-          i686-linux-android
-          x86_64-linux-android
+        target: armv7-linux-androideabi,aarch64-linux-android,i686-linux-android,x86_64-linux-android
 
     - name: Setup Android NDK
       uses: android-actions/setup-android@v3
@@ -30,22 +26,30 @@ jobs:
     - name: Build (Android armeabi-v7a)
       if: '!cancelled()'
       run: |
-        cargo ndk -t armeabi-v7a -o Native/target/android-build build --manifest-path Native/Cargo.toml -p uniasset --release
+        pushd Native
+        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Build (Android arm64-v8a)
       if: '!cancelled()'
       run: |
-        cargo ndk -t arm64-v8a -o Native/target/android-build build --manifest-path Native/Cargo.toml -p uniasset --release
+        pushd Native
+        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Build (Android x86)
       if: '!cancelled()'
       run: |
-        cargo ndk -t x86 -o Native/target/android-build build --manifest-path Native/Cargo.toml -p uniasset --release
+        pushd Native
+        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Build (Android x86_64)
       if: '!cancelled()'
       run: |
-        cargo ndk -t x86_64 -o Native/target/android-build build --manifest-path Native/Cargo.toml -p uniasset --release
+        pushd Native
+        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        popd
 
     - name: Upload Artifact (arm-android)
       if: '!cancelled()'
