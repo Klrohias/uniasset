@@ -13,10 +13,3 @@ zune-jpeg = "0.5.12"
 [lib]
 name = "uniasset"
 crate-type = ["staticlib", "cdylib"]
-
-[target.'cfg(target_os = "ios")']
-rustflags = [
-    "-C",
-    "link_arg=-miphoneos-version-min=10.0",
-    "llvm-args=\"-fembed-bitcode\"",
-]

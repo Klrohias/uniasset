@@ -256,7 +256,7 @@ mod x86_sse2 {
                 let p2 = unsafe { *(src_row.add(o2) as *const u32) };
                 let p3 = unsafe { *(src_row.add(o3) as *const u32) };
 
-                let v = _mm_setr_epi32(p0 as i32, p1 as i32, p2 as i32, p3 as i32);
+                let v = unsafe { _mm_setr_epi32(p0 as i32, p1 as i32, p2 as i32, p3 as i32) };
                 unsafe { _mm_storeu_si128(dst_row.add(dx * 4) as *mut __m128i, v) };
                 dx += 4;
             }

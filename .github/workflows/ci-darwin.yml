@@ -19,6 +19,11 @@ jobs:
           x86_64-apple-darwin
           aarch64-apple-darwin
           aarch64-apple-ios
+    
+    - name: Ensure Rust targets installed
+      if: '!cancelled()'
+      run: |
+        rustup target add x86_64-apple-darwin aarch64-apple-darwin aarch64-apple-ios
 
     - name: Build macOS (x86_64-apple-darwin)
       if: '!cancelled()'
@@ -40,19 +45,19 @@ jobs:
       uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-x64-osx
+        name: libuniasset-x64-macos
         path: ${{github.workspace}}/Native/target/x86_64-apple-darwin/release/libuniasset.dylib
 
-    - name: Upload Artifact (arm64-osx)
+    - name: Upload Artifact (aarch64-macos)
       uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-arm64-osx
+        name: libuniasset-aarch64-macos
         path: ${{github.workspace}}/Native/target/aarch64-apple-darwin/release/libuniasset.dylib
 
-    - name: Upload Artifact (arm64-ios)
+    - name: Upload Artifact (aarch64-ios)
       uses: actions/upload-artifact@v4
       if: '!cancelled()'
       with:
-        name: libuniasset-arm64-ios
+        name: libuniasset-aarch64-ios
         path: ${{github.workspace}}/Native/target/aarch64-apple-ios/release/libuniasset.a
