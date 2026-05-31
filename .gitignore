@@ -1,3 +1,7 @@
 # MacOS Internals
 .DS_Store
 ._*
+.vs
+.idea
+
+Native/out/
