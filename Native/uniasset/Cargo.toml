@@ -8,6 +8,14 @@ libwebp-sys = "0.13"
 stb_image = "0.3.0"
 anyhow = "1.0.102"
 zune-jpeg = "0.5.12"
+symphonia = { version = "0.6", default-features = false, features = [
+    "mp3",
+    "flac",
+    "wav",
+    "vorbis",
+    "ogg",
+] }
+bytemuck = { version = "1", features = ["derive"] }
 
 [lib]
 name = "uniasset"
