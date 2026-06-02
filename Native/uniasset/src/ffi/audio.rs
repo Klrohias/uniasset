@@ -1,7 +1,6 @@
 use crate::{
     audio::AudioAsset,
-    error::clear_error,
-    native::{NativeHandle, NativeHandleExts},
+    ffi::{NativeHandle, NativeHandleExts, clear_error},
 };
 
 #[unsafe(no_mangle)]

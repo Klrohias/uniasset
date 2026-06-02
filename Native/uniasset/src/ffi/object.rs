@@ -1,6 +1,6 @@
-use std::{error::Error, ffi::c_int, io, os::raw::c_void, sync::Arc};
+use std::{error::Error, os::raw::c_void, sync::Arc};
 
-use crate::error::set_error;
+use crate::ffi::set_error;
 
 pub type NativeHandle = *const c_void;
 

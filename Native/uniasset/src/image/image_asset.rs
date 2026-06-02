@@ -19,11 +19,11 @@ use stb_image::stb_image;
 use zune_jpeg::{JpegDecoder, zune_core::bytestream::ZCursor};
 
 use crate::{
+    ffi::{NativeHandle, NativeHandleExts},
     image::{
         ImageBuffer, is_jpeg, is_webp,
         resizer::{ResizeFilter, resize},
     },
-    native::{NativeHandle, NativeHandleExts},
 };
 
 fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels: usize) {

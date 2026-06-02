@@ -8,10 +8,11 @@ use std::{
 use anyhow::anyhow;
 
 use crate::{
-    error::{clear_error, set_error},
+    ffi::{
+        NativeHandle, NativeHandleExts, NativeIOProvider, clear_error, failible_to_native,
+        set_error,
+    },
     image::{CropOptions, ImageAsset, resizer::ResizeFilter},
-    io::NativeIOProvider,
-    native::{NativeHandle, NativeHandleExts, failible_to_native},
 };
 
 #[unsafe(no_mangle)]

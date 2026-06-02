@@ -6,5 +6,3 @@ mod magic_number;
 pub use magic_number::*;
 mod decoder;
 pub use decoder::*;
-
-mod ffi;

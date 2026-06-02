@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
     audio::{AudioFormatProbe, probe_format_from_stream},
-    native::{NativeHandle, NativeHandleExts},
+    ffi::{NativeHandle, NativeHandleExts},
 };
 
 #[derive(Default)]
