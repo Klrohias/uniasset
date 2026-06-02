@@ -15,7 +15,8 @@ symphonia = { version = "0.6", default-features = false, features = [
     "vorbis",
     "ogg",
 ] }
-bytemuck = { version = "1", features = ["derive"] }
+bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
+parking_lot = "0.12.5"
 
 [lib]
 name = "uniasset"
