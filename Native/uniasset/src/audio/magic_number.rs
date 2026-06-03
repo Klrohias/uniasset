@@ -22,6 +22,7 @@ pub fn is_ogg(data: &[u8]) -> bool {
     data.len() >= 14 && data.starts_with(OGG_MAGIC_NUMBER)
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum AudioFormatProbe {
     Mp3,
     Flac,

@@ -1,6 +1,12 @@
-use std::{cmp::min, io, sync::Arc};
+use std::{
+    cmp::min,
+    io::{self, Cursor, Read, Seek},
+    sync::atomic::{AtomicI64, Ordering},
+};
 
+use parking_lot::Mutex;
 use symphonia::core::{
+    audio::GenericAudioBufferRef,
     codecs::audio::{AudioDecoderOptions, CODEC_ID_NULL_AUDIO},
     errors::Error as SymphoniaError,
     formats::{FormatOptions, FormatReader, SeekMode, SeekTo, probe::Hint},
@@ -11,32 +17,75 @@ use symphonia::core::{
 use symphonia::default::{get_codecs, get_probe};
 
 use crate::audio::{AudioDecoder, DecoderError, SampleFormat};
-struct DecoderInner {
+struct SymphoniaState {
     reader: Box<dyn FormatReader>,
     decoder: Box<dyn symphonia::core::codecs::audio::AudioDecoder>,
     track_id: u32,
     time_base: Option<TimeBase>,
     reached_eof: bool,
-    remain_buffer: Option<PcmFrameBuffer>,
+}
+
+struct AudioMetadata {
+    sample_count: u64,
+    sample_rate: u32,
+    channel_count: usize,
+    frame_count: u64,
+    bytes_per_frame: usize,
+}
+
+#[derive(Default)]
+struct AudioFrameBuffer {
+    buffer: Vec<u8>,
+    frame_count: usize,
+    frame_offset: Option<usize>,
+}
+
+impl AudioFrameBuffer {
+    /// Prepare for write pcm frames with `byte_size` bytes, and clear the remaining frame
+    fn prepare(&mut self, byte_size: usize) {
+        if self.buffer.len() < byte_size {
+            self.buffer = vec![0u8; byte_size];
+        }
+
+        self.clear()
+    }
+
+    /// Clear remaining frame
+    fn clear(&mut self) {
+        self.frame_count = 0;
+        self.frame_offset = None;
+    }
+
+    fn has_remaining(&self) -> bool {
+        self.frame_offset.is_some()
+    }
 }
 
 pub struct SymphoniaDecoder {
     sample_format: SampleFormat,
-    sample_count: u64,
-    sample_rate: u32,
-    channel_count: usize,
-    bytes_per_frame: usize,
-    position: u64,
+    metadata: AudioMetadata,
+    inner: SymphoniaState,
 
-    inner: DecoderInner,
+    frame_position: AtomicI64,
+    frame_buffer: AudioFrameBuffer,
+    mutex: Mutex<()>,
 }
 
 impl SymphoniaDecoder {
-    pub fn from_io<T>(stream: T, sample_format: SampleFormat) -> Result<Self, DecoderError>
+    pub fn from_io<T>(mut stream: T, sample_format: SampleFormat) -> Result<Self, DecoderError>
     where
-        T: MediaSource + 'static,
+        T: Read + Seek + Send + Sync + 'static,
     {
-        let mss = MediaSourceStream::new(Box::new(stream), MediaSourceStreamOptions::default());
+        // Measure stream length
+        let length = stream.seek(io::SeekFrom::End(0))?;
+
+        let adapter = MediaSourceAdapter {
+            inner: stream,
+            length: Some(length),
+        };
+
+        // Construct media source stream
+        let mss = MediaSourceStream::new(Box::new(adapter), MediaSourceStreamOptions::default());
         Self::from_media_source_stream(mss, sample_format)
     }
 
@@ -44,7 +93,7 @@ impl SymphoniaDecoder {
     where
         T: AsRef<[u8]> + Send + Sync + 'static,
     {
-        Self::from_io(io::Cursor::new(data), sample_format)
+        Self::from_io(Cursor::new(data), sample_format)
     }
 
     fn from_media_source_stream(
@@ -83,128 +132,44 @@ impl SymphoniaDecoder {
             .map(|x| x.count())
             .ok_or(DecoderError::UnsupportedFormat)?;
         let time_base = track.time_base;
-        let sample_count = track.num_frames.unwrap_or(0);
+        let frame_count = track.num_frames.ok_or(DecoderError::UnsupportedFormat)?;
+        let sample_count = frame_count * channel_count as u64;
 
         let decoder =
             get_codecs().make_audio_decoder(codec_params, &AudioDecoderOptions::default())?;
 
         let bytes_per_frame = sample_format.byte_size() * channel_count;
 
+        let frame_buffer_size = codec_params
+            .max_frames_per_packet
+            .unwrap_or(4096 * sample_format.byte_size() as u64)
+            as usize;
+
         Ok(Self {
             sample_format,
-            sample_count,
-            sample_rate,
-            channel_count,
-            bytes_per_frame,
-            position: 0,
-            inner: DecoderInner {
+            metadata: AudioMetadata {
+                sample_count,
+                sample_rate,
+                channel_count,
+                frame_count,
+                bytes_per_frame,
+            },
+            frame_position: AtomicI64::new(0),
+            mutex: Mutex::new(()),
+            inner: SymphoniaState {
                 reader: format,
                 decoder,
                 track_id,
                 time_base,
                 reached_eof: false,
-                remain_buffer: None,
+            },
+
+            frame_buffer: AudioFrameBuffer {
+                buffer: vec![0u8; frame_buffer_size],
+                frame_offset: None,
+                frame_count: 0,
             },
         })
-    }
-
-    /// Decode the next packet from the format reader.
-    /// Returns Ok(None) at EOF. Errors from unrecognized/corrupt packets are silently skipped.
-    fn decode_next_packet(&mut self) -> Result<Option<PcmFrameBuffer>, DecoderError> {
-        if self.inner.reached_eof {
-            return Ok(None);
-        }
-
-        // Loop until we get a valid decoded frame or hit EOF/error
-        loop {
-            let packet = match self.inner.reader.next_packet() {
-                Ok(Some(packet)) => packet,
-                Ok(None) => {
-                    self.inner.reached_eof = true;
-                    return Ok(None);
-                }
-                Err(SymphoniaError::IoError(e)) => return Err(DecoderError::IOError(e)),
-                Err(_) => continue,
-            };
-
-            if packet.track_id != self.inner.track_id {
-                continue;
-            }
-
-            let decoded = match self.inner.decoder.decode(&packet) {
-                Ok(decoded) => decoded,
-                Err(SymphoniaError::DecodeError(_)) => continue,
-                Err(SymphoniaError::ResetRequired) => {
-                    self.inner.decoder.reset();
-                    continue;
-                }
-                Err(SymphoniaError::IoError(e)) => return Err(DecoderError::IOError(e)),
-                Err(_) => continue,
-            };
-
-            let pcm_data: Box<[u8]> = match self.sample_format {
-                SampleFormat::Float32 => {
-                    let mut interleaved = vec![0f32; decoded.samples_interleaved()];
-                    decoded.copy_to_slice_interleaved::<f32, _>(interleaved.as_mut_slice());
-                    bytemuck::cast_vec(interleaved).into_boxed_slice()
-                }
-                SampleFormat::Int16 => {
-                    let mut interleaved = vec![0i16; decoded.samples_interleaved()];
-                    decoded.copy_to_slice_interleaved::<i16, _>(interleaved.as_mut_slice());
-                    bytemuck::cast_vec(interleaved).into_boxed_slice()
-                }
-            };
-
-            return Ok(Some(PcmFrameBuffer {
-                data: Arc::from(pcm_data),
-                offset: 0,
-            }));
-        }
-    }
-
-    /// Convert a sample position to a `Timestamp` for precise seeking.
-    ///
-    /// Uses direct rational conversion: `ts = sample * denom / (numer * sample_rate)`.
-    /// This avoids the Time intermediate and its associated precision loss
-    /// from integer division in the nanoseconds conversion.
-    ///
-    /// Returns `None` if no time base is available or the value overflows `i64`.
-    fn sample_to_timestamp(&self, sample: u64) -> Option<Timestamp> {
-        let tb = self.inner.time_base?;
-        // ts = sample * denom / (numer * sample_rate)
-        let ts = sample as u128 * tb.denom.get() as u128
-            / (tb.numer.get() as u128 * self.sample_rate as u128);
-        i64::try_from(ts).ok().map(Timestamp::new)
-    }
-
-    /// Convert a `Timestamp` to sample position using direct rational conversion.
-    ///
-    /// Formula: `sample = ts * numer * sample_rate / denom`.
-    /// No Time or nanosecond intermediate — single mul+div path.
-    fn timestamp_to_sample(&self, ts: Timestamp) -> u64 {
-        match self.inner.time_base {
-            Some(tb) => {
-                let ts = ts.get();
-                if ts <= 0 {
-                    return 0;
-                }
-                // sample = ts * numer * sample_rate / denom
-                (ts as u128 * tb.numer.get() as u128 * self.sample_rate as u128
-                    / tb.denom.get() as u128) as u64
-            }
-            None => {
-                // Without a time base, assume timestamp is already in sample units
-                ts.get().max(0) as u64
-            }
-        }
-    }
-
-    /// Fallback: sample → Time (seconds + nanos). Only used when time base is unavailable.
-    fn sample_to_time(&self, sample: u64) -> Option<Time> {
-        let seconds = (sample / self.sample_rate as u64) as i64;
-        let remainder = sample % self.sample_rate as u64;
-        let nanos = (remainder * 1_000_000_000 / self.sample_rate as u64) as u32;
-        Time::try_new(seconds, nanos)
     }
 }
 
@@ -214,25 +179,29 @@ impl AudioDecoder for SymphoniaDecoder {
     }
 
     fn get_sample_count(&self) -> u64 {
-        self.sample_count
+        self.metadata.sample_count
     }
 
     fn get_sample_rate(&self) -> u32 {
-        self.sample_rate
+        self.metadata.sample_rate
     }
 
     fn get_channel_count(&self) -> usize {
-        self.channel_count
+        self.metadata.channel_count
+    }
+
+    fn get_frame_count(&self) -> u64 {
+        self.metadata.frame_count
     }
 
     fn tell(&self) -> i64 {
-        if self.bytes_per_frame == 0 {
-            return 0;
-        }
-        self.position as i64
+        self.frame_position.load(Ordering::Relaxed)
     }
 
     fn seek(&mut self, position: i64) -> Result<(), DecoderError> {
+        let _guard = self.mutex.lock();
+
+        // Argument range check
         if position < 0 {
             return Err(DecoderError::IOError(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -240,150 +209,171 @@ impl AudioDecoder for SymphoniaDecoder {
             )));
         }
 
-        let target_sample = position as u64;
+        let position = position as u64;
+        if position >= self.metadata.frame_count {
+            return Err(DecoderError::IOError(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "seek position exceeds total frame count",
+            )));
+        }
 
-        // If seeking to current position, nothing to do
-        if target_sample == self.position && self.inner.remain_buffer.is_none() {
+        let current_position = self.frame_position.load(Ordering::Relaxed) as u64;
+        if position == current_position {
             return Ok(());
         }
 
-        // Seek to position 0: fast path
-        if target_sample == 0 {
-            self.inner.reader.seek(
-                SeekMode::Accurate,
-                SeekTo::Timestamp {
-                    ts: Timestamp::ZERO,
-                    track_id: self.inner.track_id,
-                },
-            )?;
-            self.inner.decoder.reset();
-            self.inner.remain_buffer = None;
-            self.inner.reached_eof = false;
-            self.position = 0;
-            return Ok(());
-        }
-
-        // Prefer Timestamp-based seek for maximal precision.
-        // This avoids the Time roundtrip: Sample → Time(ns loss) → [symphonia: Time→Timestamp].
-        // Instead: Sample → Timestamp (single rational conversion, no intermediate).
-        let seeked = if let Some(ts) = self.sample_to_timestamp(target_sample) {
-            self.inner.reader.seek(
-                SeekMode::Accurate,
-                SeekTo::Timestamp {
-                    ts,
-                    track_id: self.inner.track_id,
-                },
-            )?
-        } else {
-            // Fallback: no time base or timestamp overflowed i64.
-            // Use Time-based seek with nanosecond precision.
-            let target_time = self.sample_to_time(target_sample).ok_or_else(|| {
-                DecoderError::IOError(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "seek position out of time range",
-                ))
-            })?;
-
-            self.inner.reader.seek(
-                SeekMode::Accurate,
-                SeekTo::Time {
-                    time: target_time,
-                    track_id: Some(self.inner.track_id),
-                },
-            )?
-        };
-
-        self.inner.decoder.reset();
-        self.inner.remain_buffer = None;
+        // Clear frame buffer
+        self.frame_buffer.clear();
         self.inner.reached_eof = false;
 
-        // Use the actual timestamp reached to set the exact sample position
-        self.position = self.timestamp_to_sample(seeked.actual_ts);
+        // Reset decoder to ensure clean state after seek
+        self.inner.decoder.reset();
 
-        Ok(())
+        todo!()
     }
 
-    fn read(&mut self, buffer: &mut [u8], count: u32) -> Result<u32, DecoderError> {
-        if self.bytes_per_frame == 0 || buffer.is_empty() || count == 0 {
-            return Ok(0);
+    fn read(&mut self, buffer: &mut [u8], frame_count: u32) -> Result<u32, DecoderError> {
+        let _guard = self.mutex.lock();
+
+        let mut position = 0usize;
+        let mut required_frames = frame_count as usize;
+
+        // Bytes each frame (sample size * channel count)
+        let frame_byte_size = self.metadata.bytes_per_frame;
+
+        // Check remaining frames from the last read
+        if let Some(frame_offset) = self.frame_buffer.frame_offset {
+            let available_frames = self.frame_buffer.frame_count - frame_offset;
+
+            let take_frames = min(required_frames as usize, available_frames);
+            let take_frame_bytes = take_frames * frame_byte_size;
+
+            let buffer_begin = frame_offset * frame_byte_size;
+            buffer[position..position + take_frame_bytes].copy_from_slice(
+                &self.frame_buffer.buffer[buffer_begin..buffer_begin + take_frame_bytes],
+            );
+
+            position += take_frame_bytes;
+            required_frames -= take_frames;
+
+            let new_offset = frame_offset + take_frames;
+
+            if new_offset == self.frame_buffer.frame_count {
+                // All the frames in the buffer has been used
+                self.frame_buffer.frame_offset = None;
+                self.frame_buffer.frame_count = 0;
+            } else {
+                // Some remaining frames
+                // In this branch, `required_frames` should be zero
+                assert_eq!(required_frames, 0);
+                self.frame_buffer.frame_offset = Some(new_offset)
+            }
         }
 
-        let max_bytes = min(count as usize, buffer.len());
-        let mut written = 0usize;
-
-        // 1. Drain any remaining data from the previous decoded frame.
-        //    Reads are rounded down to complete frames to keep position tracking accurate.
-        if let Some(ref mut remain) = self.inner.remain_buffer {
-            let remain_bytes = remain.remaining();
-            // Only copy complete frames
-            let to_copy = min(max_bytes, remain_bytes);
-            let to_copy = (to_copy / self.bytes_per_frame) * self.bytes_per_frame;
-
-            if to_copy > 0 {
-                let start = remain.offset;
-                buffer[..to_copy].copy_from_slice(&remain.data[start..start + to_copy]);
-                remain.offset += to_copy;
-                written += to_copy;
-                self.position += (to_copy / self.bytes_per_frame) as u64;
-            }
-
-            if remain.remaining() == 0 {
-                self.inner.remain_buffer = None;
-            }
-
-            if written >= max_bytes {
-                return Ok(written as u32);
-            }
-        }
-
-        // 2. Decode packets on demand until we've filled the buffer or hit EOF
-        while written < max_bytes {
-            let decoded = self.decode_next_packet()?;
-            let decoded = match decoded {
-                Some(d) => d,
-                None => break, // EOF
+        // Decode new frames
+        while required_frames > 0 {
+            // Decode packet
+            let packet = match self.inner.reader.next_packet() {
+                Ok(Some(packet)) => packet,
+                Ok(None) => {
+                    self.inner.reached_eof = true;
+                    break;
+                }
+                Err(SymphoniaError::ResetRequired) => {
+                    self.inner.decoder.reset();
+                    continue;
+                }
+                Err(err) => return Err(err.into()),
             };
 
-            let decoded_bytes = decoded.data.len();
-            let needed = max_bytes - written;
-            // Only copy complete frames
-            let to_copy = min(needed, decoded_bytes);
-            let to_copy = (to_copy / self.bytes_per_frame) * self.bytes_per_frame;
+            let decoded = self.inner.decoder.decode(&packet)?;
+            let decoded_frames = decoded.frames();
+            if decoded.is_empty() {
+                continue;
+            }
 
-            if to_copy > 0 {
-                buffer[written..written + to_copy].copy_from_slice(&decoded.data[..to_copy]);
+            if decoded_frames <= required_frames {
+                // If the count of decoded frames less than required frames,
+                // copy them into output buffer instead of internal frame buffer
+                let new_frames_byte_size = decoded_frames * frame_byte_size;
+                copy_interleaved_frames_as(
+                    decoded,
+                    &mut buffer[position..(position + new_frames_byte_size)],
+                    self.sample_format,
+                );
 
-                let frames_copied = to_copy / self.bytes_per_frame;
-                written += to_copy;
-                self.position += frames_copied as u64;
-
-                // Store leftover as remain buffer for next read
-                if to_copy < decoded_bytes {
-                    self.inner.remain_buffer = Some(PcmFrameBuffer {
-                        data: decoded.data,
-                        offset: to_copy,
-                    });
-                }
+                position += new_frames_byte_size;
+                required_frames -= decoded_frames;
             } else {
-                // Buffer is too small for even one frame — store the decoded frame
-                // and return what we have so far
-                self.inner.remain_buffer = Some(decoded);
-                return Ok(written as u32);
+                // Required frames less then decoded frames,
+                // remain some frames, copy all the decoded frames to buffer firstly
+                self.frame_buffer.prepare(decoded_frames * frame_byte_size);
+                copy_interleaved_frames_as(
+                    decoded,
+                    &mut self.frame_buffer.buffer,
+                    self.sample_format,
+                );
+
+                self.frame_buffer.frame_count = decoded_frames;
+
+                // Copy required frames
+                let new_frames_byte_size = required_frames * frame_byte_size;
+                buffer[position..(position + new_frames_byte_size)]
+                    .copy_from_slice(&self.frame_buffer.buffer[0..new_frames_byte_size]);
+                self.frame_buffer.frame_offset = Some(required_frames);
+                position += new_frames_byte_size;
+                required_frames = 0;
             }
         }
 
-        Ok(written as u32)
+        // Return read frame count
+        let read_frames = frame_count as usize - required_frames;
+        self.frame_position
+            .fetch_add(read_frames as i64, Ordering::Relaxed);
+
+        Ok(read_frames as u32)
     }
 }
 
-struct PcmFrameBuffer {
-    data: Arc<[u8]>,
-    offset: usize,
+fn copy_interleaved_frames_as(
+    audio_buffer: GenericAudioBufferRef<'_>,
+    dst: impl AsMut<[u8]>,
+    sample_format: SampleFormat,
+) {
+    match sample_format {
+        SampleFormat::Float32 => {
+            audio_buffer.copy_bytes_interleaved_as::<f32, _>(dst);
+        }
+        SampleFormat::Int16 => {
+            audio_buffer.copy_bytes_interleaved_as::<i16, _>(dst);
+        }
+    }
 }
 
-impl PcmFrameBuffer {
-    fn remaining(&self) -> usize {
-        self.data.len().saturating_sub(self.offset)
+struct MediaSourceAdapter<T> {
+    inner: T,
+    length: Option<u64>,
+}
+
+impl<T: Read> Read for MediaSourceAdapter<T> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.read(buf)
+    }
+}
+
+impl<T: Seek> Seek for MediaSourceAdapter<T> {
+    fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
+        self.inner.seek(pos)
+    }
+}
+
+impl<T: Read + Seek + Send + Sync + 'static> MediaSource for MediaSourceAdapter<T> {
+    fn is_seekable(&self) -> bool {
+        true
+    }
+
+    fn byte_len(&self) -> Option<u64> {
+        self.length
     }
 }
 

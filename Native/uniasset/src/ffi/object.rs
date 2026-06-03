@@ -9,7 +9,7 @@ pub(crate) trait NativeHandleExts {
     fn from_handle(handle: NativeHandle) -> Self;
 }
 
-impl<T> NativeHandleExts for Box<Arc<T>> {
+impl<T: ?Sized> NativeHandleExts for Box<Arc<T>> {
     fn into_handle(self) -> NativeHandle {
         Box::into_raw(self) as NativeHandle
     }

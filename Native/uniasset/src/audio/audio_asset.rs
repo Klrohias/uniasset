@@ -11,7 +11,7 @@ use parking_lot::RwLock;
 use crate::{
     audio::{
         AudioDecoder, AudioDecoderWrapper, AudioFormatProbe, DecoderError, SampleFormat,
-        SymphoniaDecoder, probe_format_from_stream,
+        SymphoniaDecoder, probe_format, probe_format_from_stream,
     },
     ffi::{NativeHandle, NativeHandleExts},
 };
@@ -25,10 +25,14 @@ impl AudioAsset {
     }
 
     pub fn load_memory(&self, data: Arc<[u8]>) -> Result<(), AudioOperationError> {
+        if probe_format(&data) == AudioFormatProbe::Unsupported {
+            return Err(AudioOperationError::UnsupportedFormat);
+        }
+
         let decoder = SymphoniaDecoder::from_io(Cursor::new(data.clone()), SampleFormat::Int16)?;
 
         let info = AudioInfo {
-            frame_count: decoder.get_sample_count() * decoder.get_channel_count() as u64,
+            frame_count: decoder.get_frame_count(),
             sample_count: decoder.get_sample_count(),
             sample_rate: decoder.get_sample_rate(),
             channel_count: decoder.get_channel_count() as u16,
@@ -40,16 +44,14 @@ impl AudioAsset {
         Ok(())
     }
 
-    pub fn load_io(&self, mut stream: impl Read + Seek) -> Result<(), AudioOperationError> {
-        match probe_format_from_stream(&mut stream)? {
-            AudioFormatProbe::Mp3 => todo!(),
-            AudioFormatProbe::Flac => todo!(),
-            AudioFormatProbe::Wav => todo!(),
-            AudioFormatProbe::OggVorbis => todo!(),
-            AudioFormatProbe::Unsupported => {
-                return Err(AudioOperationError::UnsupportedFormat);
-            }
+    pub fn load_io(&self, mut stream: impl Read + Seek + Send + Sync + 'static) -> Result<(), AudioOperationError> {
+        if probe_format_from_stream(&mut stream)? == AudioFormatProbe::Unsupported {
+            return Err(AudioOperationError::UnsupportedFormat);
         }
+
+        let decoder = SymphoniaDecoder::from_io(stream, SampleFormat::Int16)?;
+
+        Ok(())
     }
 
     pub fn get_decoder(
@@ -57,8 +59,49 @@ impl AudioAsset {
         sample_format: SampleFormat,
     ) -> Result<AudioDecoderWrapper, DecoderError> {
         let decoder = SymphoniaDecoder::from_memory([], sample_format)?;
+        let wrapper = AudioDecoderWrapper::from(decoder);
 
-        Ok(AudioDecoderWrapper::from(decoder))
+        Ok(wrapper)
+    }
+
+    pub fn get_channel_count(&self) -> Result<u16, AudioOperationError> {
+        Ok(self
+            .0
+            .read()
+            .audio_info
+            .as_ref()
+            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .channel_count)
+    }
+
+    pub fn get_sample_count(&self) -> Result<u64, AudioOperationError> {
+        Ok(self
+            .0
+            .read()
+            .audio_info
+            .as_ref()
+            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .sample_count)
+    }
+
+    pub fn get_sample_rate(&self) -> Result<u32, AudioOperationError> {
+        Ok(self
+            .0
+            .read()
+            .audio_info
+            .as_ref()
+            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .sample_rate)
+    }
+
+    pub fn get_frame_count(&self) -> Result<u64, AudioOperationError> {
+        Ok(self
+            .0
+            .read()
+            .audio_info
+            .as_ref()
+            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .frame_count)
     }
 }
 
@@ -89,6 +132,7 @@ pub enum AudioOperationError {
     IOError(io::Error),
     DecoderError(DecoderError),
     UnsupportedFormat,
+    Unloaded,
 }
 
 impl Error for AudioOperationError {}
@@ -99,6 +143,7 @@ impl Display for AudioOperationError {
             AudioOperationError::IOError(error) => write!(f, "IO Error: {error}"),
             AudioOperationError::UnsupportedFormat => write!(f, "Unsupported audio format"),
             AudioOperationError::DecoderError(error) => write!(f, "Decoder Error: {error}"),
+            AudioOperationError::Unloaded => write!(f, "No audio asset loaded"),
         }
     }
 }

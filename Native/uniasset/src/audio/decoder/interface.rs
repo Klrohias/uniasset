@@ -1,24 +1,61 @@
-use std::{cell::UnsafeCell, error::Error, fmt::Display, io, sync::Arc};
+use std::{error::Error, fmt::Display, io, sync::Arc};
 
-use parking_lot::{Mutex, MutexGuard};
-
-use crate::audio::SampleFormat;
+use crate::{
+    audio::SampleFormat,
+    ffi::{NativeHandle, NativeHandleExts},
+    thread::SyncUnsafeCell,
+};
 
 pub trait AudioDecoder {
     fn get_sample_format(&self) -> SampleFormat;
+
+    /// Pcm frame count
+    fn get_frame_count(&self) -> u64;
+
+    /// SampleCount = FrameCount * ChannelCount
     fn get_sample_count(&self) -> u64;
+
     fn get_sample_rate(&self) -> u32;
     fn get_channel_count(&self) -> usize;
     fn tell(&self) -> i64;
     fn seek(&mut self, position: i64) -> Result<(), DecoderError>;
-    fn read(&mut self, buffer: &mut [u8], count: u32) -> Result<u32, DecoderError>;
+    fn read(&mut self, buffer: &mut [u8], frame_count: u32) -> Result<u32, DecoderError>;
 }
 
-pub struct AudioDecoderWrapper(Arc<UnsafeCell<dyn AudioDecoder + 'static>>);
+#[derive(Clone)]
+pub struct AudioDecoderWrapper(Box<Arc<SyncUnsafeCell<dyn AudioDecoder + 'static>>>);
 
 impl<T: AudioDecoder + 'static> From<T> for AudioDecoderWrapper {
     fn from(value: T) -> Self {
-        Self(Arc::new(UnsafeCell::new(value)))
+        Self(Box::new(Arc::new(SyncUnsafeCell::new(value))))
+    }
+}
+
+impl AudioDecoderWrapper {
+    pub fn get_sample_format(&self) -> SampleFormat {
+        unsafe { &*self.0.get() }.get_sample_format()
+    }
+
+    pub fn get_channel_count(&self) -> usize {
+        unsafe { &*self.0.get() }.get_channel_count()
+    }
+
+    pub fn get_sample_count(&self) -> u64 {
+        unsafe { &*self.0.get() }.get_sample_count()
+    }
+
+    pub fn get_sample_rate(&self) -> u32 {
+        unsafe { &*self.0.get() }.get_sample_rate()
+    }
+}
+
+impl NativeHandleExts for AudioDecoderWrapper {
+    fn into_handle(self) -> NativeHandle {
+        self.0.into_handle()
+    }
+
+    fn from_handle(handle: NativeHandle) -> Self {
+        Self(NativeHandleExts::from_handle(handle))
     }
 }
 
