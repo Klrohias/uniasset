@@ -3,7 +3,10 @@ use std::{
     fmt::Display,
     fs::File,
     io::{self, Cursor, Read, Seek},
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicPtr, Ordering},
+    },
 };
 
 use parking_lot::RwLock;
@@ -11,63 +14,71 @@ use parking_lot::RwLock;
 use crate::{
     audio::{
         AudioDecoder, AudioDecoderWrapper, AudioFormatProbe, DecoderError, SampleFormat,
-        SymphoniaDecoder, probe_format, probe_format_from_stream,
+        SymphoniaDecoder, probe_format_from_stream,
     },
     ffi::{NativeHandle, NativeHandleExts},
+    thread::SyncUnsafeCell,
 };
 
-#[derive(Default)]
-pub struct AudioAsset(Box<Arc<RwLock<AudioAssetState>>>);
+pub struct AudioAsset(Box<Arc<SyncUnsafeCell<AudioAssetState>>>);
+
+impl Default for AudioAsset {
+    fn default() -> Self {
+        Self(Box::new(Arc::new(AudioAssetState::default().into())))
+    }
+}
 
 impl AudioAsset {
+    fn unsafe_mut_state<'a>(&'a self) -> &'a mut AudioAssetState {
+        unsafe { &mut *self.0.get() }
+    }
+
     pub fn load_file(&self, path: impl AsRef<str>) -> Result<(), AudioOperationError> {
         self.load_io(File::open(path.as_ref())?)
     }
 
-    pub fn load_memory(&self, data: Arc<[u8]>) -> Result<(), AudioOperationError> {
-        if probe_format(&data) == AudioFormatProbe::Unsupported {
+    pub fn load_memory(
+        &self,
+        data: impl AsRef<[u8]> + Send + Sync + 'static,
+    ) -> Result<(), AudioOperationError> {
+        self.load_io(Cursor::new(data))
+    }
+
+    pub fn load_io(
+        &self,
+        mut stream: impl Read + Seek + Send + Sync + 'static,
+    ) -> Result<(), AudioOperationError> {
+        if probe_format_from_stream(&mut stream)? == AudioFormatProbe::Unsupported {
             return Err(AudioOperationError::UnsupportedFormat);
         }
 
-        let decoder = SymphoniaDecoder::from_io(Cursor::new(data.clone()), SampleFormat::Int16)?;
+        let decoder = SymphoniaDecoder::from_io(stream, SampleFormat::Int16)?;
+        let state = self.unsafe_mut_state();
+        let _guard = state.lock.write();
 
+        // Read audio info
         let info = AudioInfo {
             frame_count: decoder.get_frame_count(),
             sample_count: decoder.get_sample_count(),
             sample_rate: decoder.get_sample_rate(),
             channel_count: decoder.get_channel_count() as u16,
         };
-
-        let mut state = self.0.write();
         state.audio_info = Some(info);
 
-        Ok(())
-    }
-
-    pub fn load_io(&self, mut stream: impl Read + Seek + Send + Sync + 'static) -> Result<(), AudioOperationError> {
-        if probe_format_from_stream(&mut stream)? == AudioFormatProbe::Unsupported {
-            return Err(AudioOperationError::UnsupportedFormat);
-        }
-
-        let decoder = SymphoniaDecoder::from_io(stream, SampleFormat::Int16)?;
+        // Store audio decoder
+        let boxed_decoder_wrapper = Box::new(decoder.into());
+        state
+            .audio_decoder
+            .store(Box::into_raw(boxed_decoder_wrapper), Ordering::Relaxed);
 
         Ok(())
-    }
-
-    pub fn get_decoder(
-        &self,
-        sample_format: SampleFormat,
-    ) -> Result<AudioDecoderWrapper, DecoderError> {
-        let decoder = SymphoniaDecoder::from_memory([], sample_format)?;
-        let wrapper = AudioDecoderWrapper::from(decoder);
-
-        Ok(wrapper)
     }
 
     pub fn get_channel_count(&self) -> Result<u16, AudioOperationError> {
-        Ok(self
-            .0
-            .read()
+        let state = self.unsafe_mut_state();
+        let _guard = state.lock.read();
+
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or_else(|| AudioOperationError::Unloaded)?
@@ -75,9 +86,10 @@ impl AudioAsset {
     }
 
     pub fn get_sample_count(&self) -> Result<u64, AudioOperationError> {
-        Ok(self
-            .0
-            .read()
+        let state = self.unsafe_mut_state();
+        let _guard = state.lock.read();
+
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or_else(|| AudioOperationError::Unloaded)?
@@ -85,9 +97,10 @@ impl AudioAsset {
     }
 
     pub fn get_sample_rate(&self) -> Result<u32, AudioOperationError> {
-        Ok(self
-            .0
-            .read()
+        let state = self.unsafe_mut_state();
+        let _guard = state.lock.read();
+
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or_else(|| AudioOperationError::Unloaded)?
@@ -95,9 +108,10 @@ impl AudioAsset {
     }
 
     pub fn get_frame_count(&self) -> Result<u64, AudioOperationError> {
-        Ok(self
-            .0
-            .read()
+        let state = self.unsafe_mut_state();
+        let _guard = state.lock.read();
+
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or_else(|| AudioOperationError::Unloaded)?
@@ -116,8 +130,10 @@ impl NativeHandleExts for AudioAsset {
 }
 
 #[derive(Default)]
-pub struct AudioAssetState {
+struct AudioAssetState {
+    lock: RwLock<()>,
     audio_info: Option<AudioInfo>,
+    audio_decoder: AtomicPtr<AudioDecoderWrapper>,
 }
 
 struct AudioInfo {

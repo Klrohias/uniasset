@@ -35,3 +35,6 @@ impl io::Seek for NativeIOProvider {
         Ok(result as u64)
     }
 }
+
+unsafe impl Send for NativeIOProvider {}
+unsafe impl Sync for NativeIOProvider {}

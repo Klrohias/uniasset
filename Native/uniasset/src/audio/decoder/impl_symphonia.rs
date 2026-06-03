@@ -9,10 +9,10 @@ use symphonia::core::{
     audio::GenericAudioBufferRef,
     codecs::audio::{AudioDecoderOptions, CODEC_ID_NULL_AUDIO},
     errors::Error as SymphoniaError,
-    formats::{FormatOptions, FormatReader, SeekMode, SeekTo, probe::Hint},
+    formats::{FormatOptions, FormatReader, probe::Hint},
     io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions},
     meta::MetadataOptions,
-    units::{Time, TimeBase, Timestamp},
+    units::TimeBase,
 };
 use symphonia::default::{get_codecs, get_probe};
 
@@ -20,8 +20,8 @@ use crate::audio::{AudioDecoder, DecoderError, SampleFormat};
 struct SymphoniaState {
     reader: Box<dyn FormatReader>,
     decoder: Box<dyn symphonia::core::codecs::audio::AudioDecoder>,
-    track_id: u32,
-    time_base: Option<TimeBase>,
+    _track_id: u32,
+    _time_base: Option<TimeBase>,
     reached_eof: bool,
 }
 
@@ -56,9 +56,9 @@ impl AudioFrameBuffer {
         self.frame_offset = None;
     }
 
-    fn has_remaining(&self) -> bool {
-        self.frame_offset.is_some()
-    }
+    // fn has_remaining(&self) -> bool {
+    //     self.frame_offset.is_some()
+    // }
 }
 
 pub struct SymphoniaDecoder {
@@ -159,8 +159,8 @@ impl SymphoniaDecoder {
             inner: SymphoniaState {
                 reader: format,
                 decoder,
-                track_id,
-                time_base,
+                _track_id: track_id,
+                _time_base: time_base,
                 reached_eof: false,
             },
 

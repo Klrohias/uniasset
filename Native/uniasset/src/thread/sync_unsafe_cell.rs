@@ -19,3 +19,9 @@ impl<T> SyncUnsafeCell<T> {
         Self(UnsafeCell::new(value))
     }
 }
+
+impl<T> From<T> for SyncUnsafeCell<T> {
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}

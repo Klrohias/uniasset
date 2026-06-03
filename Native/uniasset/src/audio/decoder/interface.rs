@@ -1,10 +1,6 @@
-use std::{error::Error, fmt::Display, io, sync::Arc};
+use std::{cell::UnsafeCell, error::Error, fmt::Display, io};
 
-use crate::{
-    audio::SampleFormat,
-    ffi::{NativeHandle, NativeHandleExts},
-    thread::SyncUnsafeCell,
-};
+use crate::audio::SampleFormat;
 
 pub trait AudioDecoder {
     fn get_sample_format(&self) -> SampleFormat;
@@ -22,12 +18,11 @@ pub trait AudioDecoder {
     fn read(&mut self, buffer: &mut [u8], frame_count: u32) -> Result<u32, DecoderError>;
 }
 
-#[derive(Clone)]
-pub struct AudioDecoderWrapper(Box<Arc<SyncUnsafeCell<dyn AudioDecoder + 'static>>>);
+pub struct AudioDecoderWrapper(Box<UnsafeCell<dyn AudioDecoder>>);
 
 impl<T: AudioDecoder + 'static> From<T> for AudioDecoderWrapper {
     fn from(value: T) -> Self {
-        Self(Box::new(Arc::new(SyncUnsafeCell::new(value))))
+        Self(Box::new(UnsafeCell::new(value)))
     }
 }
 
@@ -47,15 +42,21 @@ impl AudioDecoderWrapper {
     pub fn get_sample_rate(&self) -> u32 {
         unsafe { &*self.0.get() }.get_sample_rate()
     }
-}
 
-impl NativeHandleExts for AudioDecoderWrapper {
-    fn into_handle(self) -> NativeHandle {
-        self.0.into_handle()
+    pub fn get_frame_count(&self) -> u64 {
+        unsafe { &*self.0.get() }.get_frame_count()
     }
 
-    fn from_handle(handle: NativeHandle) -> Self {
-        Self(NativeHandleExts::from_handle(handle))
+    pub fn tell(&self) -> i64 {
+        unsafe { &*self.0.get() }.tell()
+    }
+
+    pub fn seek(&self, position: i64) -> Result<(), DecoderError> {
+        unsafe { &mut *self.0.get() }.seek(position)
+    }
+
+    pub fn read(&self, buffer: &mut [u8], frame_count: u32) -> Result<u32, DecoderError> {
+        unsafe { &mut *self.0.get() }.read(buffer, frame_count)
     }
 }
 
