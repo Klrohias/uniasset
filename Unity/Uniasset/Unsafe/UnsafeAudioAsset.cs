@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+using System;
 using System.Text;
 using Uniasset.Audio;
 
@@ -19,28 +18,28 @@ namespace Uniasset.Unsafe
             return new UnsafeAudioAsset(Interop.Uniasset_AudioAsset_Create());
         }
 
-        public void Load(byte[] data)
+        public void LoadFile(string path, SampleFormat sampleFormat = SampleFormat.Int16)
+        {
+            var pathBytes = Encoding.UTF8.GetBytes(path);
+            fixed (byte* pathPtr = pathBytes)
+            {
+                Interop.Uniasset_AudioAsset_LoadFile(Instance, (sbyte*)pathPtr, (byte)sampleFormat);
+                NativeException.ThrowIfNeeded();
+            }
+        }
+
+        public void LoadMemory(byte[] data, SampleFormat sampleFormat = SampleFormat.Int16)
         {
             fixed (byte* dataPtr = data)
             {
-                Interop.Uniasset_AudioAsset_Load(Instance, dataPtr, (ulong)data.Length);
+                Interop.Uniasset_AudioAsset_LoadMemory(Instance, dataPtr, (ulong)data.Length, (byte)sampleFormat);
                 NativeException.ThrowIfNeeded();
             }
         }
 
-        public void Load(string path)
+        public void LoadIO(NativeIOProvider* provider, SampleFormat sampleFormat = SampleFormat.Int16)
         {
-            var pathBytes = Encoding.Default.GetBytes(path);
-            fixed (byte* pathPtr = pathBytes)
-            {
-                Interop.Uniasset_AudioAsset_LoadFile(Instance, (sbyte*)pathPtr);
-                NativeException.ThrowIfNeeded();
-            }
-        }
-
-        public void Unload()
-        {
-            Interop.Uniasset_AudioAsset_Unload(Instance);
+            Interop.Uniasset_AudioAsset_LoadIO(Instance, provider, (byte)sampleFormat);
             NativeException.ThrowIfNeeded();
         }
 
@@ -51,14 +50,7 @@ namespace Uniasset.Unsafe
             return result;
         }
 
-        public int GetSampleCount()
-        {
-            var result = (int)Interop.Uniasset_AudioAsset_GetSampleCount(Instance);
-            NativeException.ThrowIfNeeded();
-            return result;
-        }
-
-        public long GetSampleCountLong()
+        public long GetSampleCount()
         {
             var result = (long)Interop.Uniasset_AudioAsset_GetSampleCount(Instance);
             NativeException.ThrowIfNeeded();
@@ -72,20 +64,47 @@ namespace Uniasset.Unsafe
             return result;
         }
 
-        public float GetLength()
+        public long GetFrameCount()
         {
-            var result = Interop.Uniasset_AudioAsset_GetLength(Instance);
+            var result = (long)Interop.Uniasset_AudioAsset_GetFrameCount(Instance);
             NativeException.ThrowIfNeeded();
             return result;
         }
-        
-        public UnsafeAudioDecoder GetAudioDecoder(SampleFormat format, long frameBufferSize)
+
+        public long Tell()
         {
-            var result = Interop.Uniasset_AudioAsset_GetAudioDecoder(Instance, (byte)format, frameBufferSize);
+            var result = Interop.Uniasset_AudioAsset_Tell(Instance);
             NativeException.ThrowIfNeeded();
-            return new UnsafeAudioDecoder(result);
+            return result;
         }
 
+        public int Read(byte[] buffer, int frameCount)
+        {
+            fixed (byte* bufferPtr = buffer)
+            {
+                var result = (int)Interop.Uniasset_AudioAsset_Read(Instance, bufferPtr, (ulong)buffer.Length, (uint)frameCount);
+                NativeException.ThrowIfNeeded();
+                return result;
+            }
+        }
+
+        public int Read<T>(Span<T> buffer, int frameCount)
+            where T : unmanaged
+        {
+            fixed (T* bufferPtr = buffer)
+            {
+                var byteSize = (ulong)(buffer.Length * sizeof(T));
+                var result = (int)Interop.Uniasset_AudioAsset_Read(Instance, (byte*)bufferPtr, byteSize, (uint)frameCount);
+                NativeException.ThrowIfNeeded();
+                return result;
+            }
+        }
+
+        public void Seek(long position)
+        {
+            Interop.Uniasset_AudioAsset_Seek(Instance, position);
+            NativeException.ThrowIfNeeded();
+        }
 
         public void Destroy()
         {

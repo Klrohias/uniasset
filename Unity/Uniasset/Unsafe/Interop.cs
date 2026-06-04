@@ -88,8 +88,7 @@ namespace Uniasset.Unsafe
             [NativeTypeName("uint32_t")] uint count,
             void** output);
 
-        // Audio bindings intentionally left unchanged for now (per request),
-        // but note: the current Rust FFI no longer exports these symbols.
+        // AudioAsset
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_AudioAsset_Create();
 
@@ -97,91 +96,39 @@ namespace Uniasset.Unsafe
         public static extern void Uniasset_AudioAsset_Destory(void* obj);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] sbyte* path);
+        public static extern void Uniasset_AudioAsset_LoadFile(void* self, [NativeTypeName("const char *")] sbyte* path, [NativeTypeName("uint8_t")] byte sampleFormat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_AudioAsset_Load(void* self, [NativeTypeName("uint8_t *")] byte* data, [NativeTypeName("uint64_t")] ulong size);
+        public static extern void Uniasset_AudioAsset_LoadMemory(void* self, [NativeTypeName("const uint8_t *")] byte* data, [NativeTypeName("size_t")] ulong size, [NativeTypeName("uint8_t")] byte sampleFormat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_AudioAsset_Unload(void* self);
+        public static extern void Uniasset_AudioAsset_LoadIO(void* self, NativeIOProvider* provider, [NativeTypeName("uint8_t")] byte sampleFormat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint32_t")]
-        public static extern uint Uniasset_AudioAsset_GetChannelCount(void* self);
+        [return: NativeTypeName("uint16_t")]
+        public static extern ushort Uniasset_AudioAsset_GetChannelCount(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: NativeTypeName("uint64_t")]
         public static extern ulong Uniasset_AudioAsset_GetSampleCount(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint32_t")]
+        [return: NativeTypeName("unsigned int")]
         public static extern uint Uniasset_AudioAsset_GetSampleRate(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern float Uniasset_AudioAsset_GetLength(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint8_t")]
-        public static extern byte Uniasset_AudioAsset_GetLoadType(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("const char *")]
-        public static extern sbyte* Uniasset_AudioAsset_GetPath(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_AudioAsset_GetData(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: NativeTypeName("uint64_t")]
-        public static extern ulong Uniasset_AudioAsset_GetDataLength(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_AudioAsset_GetAudioDecoder(void* self, [NativeTypeName("uint8_t")] byte format, [NativeTypeName("int64_t")] long frameBufferSize);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void Uniasset_IAudioDecoder_Destory(void* obj);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint8_t")]
-        public static extern byte Uniasset_IAudioDecoder_GetSampleFormat(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint32_t")]
-        public static extern uint Uniasset_IAudioDecoder_GetChannelCount(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint64_t")]
-        public static extern ulong Uniasset_IAudioDecoder_GetSampleCount(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint32_t")]
-        public static extern uint Uniasset_IAudioDecoder_GetSampleRate(void* self);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint32_t")]
-        public static extern uint Uniasset_IAudioDecoder_Read(void* self, void* buffer, [NativeTypeName("uint32_t")] uint count);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        [return: NativeTypeName("uint8_t")]
-        public static extern byte Uniasset_IAudioDecoder_Seek(void* self, [NativeTypeName("int64_t")] long pos);
+        public static extern ulong Uniasset_AudioAsset_GetFrameCount(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         [return: NativeTypeName("int64_t")]
-        public static extern long Uniasset_IAudioDecoder_Tell(void* self);
+        public static extern long Uniasset_AudioAsset_Tell(void* self);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_FlacDecoder_Create(void* asset, [NativeTypeName("uint8_t")] byte format);
+        [return: NativeTypeName("unsigned int")]
+        public static extern uint Uniasset_AudioAsset_Read(void* self, [NativeTypeName("uint8_t *")] byte* buffer, [NativeTypeName("size_t")] ulong bufferSize, [NativeTypeName("unsigned int")] uint frameCount);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_OggDecoder_Create(void* asset, [NativeTypeName("uint8_t")] byte format);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_WavDecoder_Create(void* asset, [NativeTypeName("uint8_t")] byte format);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_Mp3Decoder_Create(void* asset, [NativeTypeName("uint8_t")] byte format);
-
-        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-        public static extern void* Uniasset_ExternalAudioDecoder_Create(void* userData, void* getChannelCountFunc, void* getSampleCountFunc, void* getSampleFormatFunc, void* getSampleRateFunc, void* readFunc, void* seekFunc, void* tellFunc);
+        public static extern void Uniasset_AudioAsset_Seek(void* self, [NativeTypeName("int64_t")] long position);
     }
 }

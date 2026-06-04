@@ -1,12 +1,12 @@
 use std::{
-    ffi::{CStr, c_char, c_uint},
+    ffi::{CStr, c_char, c_uchar, c_uint},
     slice,
 };
 
 use anyhow::anyhow;
 
 use crate::{
-    audio::AudioAsset,
+    audio::{AudioAsset, SampleFormat},
     ffi::{
         NativeHandle, NativeHandleExts, NativeIOProvider, clear_error, failible_to_native,
         set_error,
@@ -29,13 +29,23 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_Destory(handle: NativeHandle) {
 pub unsafe extern "C" fn Uniasset_AudioAsset_LoadFile(
     handle: NativeHandle,
     path: *const c_char,
+    sample_format: c_uchar,
 ) {
     clear_error();
     let obj = AudioAsset::from_handle(handle);
     let path_slice = unsafe { CStr::from_ptr(path) };
     let path_str = path_slice.to_string_lossy();
 
-    _ = failible_to_native(|| obj.load_file(path_str.as_ref()), || ());
+    let format = match sample_format {
+        0 => SampleFormat::Float32,
+        1 => SampleFormat::Int16,
+        _ => {
+            set_error(anyhow!("Invalid sample format: {sample_format}"));
+            return;
+        }
+    };
+
+    _ = failible_to_native(|| obj.load_file(path_str.as_ref(), format), || ());
 
     std::mem::forget(obj);
 }
@@ -45,17 +55,27 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadMemory(
     handle: NativeHandle,
     data: *const u8,
     size: usize,
+    sample_format: c_uchar,
 ) {
     clear_error();
 
     let obj = AudioAsset::from_handle(handle);
+
+    let format = match sample_format {
+        0 => SampleFormat::Float32,
+        1 => SampleFormat::Int16,
+        _ => {
+            set_error(anyhow!("Invalid sample format: {sample_format}"));
+            return;
+        }
+    };
 
     _ = failible_to_native(
         || {
             // SAFETY: caller guarantees data outlives the audio asset
             let data_ref: &'static [u8] =
                 unsafe { std::mem::transmute(slice::from_raw_parts(data, size)) };
-            obj.load_memory(data_ref)
+            obj.load_memory(data_ref, format)
         },
         || (),
     );
@@ -67,6 +87,7 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadMemory(
 pub unsafe extern "C" fn Uniasset_AudioAsset_LoadIO(
     handle: NativeHandle,
     provider: *mut NativeIOProvider,
+    sample_format: c_uchar,
 ) {
     clear_error();
 
@@ -75,8 +96,18 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadIO(
     }
 
     let obj = AudioAsset::from_handle(handle);
+
+    let format = match sample_format {
+        0 => SampleFormat::Float32,
+        1 => SampleFormat::Int16,
+        _ => {
+            set_error(anyhow!("Invalid sample format: {sample_format}"));
+            return;
+        }
+    };
+
     _ = failible_to_native(
-        || obj.load_io(unsafe { &mut *provider }),
+        || obj.load_io(unsafe { &mut *provider }, format),
         || (),
     );
 

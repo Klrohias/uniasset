@@ -57,26 +57,28 @@ impl AudioAsset {
         Ok(decoder_ptr)
     }
 
-    pub fn load_file(&self, path: impl AsRef<str>) -> Result<(), AudioOperationError> {
-        self.load_io(File::open(path.as_ref())?)
+    pub fn load_file(&self, path: impl AsRef<str>, sample_format: SampleFormat) -> Result<(), AudioOperationError> {
+        self.load_io(File::open(path.as_ref())?, sample_format)
     }
 
     pub fn load_memory(
         &self,
         data: impl AsRef<[u8]> + Send + Sync + 'static,
+        sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
-        self.load_io(Cursor::new(data))
+        self.load_io(Cursor::new(data), sample_format)
     }
 
     pub fn load_io(
         &self,
         mut stream: impl Read + Seek + Send + Sync + 'static,
+        sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
         if probe_format_from_stream(&mut stream)? == AudioFormatProbe::Unsupported {
             return Err(AudioOperationError::UnsupportedFormat);
         }
 
-        let decoder = SymphoniaDecoder::from_io(stream, SampleFormat::Int16)?;
+        let decoder = SymphoniaDecoder::from_io(stream, sample_format)?;
         let state = self.unsafe_mut_state();
         let _guard = state.lock.write();
 

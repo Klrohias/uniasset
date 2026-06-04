@@ -1,5 +1,7 @@
-﻿using System;
+using System;
+using System.Runtime.InteropServices;
 using Uniasset.Unsafe;
+using UnityEngine;
 
 namespace Uniasset.Audio
 {
@@ -9,28 +11,74 @@ namespace Uniasset.Audio
         public UnsafeAudioAsset UnsafeHandle { get; } = UnsafeAudioAsset.Create();
 
         public int SampleRate => UnsafeHandle.GetSampleRate();
-        public long SampleCount => UnsafeHandle.GetSampleCountLong();
+        public long SampleCount => UnsafeHandle.GetSampleCount();
         public int ChannelCount => UnsafeHandle.GetChannelCount();
-        public float Length => UnsafeHandle.GetLength();
+        public long FrameCount => UnsafeHandle.GetFrameCount();
 
-        public void Load(string path)
+        public void Load(string path, SampleFormat sampleFormat = SampleFormat.Int16)
         {
-            UnsafeHandle.Load(path);
+            UnsafeHandle.LoadFile(path, sampleFormat);
         }
 
-        public void Load(Span<byte> data)
+        public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Int16)
         {
-            UnsafeHandle.Load(data.ToArray());
+            UnsafeHandle.LoadMemory(data.ToArray(), sampleFormat);
         }
 
-        public void Unload()
+        public void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Int16)
         {
-            UnsafeHandle.Unload();
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+
+            var gcHandle = GCHandle.Alloc(stream);
+            try
+            {
+                var provider = Interop.NativeIOProvider.Default();
+                provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
+
+                UnsafeHandle.LoadIO(&provider, sampleFormat);
+            }
+            finally
+            {
+                gcHandle.Free();
+            }
         }
-        
-        public NativeAudioDecoder GetAudioDecoder(SampleFormat format = SampleFormat.Float, long frameBufferSize = -1)
+
+        public long Tell()
         {
-            return new NativeAudioDecoder(UnsafeHandle.GetAudioDecoder(format, frameBufferSize));
+            return UnsafeHandle.Tell();
+        }
+
+        public int Read<T>(Span<T> buffer, int frameCount)
+            where T : unmanaged
+        {
+            return UnsafeHandle.Read(buffer, frameCount);
+        }
+
+        public void Seek(long position)
+        {
+            UnsafeHandle.Seek(position);
+        }
+
+        public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream = true)
+        {
+            return AudioClip.Create(name, (int)(SampleCount / ChannelCount),
+                ChannelCount, SampleRate, stream, AudioClipRead, AudioClipSeek);
+        }
+
+        private void AudioClipSeek(int position)
+        {
+            lock (this)
+            {
+                Seek(position);
+            }
+        }
+
+        private void AudioClipRead(float[] data)
+        {
+            lock (this)
+            {
+                Read(new Span<float>(data), data.Length / ChannelCount);
+            }
         }
 
         public void Dispose()
