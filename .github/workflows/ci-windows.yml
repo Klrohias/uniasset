@@ -15,12 +15,13 @@ jobs:
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         target: x86_64-pc-windows-msvc
+        components: rust-src
 
     - name: Build (x86_64-pc-windows-msvc)
       run: |
-        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-pc-windows-msvc
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-pc-windows-msvc -Z build-std=std,panic_abort
 
     - name: Upload Artifact (x64-windows)
       if: '!cancelled()'

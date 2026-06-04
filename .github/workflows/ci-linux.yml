@@ -14,12 +14,13 @@ jobs:
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         target: x86_64-unknown-linux-gnu
+        components: rust-src
 
     - name: Build (x86_64-unknown-linux-gnu)
       run: |
-        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-unknown-linux-gnu
+        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
 
     - name: Upload Artifact (x64-linux)
       uses: actions/upload-artifact@v4

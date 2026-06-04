@@ -3,7 +3,7 @@ members = ["uniasset"]
 resolver = "3"
 
 [profile.release]
-lto = "thin"
+lto = "fat"
 opt-level = "z"
 panic = "abort"
 strip = "symbols"
