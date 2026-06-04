@@ -6,8 +6,15 @@ const OGG_MAGIC_NUMBER: &[u8] = &[
     0x4F, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
+const AAC_MAGIC_NUMBER_1: &[u8] = &[0xff, 0xf1];
+const AAC_MAGIC_NUMBER_2: &[u8] = &[0xff, 0xf2];
+
 pub fn is_mp3(data: &[u8]) -> bool {
     data.starts_with(MP3_MAGIC_NUMBER_1) || data.starts_with(MP3_MAGIC_NUMBER_2)
+}
+
+pub fn is_aac(data: &[u8]) -> bool {
+    data.starts_with(AAC_MAGIC_NUMBER_1) || data.starts_with(AAC_MAGIC_NUMBER_2)
 }
 
 pub fn is_flac(data: &[u8]) -> bool {
@@ -28,6 +35,7 @@ pub enum AudioFormatProbe {
     Flac,
     Wav,
     OggVorbis,
+    Aac,
     Unsupported,
 }
 
@@ -40,6 +48,8 @@ pub fn probe_format(data: impl AsRef<[u8]>) -> AudioFormatProbe {
         AudioFormatProbe::OggVorbis
     } else if is_mp3(data.as_ref()) {
         AudioFormatProbe::Mp3
+    } else if is_aac(data.as_ref()) {
+        AudioFormatProbe::Aac
     } else {
         AudioFormatProbe::Unsupported
     }
@@ -60,6 +70,8 @@ pub fn probe_format_from_stream(
         Ok(AudioFormatProbe::OggVorbis)
     } else if is_mp3(&magic_number_buffer) {
         Ok(AudioFormatProbe::Mp3)
+    } else if is_aac(&magic_number_buffer) {
+        Ok(AudioFormatProbe::Aac)
     } else {
         Ok(AudioFormatProbe::Unsupported)
     }

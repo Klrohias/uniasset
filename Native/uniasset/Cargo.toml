@@ -14,6 +14,7 @@ symphonia = { version = "0.6", default-features = false, features = [
     "wav",
     "vorbis",
     "ogg",
+    "aac",
 ] }
 bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
 parking_lot = "0.12.5"

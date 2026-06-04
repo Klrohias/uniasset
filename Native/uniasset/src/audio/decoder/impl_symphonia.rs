@@ -9,10 +9,10 @@ use symphonia::core::{
     audio::GenericAudioBufferRef,
     codecs::audio::{AudioDecoderOptions, CODEC_ID_NULL_AUDIO},
     errors::Error as SymphoniaError,
-    formats::{FormatOptions, FormatReader, probe::Hint},
+    formats::{FormatOptions, FormatReader, SeekMode, SeekTo, probe::Hint},
     io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions},
     meta::MetadataOptions,
-    units::TimeBase,
+    units::{TimeBase, Timestamp},
 };
 use symphonia::default::{get_codecs, get_probe};
 
@@ -20,8 +20,8 @@ use crate::audio::{AudioDecoder, DecoderError, SampleFormat};
 struct SymphoniaState {
     reader: Box<dyn FormatReader>,
     decoder: Box<dyn symphonia::core::codecs::audio::AudioDecoder>,
-    _track_id: u32,
-    _time_base: Option<TimeBase>,
+    track_id: u32,
+    time_base: Option<TimeBase>,
     reached_eof: bool,
 }
 
@@ -64,8 +64,7 @@ impl AudioFrameBuffer {
 pub struct SymphoniaDecoder {
     sample_format: SampleFormat,
     metadata: AudioMetadata,
-    inner: SymphoniaState,
-
+    symphonia_state: SymphoniaState,
     frame_position: AtomicI64,
     frame_buffer: AudioFrameBuffer,
     mutex: Mutex<()>,
@@ -154,11 +153,11 @@ impl SymphoniaDecoder {
             },
             frame_position: AtomicI64::new(0),
             mutex: Mutex::new(()),
-            inner: SymphoniaState {
+            symphonia_state: SymphoniaState {
                 reader: format,
                 decoder,
-                _track_id: track_id,
-                _time_base: time_base,
+                track_id,
+                time_base,
                 reached_eof: false,
             },
 
@@ -222,12 +221,83 @@ impl AudioDecoder for SymphoniaDecoder {
 
         // Clear frame buffer
         self.frame_buffer.clear();
-        self.inner.reached_eof = false;
+        self.symphonia_state.reached_eof = false;
 
         // Reset decoder to ensure clean state after seek
-        self.inner.decoder.reset();
+        self.symphonia_state.decoder.reset();
 
-        todo!()
+        // 1. Seek the reader to the nearest packet (before or at the target frame)
+        let seeked_to = self
+            .symphonia_state
+            .reader
+            .seek(
+                SeekMode::Accurate,
+                SeekTo::Timestamp {
+                    ts: Timestamp::new(position as i64),
+                    track_id: self.symphonia_state.track_id,
+                },
+            )
+            .map_err(|_| {
+                DecoderError::IOError(io::Error::new(io::ErrorKind::Other, "Failed to seek"))
+            })?;
+
+        // 2. Calculate how many frames to skip to reach the exact target frame.
+        //    With SeekMode::Accurate, actual_ts <= required_ts, so delta >= 0.
+        let delta = seeked_to
+            .required_ts
+            .checked_delta(seeked_to.actual_ts)
+            .unwrap_or_default();
+        let mut skip_frames = delta.get() as usize;
+
+        // 3. Decode packets and skip frames until we reach the exact target position.
+        //    This leverages AudioFrameBuffer + frame_offset: any excess frames beyond
+        //    the target are left in the buffer for subsequent read() calls.
+        while skip_frames > 0 {
+            match self.symphonia_state.reader.next_packet() {
+                Ok(Some(packet)) => match self.symphonia_state.decoder.decode(&packet) {
+                    Ok(decoded) => {
+                        let decoded_frames = decoded.frames();
+                        if decoded_frames == 0 {
+                            continue;
+                        }
+
+                        let frame_byte_size = self.metadata.bytes_per_frame;
+                        let decoded_byte_size = decoded_frames * frame_byte_size;
+
+                        if decoded_frames <= skip_frames {
+                            // Entire packet falls within the skip range — discard it
+                            skip_frames -= decoded_frames;
+                        } else {
+                            // This packet contains the target frame. Buffer the decoded
+                            // audio and set frame_offset so that the next read() starts
+                            // from the exact target frame within this packet.
+                            let consumed_frames = skip_frames;
+                            self.frame_buffer.prepare(decoded_byte_size);
+                            copy_interleaved_frames_as(
+                                decoded,
+                                &mut self.frame_buffer.buffer[..decoded_byte_size],
+                                self.sample_format,
+                            );
+
+                            self.frame_buffer.frame_count = decoded_frames;
+                            self.frame_buffer.frame_offset = Some(consumed_frames);
+                            skip_frames = 0;
+                        }
+                    }
+                    Err(_) => continue,
+                },
+                Ok(None) => break,
+                Err(SymphoniaError::ResetRequired) => {
+                    self.symphonia_state.decoder.reset();
+                    continue;
+                }
+                Err(_) => break,
+            }
+        }
+
+        self.frame_position
+            .store(position as i64, Ordering::Relaxed);
+        Ok(())
     }
 
     fn read(&mut self, buffer: &mut [u8], frame_count: u32) -> Result<u32, DecoderError> {
@@ -271,20 +341,20 @@ impl AudioDecoder for SymphoniaDecoder {
         // Decode new frames
         while required_frames > 0 {
             // Decode packet
-            let packet = match self.inner.reader.next_packet() {
+            let packet = match self.symphonia_state.reader.next_packet() {
                 Ok(Some(packet)) => packet,
                 Ok(None) => {
-                    self.inner.reached_eof = true;
+                    self.symphonia_state.reached_eof = true;
                     break;
                 }
                 Err(SymphoniaError::ResetRequired) => {
-                    self.inner.decoder.reset();
+                    self.symphonia_state.decoder.reset();
                     continue;
                 }
                 Err(err) => return Err(err.into()),
             };
 
-            let decoded = self.inner.decoder.decode(&packet)?;
+            let decoded = self.symphonia_state.decoder.decode(&packet)?;
             let decoded_frames = decoded.frames();
             if decoded.is_empty() {
                 continue;
