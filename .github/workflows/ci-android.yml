@@ -33,28 +33,28 @@ jobs:
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release -Z build-std=std,panic_abort
+        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
         popd
 
     - name: Build (Android arm64-v8a)
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release -Z build-std=std,panic_abort
+        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
         popd
 
     - name: Build (Android x86)
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release -Z build-std=std,panic_abort
+        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
         popd
 
     - name: Build (Android x86_64)
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release -Z build-std=std,panic_abort
+        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
         popd
 
     - name: List Android build outputs
