@@ -59,6 +59,11 @@ namespace Uniasset.Audio
             UnsafeHandle.Seek(position);
         }
 
+        public void Unload()
+        {
+            UnsafeHandle.Unload();
+        }
+
         public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream = true)
         {
             return AudioClip.Create(name, (int)(SampleCount / ChannelCount),

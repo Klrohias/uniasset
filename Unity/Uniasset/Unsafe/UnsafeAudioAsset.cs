@@ -106,6 +106,12 @@ namespace Uniasset.Unsafe
             NativeException.ThrowIfNeeded();
         }
 
+        public void Unload()
+        {
+            Interop.Uniasset_AudioAsset_Unload(Instance);
+            NativeException.ThrowIfNeeded();
+        }
+
         public void Destroy()
         {
             Interop.Uniasset_AudioAsset_Destory(Instance);

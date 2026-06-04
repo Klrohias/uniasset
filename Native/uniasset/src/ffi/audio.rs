@@ -106,11 +106,16 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadIO(
         }
     };
 
-    _ = failible_to_native(
-        || obj.load_io(unsafe { &mut *provider }, format),
-        || (),
-    );
+    _ = failible_to_native(|| obj.load_io(unsafe { &mut *provider }, format), || ());
 
+    std::mem::forget(obj);
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_AudioAsset_Unload(handle: NativeHandle) {
+    clear_error();
+    let obj = AudioAsset::from_handle(handle);
+    obj.unload();
     std::mem::forget(obj);
 }
 
@@ -180,10 +185,7 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_Read(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Uniasset_AudioAsset_Seek(
-    handle: NativeHandle,
-    position: i64,
-) {
+pub unsafe extern "C" fn Uniasset_AudioAsset_Seek(handle: NativeHandle, position: i64) {
     clear_error();
     let obj = AudioAsset::from_handle(handle);
     _ = failible_to_native(|| obj.seek(position), || ());
