@@ -1,5 +1,6 @@
 use std::{
     ffi::{CStr, c_char, c_uchar, c_uint},
+    mem::ManuallyDrop,
     slice,
 };
 
@@ -32,7 +33,7 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadFile(
     sample_format: c_uchar,
 ) {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let path_slice = unsafe { CStr::from_ptr(path) };
     let path_str = path_slice.to_string_lossy();
 
@@ -46,8 +47,6 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadFile(
     };
 
     _ = failible_to_native(|| obj.load_file(path_str.as_ref(), format), || ());
-
-    std::mem::forget(obj);
 }
 
 #[unsafe(no_mangle)]
@@ -59,7 +58,7 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadMemory(
 ) {
     clear_error();
 
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
 
     let format = match sample_format {
         0 => SampleFormat::Float32,
@@ -79,8 +78,6 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadMemory(
         },
         || (),
     );
-
-    std::mem::forget(obj);
 }
 
 #[unsafe(no_mangle)]
@@ -93,9 +90,10 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadIO(
 
     if provider.is_null() {
         set_error(anyhow!("Invaild IO provider"));
+        return;
     }
 
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
 
     let format = match sample_format {
         0 => SampleFormat::Float32,
@@ -107,60 +105,52 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_LoadIO(
     };
 
     _ = failible_to_native(|| obj.load_io(unsafe { &mut *provider }, format), || ());
-
-    std::mem::forget(obj);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_Unload(handle: NativeHandle) {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     obj.unload();
-    std::mem::forget(obj);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_GetChannelCount(handle: NativeHandle) -> u16 {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let result = failible_to_native(|| obj.get_channel_count(), || 0);
-    std::mem::forget(obj);
     result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_GetSampleCount(handle: NativeHandle) -> u64 {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let result = failible_to_native(|| obj.get_sample_count(), || 0);
-    std::mem::forget(obj);
     result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_GetSampleRate(handle: NativeHandle) -> c_uint {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let result = failible_to_native(|| obj.get_sample_rate(), || 0);
-    std::mem::forget(obj);
     result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_GetFrameCount(handle: NativeHandle) -> u64 {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let result = failible_to_native(|| obj.get_frame_count(), || 0);
-    std::mem::forget(obj);
     result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_Tell(handle: NativeHandle) -> i64 {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let result = failible_to_native(|| obj.tell(), || 0);
-    std::mem::forget(obj);
     result
 }
 
@@ -172,7 +162,7 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_Read(
     frame_count: c_uint,
 ) -> c_uint {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     let result = failible_to_native(
         || {
             let buf = unsafe { slice::from_raw_parts_mut(buffer, buffer_size) };
@@ -180,14 +170,12 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_Read(
         },
         || 0,
     );
-    std::mem::forget(obj);
     result
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_Seek(handle: NativeHandle, position: i64) {
     clear_error();
-    let obj = AudioAsset::from_handle(handle);
+    let obj = ManuallyDrop::new(AudioAsset::from_handle(handle));
     _ = failible_to_native(|| obj.seek(position), || ());
-    std::mem::forget(obj);
 }
