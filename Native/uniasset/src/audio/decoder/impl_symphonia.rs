@@ -76,6 +76,7 @@ impl SymphoniaDecoder {
     {
         // Measure stream length
         let length = stream.seek(io::SeekFrom::End(0))?;
+        stream.seek(io::SeekFrom::Start(0))?;
 
         let adapter = MediaSourceAdapter {
             inner: stream,

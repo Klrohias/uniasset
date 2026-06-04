@@ -12,6 +12,7 @@ symphonia = { version = "0.6", default-features = false, features = [
     "mp3",
     "flac",
     "wav",
+    "pcm",
     "vorbis",
     "ogg",
     "aac",
