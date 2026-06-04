@@ -39,8 +39,8 @@ impl AudioAsset {
             .audio_decoder
             .swap(new_decoder, Ordering::Release);
 
-        unsafe {
-            _ = Box::from_raw(old_ptr);
+        if !old_ptr.is_null() {
+            _ = unsafe { Box::from_raw(old_ptr) };
         }
     }
 

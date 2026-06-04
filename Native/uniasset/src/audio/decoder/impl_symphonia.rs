@@ -140,10 +140,8 @@ impl SymphoniaDecoder {
 
         let bytes_per_frame = sample_format.byte_size() * channel_count;
 
-        let frame_buffer_size = codec_params
-            .max_frames_per_packet
-            .unwrap_or(4096 * sample_format.byte_size() as u64)
-            as usize;
+        let frame_buffer_frames = codec_params.max_frames_per_packet.unwrap_or(4096) as usize;
+        let frame_buffer_size = frame_buffer_frames * bytes_per_frame;
 
         Ok(Self {
             sample_format,
@@ -292,10 +290,11 @@ impl AudioDecoder for SymphoniaDecoder {
                 continue;
             }
 
+            let decoded_byte_size = decoded_frames * frame_byte_size;
             if decoded_frames <= required_frames {
                 // If the count of decoded frames less than required frames,
                 // copy them into output buffer instead of internal frame buffer
-                let new_frames_byte_size = decoded_frames * frame_byte_size;
+                let new_frames_byte_size = decoded_byte_size;
                 copy_interleaved_frames_as(
                     decoded,
                     &mut buffer[position..(position + new_frames_byte_size)],
@@ -307,10 +306,10 @@ impl AudioDecoder for SymphoniaDecoder {
             } else {
                 // Required frames less then decoded frames,
                 // remain some frames, copy all the decoded frames to buffer firstly
-                self.frame_buffer.prepare(decoded_frames * frame_byte_size);
+                self.frame_buffer.prepare(decoded_byte_size);
                 copy_interleaved_frames_as(
                     decoded,
-                    &mut self.frame_buffer.buffer,
+                    &mut self.frame_buffer.buffer[..decoded_byte_size],
                     self.sample_format,
                 );
 
