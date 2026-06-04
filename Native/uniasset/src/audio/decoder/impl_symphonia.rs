@@ -12,7 +12,7 @@ use symphonia::core::{
     formats::{FormatOptions, FormatReader, SeekMode, SeekTo, probe::Hint},
     io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions},
     meta::MetadataOptions,
-    units::{TimeBase, Timestamp},
+    units::Timestamp,
 };
 use symphonia::default::{get_codecs, get_probe};
 
@@ -21,7 +21,6 @@ struct SymphoniaState {
     reader: Box<dyn FormatReader>,
     decoder: Box<dyn symphonia::core::codecs::audio::AudioDecoder>,
     track_id: u32,
-    time_base: Option<TimeBase>,
     reached_eof: bool,
 }
 
@@ -130,7 +129,6 @@ impl SymphoniaDecoder {
             .as_ref()
             .map(|x| x.count())
             .ok_or(DecoderError::UnsupportedFormat)?;
-        let time_base = track.time_base;
         let frame_count = track.num_frames.ok_or(DecoderError::UnsupportedFormat)?;
         let sample_count = frame_count * channel_count as u64;
 
@@ -157,7 +155,6 @@ impl SymphoniaDecoder {
                 reader: format,
                 decoder,
                 track_id,
-                time_base,
                 reached_eof: false,
             },
 
