@@ -37,7 +37,7 @@ namespace Uniasset.Unsafe
             }
         }
 
-        public void LoadIO(NativeIOProvider* provider, SampleFormat sampleFormat = SampleFormat.Int16)
+        public void LoadIO(Interop.NativeIOProvider* provider, SampleFormat sampleFormat = SampleFormat.Int16)
         {
             Interop.Uniasset_AudioAsset_LoadIO(Instance, provider, (byte)sampleFormat);
             NativeException.ThrowIfNeeded();

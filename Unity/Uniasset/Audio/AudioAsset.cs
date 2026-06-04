@@ -25,7 +25,7 @@ namespace Uniasset.Audio
             UnsafeHandle.LoadMemory(data.ToArray(), sampleFormat);
         }
 
-        public void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Int16)
+        public unsafe void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Int16)
         {
             if (stream == null) throw new ArgumentNullException(nameof(stream));
 
