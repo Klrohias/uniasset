@@ -1,0 +1,3 @@
+# Downloaded native libraries — do not track
+*
+!.gitignore
