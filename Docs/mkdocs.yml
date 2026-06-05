@@ -1,0 +1,84 @@
+site_name: Uniasset
+site_url: https://uniasset.klrohias.com
+site_description: A Unity plugin for loading external assets via native Rust libraries
+site_author: Klrohias
+
+repo_name: Klrohias/uniasset
+repo_url: https://github.com/Klrohias/uniasset
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换到暗色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换到亮色模式
+  font:
+    text: Noto Sans SC
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+plugins:
+  - search
+
+extra_css:
+  - stylesheets/landing.css
+
+markdown_extensions:
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+  - tables
+  - attr_list
+  - def_list
+  - abbr
+
+nav:
+  - 首页: index.md
+  - 快速开始: getting-started.md
+  - 使用指南:
+    - guide/image-loading.md
+    - guide/audio-loading.md
+    - guide/custom-streams.md
+  - API 参考:
+    - api/index.md
+    - api/image-asset.md
+    - api/audio-asset.md
+    - api/crop-options.md
+    - api/sample-format.md
+    - api/iostream.md
+  - 更新日志: changelog.md
