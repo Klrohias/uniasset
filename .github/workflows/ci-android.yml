@@ -8,7 +8,7 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v8
 
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -60,28 +60,28 @@ jobs:
 
     - name: Upload Artifact (arm-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libuniasset-arm-neon-android
         path: ${{github.workspace}}/Native/target/android-build/armeabi-v7a/libuniasset.so
 
     - name: Upload Artifact (aarch64-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libuniasset-aarch64-android
         path: ${{github.workspace}}/Native/target/android-build/arm64-v8a/libuniasset.so
 
     - name: Upload Artifact (x86-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libuniasset-x86-android
         path: ${{github.workspace}}/Native/target/android-build/x86/libuniasset.so
 
     - name: Upload Artifact (x64-android)
       if: '!cancelled()'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libuniasset-x64-android
         path: ${{github.workspace}}/Native/target/android-build/x86_64/libuniasset.so

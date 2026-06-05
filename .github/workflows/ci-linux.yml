@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v8
 
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -23,7 +23,7 @@ jobs:
         cargo build --manifest-path Native/Cargo.toml --release --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
 
     - name: Upload Artifact (x64-linux)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libuniasset-x64-linux
         path: ${{github.workspace}}/Native/target/x86_64-unknown-linux-gnu/release/libuniasset.so

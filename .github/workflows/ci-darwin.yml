@@ -9,7 +9,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v8
 
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -38,21 +38,21 @@ jobs:
 
 
     - name: Upload Artifact (x64-osx)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: '!cancelled()'
       with:
         name: libuniasset-x64-macos
         path: ${{github.workspace}}/Native/target/x86_64-apple-darwin/release/libuniasset.dylib
 
     - name: Upload Artifact (aarch64-macos)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: '!cancelled()'
       with:
         name: libuniasset-aarch64-macos
         path: ${{github.workspace}}/Native/target/aarch64-apple-darwin/release/libuniasset.dylib
 
     - name: Upload Artifact (aarch64-ios)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: '!cancelled()'
       with:
         name: libuniasset-aarch64-ios
