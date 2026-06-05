@@ -15,17 +15,17 @@ namespace Uniasset.Audio
         public int ChannelCount => UnsafeHandle.GetChannelCount();
         public long FrameCount => UnsafeHandle.GetFrameCount();
 
-        public void Load(string path, SampleFormat sampleFormat = SampleFormat.Int16)
+        public void Load(string path, SampleFormat sampleFormat = SampleFormat.Float)
         {
             UnsafeHandle.LoadFile(path, sampleFormat);
         }
 
-        public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Int16)
+        public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Float)
         {
             UnsafeHandle.LoadMemory(data.ToArray(), sampleFormat);
         }
 
-        public unsafe void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Int16)
+        public unsafe void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Float)
         {
             if (stream == null) throw new ArgumentNullException(nameof(stream));
 

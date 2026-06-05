@@ -79,24 +79,26 @@ public class TestSceneManager : MonoBehaviour
         GUI.DragWindow(_draggableRect);
         GUILayout.BeginHorizontal();
 
-        if (GUILayout.Button("Load")) _audioAsset.Load(_testMp3);
+        if (GUILayout.Button("Load")) 
+        {
+            _audioAsset.Load(_testMp3, SampleFormat.Float);
+            Debug.Log($"Frame Count: {_audioAsset.FrameCount}, Sample Count: {_audioAsset.SampleCount}, Channel Count: {_audioAsset.ChannelCount}");
+        }
 
         if (GUILayout.Button("Unload")) _audioAsset.Unload();
 
         if (GUILayout.Button("AudioSourceOpen"))
         {
-            var decoder = _audioAsset.GetAudioDecoder(frameBufferSize: _audioAsset.SampleRate * 64);
-            var clip = decoder.ToAudioClip();
+            var clip = _audioAsset.ToAudioClip();
             source.clip = clip;
         }
 
         if (GUILayout.Button("AudioSourceOpen(Read)"))
         {
-            var decoder = _audioAsset.GetAudioDecoder();
-            var clip = AudioClip.Create(name, (int)decoder.SampleCount / decoder.ChannelCount
-                , decoder.ChannelCount, decoder.SampleRate, false);
-            var samples = new float[decoder.SampleCount];
-            decoder.Read(new Span<float>(samples), (int)(decoder.SampleCount / decoder.ChannelCount));
+            var clip = AudioClip.Create(name, (int)_audioAsset.FrameCount
+                , _audioAsset.ChannelCount, _audioAsset.SampleRate, false);
+            var samples = new float[_audioAsset.SampleCount];
+            _audioAsset.Read(new Span<float>(samples), (int)_audioAsset.FrameCount);
             clip.SetData(samples, 0);
             source.clip = clip;
         }

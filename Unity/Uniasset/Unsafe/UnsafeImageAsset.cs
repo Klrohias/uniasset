@@ -141,7 +141,7 @@ namespace Uniasset.Unsafe
                 Instance,
                 checked((uint)width),
                 checked((uint)height),
-                (uint)ResizeFilter.Lanczos3);
+                (uint)ResizeFilter.Nearest);
             NativeException.ThrowIfNeeded();
         }
 

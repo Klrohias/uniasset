@@ -2,6 +2,7 @@ use std::io::{self, Read, Seek};
 
 const MP3_MAGIC_NUMBER_1: &[u8] = &[0x49, 0x44, 0x33]; // ID3
 const MP3_MAGIC_NUMBER_2: &[u8] = &[0xff, 0xfb]; // MPEG frame sync
+const MP3_MAGIC_NUMBER_3: &[u8] = &[0xff, 0xf3]; 
 const OGG_MAGIC_NUMBER: &[u8] = &[
     0x4F, 0x67, 0x67, 0x53, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
@@ -10,7 +11,7 @@ const AAC_MAGIC_NUMBER_1: &[u8] = &[0xff, 0xf1];
 const AAC_MAGIC_NUMBER_2: &[u8] = &[0xff, 0xf2];
 
 pub fn is_mp3(data: &[u8]) -> bool {
-    data.starts_with(MP3_MAGIC_NUMBER_1) || data.starts_with(MP3_MAGIC_NUMBER_2)
+    data.starts_with(MP3_MAGIC_NUMBER_1) || data.starts_with(MP3_MAGIC_NUMBER_2) || data.starts_with(MP3_MAGIC_NUMBER_3)
 }
 
 pub fn is_aac(data: &[u8]) -> bool {
