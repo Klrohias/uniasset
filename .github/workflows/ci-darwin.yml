@@ -9,7 +9,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v8
+    - uses: actions/checkout@v6
 
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1

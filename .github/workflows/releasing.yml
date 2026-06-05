@@ -26,10 +26,10 @@ jobs:
     if: '!cancelled()'
 
     steps:
-      - uses: actions/checkout@v8
+      - uses: actions/checkout@v6
 
       - name: Download artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v7
         with:
           path: 'outputs/'
 
