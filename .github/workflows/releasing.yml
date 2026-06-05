@@ -1,4 +1,4 @@
-name: releasing
+name: 'Releasing'
 
 on: 
   push:

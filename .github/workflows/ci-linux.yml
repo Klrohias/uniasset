@@ -1,4 +1,4 @@
-name: ci-linux
+name: 'Build (Linux)'
 
 on:
   workflow_dispatch: {}
@@ -20,7 +20,7 @@ jobs:
 
     - name: Build (x86_64-unknown-linux-gnu)
       run: |
-        cargo build --manifest-path Native/Cargo.toml -p uniasset --release --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
+        cargo build --manifest-path Native/Cargo.toml --release --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
 
     - name: Upload Artifact (x64-linux)
       uses: actions/upload-artifact@v4

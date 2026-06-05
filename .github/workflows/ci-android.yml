@@ -1,4 +1,4 @@
-name: ci-android
+name: 'Build (Android)'
 
 on:
   workflow_dispatch: {}
@@ -14,13 +14,8 @@ jobs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
-        target: aarch64-linux-android
+        target: armv7-linux-androideabi,aarch64-linux-android,i686-linux-android,x86_64-linux-android
         components: rust-src
-
-    - name: Ensure Rust targets installed
-      if: '!cancelled()'
-      run: |
-        rustup target add armv7-linux-androideabi aarch64-linux-android i686-linux-android x86_64-linux-android
 
     - name: Setup Android NDK
       uses: android-actions/setup-android@v3
@@ -33,28 +28,28 @@ jobs:
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android arm64-v8a)
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android x86)
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android x86_64)
       if: '!cancelled()'
       run: |
         pushd Native
-        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml -p uniasset --release
+        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: List Android build outputs
