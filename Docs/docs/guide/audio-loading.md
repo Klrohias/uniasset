@@ -1,20 +1,20 @@
 # 音频加载指南
 
-本指南介绍如何使用 Uniasset 加载和处理音频。
+本指南介绍如何使用 `Uniasset.Audio.AudioAsset` 加载音频、读取 PCM 数据并转换为 Unity `AudioClip`。
 
 ## 支持格式
 
-Uniasset 通过 Symphonia 库支持以下音频格式：
+Uniasset 当前支持以下音频格式：
 
 | 格式 | 扩展名 | 说明 |
 |------|--------|------|
-| MP3 | `.mp3` | 有损压缩，最常用的音频格式 |
-| FLAC | `.flac` | 无损压缩，高质量 |
-| WAV | `.wav` | 无压缩，兼容性好 |
+| MP3 | `.mp3` | 常见有损压缩格式 |
+| FLAC | `.flac` | 无损压缩格式 |
+| WAV | `.wav` | 常见未压缩容器 |
 | PCM | `.pcm` | 原始 PCM 数据 |
-| Vorbis | — | 开源有损压缩 |
-| OGG | `.ogg` | OGG 容器格式 |
-| AAC | `.aac`, `.m4a` | 高效有损压缩 |
+| Vorbis | — | Vorbis 编码音频 |
+| OGG | `.ogg` | 常见 Vorbis 容器 |
+| AAC | `.aac`, `.m4a` | 常见有损压缩格式 |
 
 ## 基本加载
 
@@ -23,7 +23,7 @@ Uniasset 通过 Symphonia 库支持以下音频格式：
 ```csharp
 using Uniasset.Audio;
 
-var audio = new AudioAsset();
+using var audio = new AudioAsset();
 audio.Load("Assets/Audio/bgm.mp3");
 
 Debug.Log($"采样率: {audio.SampleRate} Hz");
@@ -34,27 +34,47 @@ Debug.Log($"总帧数: {audio.FrameCount}");
 ### 从字节数组加载
 
 ```csharp
+using var audio = new AudioAsset();
+
 byte[] data = File.ReadAllBytes("sound.wav");
 audio.Load(data);
 ```
 
-## 采样格式
-
-加载音频时可以指定采样格式：
+### 从自定义流加载
 
 ```csharp
-// Float 格式（默认）
-audio.Load("music.mp3", SampleFormat.Float);
+using Uniasset;
+using Uniasset.Audio;
 
-// Int16 格式（更省内存）
+using var audio = new AudioAsset();
+using var fileStream = File.OpenRead("music.flac");
+var stream = new StreamWrapper(fileStream);
+
+audio.LoadIO(stream);
+```
+
+!!! note
+    当前 `AudioAsset` 只提供 `LoadIO(IUniassetStream)`，没有 `LoadIO(Stream)` 便捷重载。
+
+## 采样格式
+
+加载音频时可以指定输出采样格式：
+
+```csharp
+audio.Load("music.mp3", SampleFormat.Float);
 audio.Load("music.mp3", SampleFormat.Int16);
 ```
+
+一般建议：
+
+- 需要直接交给 Unity 或做浮点处理时使用 `SampleFormat.Float`
+- 想降低内存占用或直接处理 16 位 PCM 时使用 `SampleFormat.Int16`
 
 详见 [SampleFormat API 参考](../api/sample-format.md)。
 
 ## 转换为 AudioClip
 
-### 流式播放（推荐用于长音频）
+### 流式播放
 
 ```csharp
 AudioClip clip = audio.ToAudioClip("BGM", stream: true);
@@ -62,33 +82,31 @@ audioSource.clip = clip;
 audioSource.Play();
 ```
 
-流式播放在播放时按需读取数据，内存占用低，适合：
+适合：
 
 - 背景音乐
-- 播客
-- 长音频
+- 长时音频
+- 希望降低一次性内存占用的场景
 
-### 全量加载（推荐用于短音效）
+### 全量加载
 
 ```csharp
 AudioClip clip = audio.ToAudioClip("Explosion", stream: false);
 ```
 
-全量加载将所有数据预加载到内存，播放延迟低，适合：
+适合：
 
-- 游戏音效
-- UI 音效
-- 短音频片段
+- 短音效
+- 需要频繁重复播放的片段
 
 ## 手动读取 PCM 数据
 
 ### 基本读取
 
 ```csharp
-var audio = new AudioAsset();
+using var audio = new AudioAsset();
 audio.Load("music.flac", SampleFormat.Float);
 
-// 读取 1024 帧
 float[] buffer = new float[1024 * audio.ChannelCount];
 int framesRead = audio.Read<float>(buffer, 1024);
 ```
@@ -107,11 +125,8 @@ while (true)
 {
     int framesRead = audio.Read<float>(buffer, chunkSize);
     if (framesRead == 0) break;
-    
+
     totalFrames += framesRead;
-    // 处理 buffer 中的数据...
-    
-    // 注意：最后一次读取可能不足 chunkSize 帧
 }
 
 Debug.Log($"总共读取 {totalFrames} 帧");
@@ -123,9 +138,13 @@ Debug.Log($"总共读取 {totalFrames} 帧");
 using var audio = new AudioAsset();
 audio.Load("sound.wav", SampleFormat.Int16);
 
-short[] buffer = new short[2048];
+short[] buffer = new short[1024 * audio.ChannelCount];
 int framesRead = audio.Read<short>(buffer, 1024);
 ```
+
+!!! warning
+    `Read<T>(...)` 中的 `T` 必须与加载时使用的 `SampleFormat` 对应：
+    `SampleFormat.Float -> float`，`SampleFormat.Int16 -> short`。
 
 ## 定位与跳转
 
@@ -136,75 +155,39 @@ long currentFrame = audio.Tell();
 Debug.Log($"当前帧: {currentFrame} / {audio.FrameCount}");
 ```
 
-### 跳转到指定位置
+### 跳转到指定帧
 
 ```csharp
-// 跳转到第 1000 帧
 audio.Seek(1000);
-
-// 跳转到开头
 audio.Seek(0);
 ```
 
-### 计算时间位置
+### 秒数与帧数换算
 
 ```csharp
-// 帧数转秒数
 float seconds = (float)audio.Tell() / audio.SampleRate;
 
-// 秒数转帧数
 long frame = (long)(10.5f * audio.SampleRate);
 audio.Seek(frame);
 ```
 
-## 异步操作
+## 生命周期管理
+
+### 使用 using
 
 ```csharp
-var audio = new AudioAsset();
-await Task.Run(() => audio.Load("large_file.flac"));
-
-// 注意：ToAudioClip 不是异步的，因为它主要是内存操作
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
 AudioClip clip = audio.ToAudioClip();
 ```
 
-## 资源管理
-
-### 使用 using 语句
+### 卸载已加载数据
 
 ```csharp
-using (var audio = new AudioAsset())
-{
-    audio.Load("music.mp3");
-    AudioClip clip = audio.ToAudioClip();
-    // clip 在 using 块结束后仍然有效
-}
+audio.Unload();
 ```
 
-### 手动释放
-
-```csharp
-var audio = new AudioAsset();
-try
-{
-    audio.Load("music.mp3");
-    // 使用音频...
-}
-finally
-{
-    audio.Dispose();
-}
-```
-
-### 重新加载
-
-```csharp
-var audio = new AudioAsset();
-audio.Load("music1.mp3");
-// 使用...
-
-audio.Unload();  // 卸载当前音频
-audio.Load("music2.mp3");  // 加载新音频
-```
+`Unload()` 会清空当前音频内容，但对象本身仍可继续复用。
 
 ## 常见用例
 
@@ -214,16 +197,16 @@ audio.Load("music2.mp3");  // 加载新音频
 public class BGMPlayer : MonoBehaviour
 {
     [SerializeField] private AudioSource _audioSource;
-    
+
     private AudioAsset _audioAsset;
 
-    public async void PlayBGM(string path)
+    public void PlayBGM(string path)
     {
         StopBGM();
-        
+
         _audioAsset = new AudioAsset();
         _audioAsset.Load(path);
-        
+
         _audioSource.clip = _audioAsset.ToAudioClip("BGM", stream: true);
         _audioSource.loop = true;
         _audioSource.Play();
@@ -244,85 +227,69 @@ public class BGMPlayer : MonoBehaviour
 }
 ```
 
-### 音效管理器
+### 音效缓存
 
 ```csharp
 public class SFXManager : MonoBehaviour
 {
     private readonly Dictionary<string, AudioClip> _cache = new();
-    
+
     public AudioClip LoadSFX(string path)
     {
         if (_cache.TryGetValue(path, out var cached))
             return cached;
-        
+
         using var audio = new AudioAsset();
         audio.Load(path);
-        
+
         var clip = audio.ToAudioClip(Path.GetFileName(path), stream: false);
         _cache[path] = clip;
         return clip;
     }
-
-    public void PlaySFX(string path)
-    {
-        var clip = LoadSFX(path);
-        AudioSource.PlayClipAtPoint(clip, Vector3.zero);
-    }
-
-    private void OnDestroy()
-    {
-        foreach (var clip in _cache.Values)
-            Destroy(clip);
-        _cache.Clear();
-    }
 }
 ```
 
-### 音频波形可视化
+### 波形预览
 
 ```csharp
-public class WaveformVisualizer : MonoBehaviour
+public float[] ReadWaveform(string path, int frameCount)
 {
-    [SerializeField] private LineRenderer _lineRenderer;
-    [SerializeField] private int _sampleCount = 256;
+    using var audio = new AudioAsset();
+    audio.Load(path, SampleFormat.Float);
 
-    public void Visualize(string audioPath)
+    float[] samples = new float[frameCount * audio.ChannelCount];
+    int framesRead = audio.Read<float>(samples, frameCount);
+
+    if (framesRead < frameCount)
     {
-        using var audio = new AudioAsset();
-        audio.Load(audioPath, SampleFormat.Float);
-        
-        float[] samples = new float[_sampleCount * audio.ChannelCount];
-        audio.Read<float>(samples, _sampleCount);
-        
-        // 只取第一个声道
-        _lineRenderer.positionCount = _sampleCount;
-        for (int i = 0; i < _sampleCount; i++)
-        {
-            float x = (float)i / _sampleCount;
-            float y = samples[i * audio.ChannelCount];
-            _lineRenderer.SetPosition(i, new Vector3(x, y, 0));
-        }
+        Array.Resize(ref samples, framesRead * audio.ChannelCount);
     }
+
+    return samples;
 }
 ```
 
-### 音频截取
+### 截取指定时间段
 
 ```csharp
 public float[] ExtractSegment(string path, float startSec, float durationSec)
 {
     using var audio = new AudioAsset();
     audio.Load(path, SampleFormat.Float);
-    
+
     long startFrame = (long)(startSec * audio.SampleRate);
-    long frameCount = (long)(durationSec * audio.SampleRate);
-    
+    int frameCount = (int)(durationSec * audio.SampleRate);
+
     audio.Seek(startFrame);
-    
+
     float[] buffer = new float[frameCount * audio.ChannelCount];
-    audio.Read<float>(buffer, (int)frameCount);
-    
+    int framesRead = audio.Read<float>(buffer, frameCount);
+
+    if (framesRead < frameCount)
+    {
+        Array.Resize(ref buffer, framesRead * audio.ChannelCount);
+    }
+
     return buffer;
 }
 ```

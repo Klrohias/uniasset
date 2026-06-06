@@ -1,16 +1,16 @@
 # 自定义流指南
 
-本指南介绍如何使用 `IUniassetStream` 接口从自定义数据源加载资源。
+本指南介绍如何使用 `IUniassetStream` 接口，把图片或音频数据从任意自定义数据源接入 Uniasset。
 
-## 概述
+## 适用场景
 
-Uniasset 的 `IUniassetStream` 接口允许你从任意数据源加载图片和音频，而不仅仅是文件或字节数组。这对于以下场景非常有用：
+`IUniassetStream` 适合以下场景：
 
-- 从自定义打包格式中读取资源
-- 从网络流加载资源
-- 读取加密或压缩的数据
-- 从内存映射文件读取
-- 单元测试中的 Mock 流
+- 资源来自自定义打包格式
+- 数据已经在内存中，不想落盘到临时文件
+- 资源需要先解密或解压，再交给 Uniasset
+- 资源来自 `AssetBundle`、数据库或网络缓存
+- 测试时需要可控的 Mock 数据源
 
 ## 接口定义
 
@@ -22,106 +22,181 @@ public interface IUniassetStream
 }
 ```
 
-### Read 方法
+### Read
 
-- 从流中读取数据到 `buffer`
+```csharp
+int Read(Span<byte> buffer);
+```
+
+要求：
+
+- 将数据读取到 `buffer`
 - 返回实际读取的字节数
-- 返回 `0` 表示已到达流末尾
-- `buffer.Length` 是期望读取的最大字节数
+- 到达末尾时返回 `0`
 
-### Seek 方法
+### Seek
 
-- 移动流的读取位置
-- `offset` 是相对于 `origin` 的偏移量
-- 返回新的流位置（从流开头算起）
-- `origin` 可以是 `Begin`、`Current` 或 `End`
+```csharp
+long Seek(long offset, SeekOrigin origin);
+```
+
+要求：
+
+- 根据 `origin` 和 `offset` 移动当前位置
+- 返回新的绝对位置
+- 必须支持 `Begin`、`Current` 和 `End`
+
+## SeekOrigin
+
+```csharp
+public enum SeekOrigin
+{
+    Begin = 0,
+    Current = 1,
+    End = 2,
+}
+```
+
+## 与 ImageAsset / AudioAsset 的配合方式
+
+### 图片
+
+`ImageAsset` 支持两种写法：
+
+```csharp
+using var image = new ImageAsset();
+image.LoadIO(customStream);
+```
+
+或直接传入 `System.IO.Stream`：
+
+```csharp
+using var image = new ImageAsset();
+using var fileStream = File.OpenRead("photo.png");
+
+image.LoadIO(fileStream);
+```
+
+### 音频
+
+`AudioAsset` 只支持 `IUniassetStream`：
+
+```csharp
+using var audio = new AudioAsset();
+audio.LoadIO(customStream);
+```
+
+如果你手里是 `System.IO.Stream`，需要手动包装：
+
+```csharp
+using var audio = new AudioAsset();
+using var fileStream = File.OpenRead("music.flac");
+
+var stream = new StreamWrapper(fileStream);
+audio.LoadIO(stream);
+```
 
 ## 使用 StreamWrapper
 
-对于已有的 `System.IO.Stream`，可以使用内置的 `StreamWrapper` 适配器：
+`StreamWrapper` 是内置适配器，用于把 `System.IO.Stream` 转成 `IUniassetStream`。
 
 ```csharp
 using Uniasset;
 using Uniasset.Image;
 
-// 方式 1：手动包装
 using var fileStream = File.OpenRead("photo.png");
 var wrapper = new StreamWrapper(fileStream);
-var image = new ImageAsset();
-image.LoadIO(wrapper);
 
-// 方式 2：直接传入 Stream（ImageAsset 会自动包装）
-using var fileStream = File.OpenRead("photo.png");
-image.LoadIO(fileStream);
+using var image = new ImageAsset();
+image.LoadIO(wrapper);
 ```
 
-!!! warning "注意事项"
-    `StreamWrapper` 要求底层的 `Stream` 必须：
-    
-    - **可读**：`CanRead` 返回 `true`
-    - **可寻址**：`CanSeek` 返回 `true`
+!!! warning "使用限制"
+    `StreamWrapper` 要求底层 `Stream` 同时满足：
 
-## 实现自定义流
+    - 可读：`CanRead == true`
+    - 可定位：`CanSeek == true`
 
-### 基本模板
+## 最小可用实现
+
+下面是一个基于 `byte[]` 的最小实现模板：
 
 ```csharp
-public class CustomStream : IUniassetStream
+public sealed class MemoryStreamAdapter : IUniassetStream
 {
-    // 你的数据源
     private readonly byte[] _data;
     private int _position;
 
-    public CustomStream(byte[] data)
+    public MemoryStreamAdapter(byte[] data)
     {
-        _data = data;
+        _data = data ?? throw new ArgumentNullException(nameof(data));
     }
 
     public int Read(Span<byte> buffer)
     {
-        // 计算可读取的字节数
         int available = _data.Length - _position;
         int toRead = Math.Min(buffer.Length, available);
-        
         if (toRead <= 0) return 0;
-        
-        // 复制数据
+
         _data.AsSpan(_position, toRead).CopyTo(buffer);
         _position += toRead;
-        
         return toRead;
     }
 
     public long Seek(long offset, SeekOrigin origin)
     {
-        _position = origin switch
+        long newPosition = origin switch
         {
-            SeekOrigin.Begin => (int)offset,
-            SeekOrigin.Current => _position + (int)offset,
-            SeekOrigin.End => _data.Length + (int)offset,
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => _position + offset,
+            SeekOrigin.End => _data.Length + offset,
             _ => throw new ArgumentOutOfRangeException(nameof(origin))
         };
-        
-        // 边界检查
-        _position = Math.Clamp(_position, 0, _data.Length);
-        
+
+        _position = (int)Math.Clamp(newPosition, 0, _data.Length);
         return _position;
     }
 }
 ```
 
-### 从 Unity AssetBundle 加载
+## 使用示例
+
+### 从内存加载图片
 
 ```csharp
-public class AssetBundleStream : IUniassetStream
+byte[] imageBytes = File.ReadAllBytes("photo.png");
+var stream = new MemoryStreamAdapter(imageBytes);
+
+using var image = new ImageAsset();
+image.LoadIO(stream);
+
+Texture2D texture = image.ToTexture2D();
+```
+
+### 从内存加载音频
+
+```csharp
+byte[] audioBytes = File.ReadAllBytes("music.mp3");
+var stream = new MemoryStreamAdapter(audioBytes);
+
+using var audio = new AudioAsset();
+audio.LoadIO(stream);
+
+AudioClip clip = audio.ToAudioClip();
+```
+
+### 从 AssetBundle 中读取
+
+```csharp
+public sealed class AssetBundleStream : IUniassetStream
 {
-    private readonly AssetBundleRequest _request;
-    private byte[] _data;
+    private readonly byte[] _data;
     private int _position;
 
     public AssetBundleStream(AssetBundle bundle, string assetName)
     {
         var asset = bundle.LoadAsset<TextAsset>(assetName);
+        if (asset == null) throw new ArgumentException("Asset not found.", nameof(assetName));
         _data = asset.bytes;
     }
 
@@ -130,7 +205,7 @@ public class AssetBundleStream : IUniassetStream
         int available = _data.Length - _position;
         int toRead = Math.Min(buffer.Length, available);
         if (toRead <= 0) return 0;
-        
+
         _data.AsSpan(_position, toRead).CopyTo(buffer);
         _position += toRead;
         return toRead;
@@ -138,23 +213,24 @@ public class AssetBundleStream : IUniassetStream
 
     public long Seek(long offset, SeekOrigin origin)
     {
-        _position = origin switch
+        long newPosition = origin switch
         {
-            SeekOrigin.Begin => (int)offset,
-            SeekOrigin.Current => _position + (int)offset,
-            SeekOrigin.End => _data.Length + (int)offset,
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => _position + offset,
+            SeekOrigin.End => _data.Length + offset,
             _ => throw new ArgumentOutOfRangeException(nameof(origin))
         };
-        _position = Math.Clamp(_position, 0, _data.Length);
+
+        _position = (int)Math.Clamp(newPosition, 0, _data.Length);
         return _position;
     }
 }
 ```
 
-### 从加密数据加载
+### 读取加密数据
 
 ```csharp
-public class EncryptedStream : IUniassetStream
+public sealed class EncryptedStream : IUniassetStream
 {
     private readonly byte[] _encryptedData;
     private readonly byte[] _key;
@@ -162,8 +238,8 @@ public class EncryptedStream : IUniassetStream
 
     public EncryptedStream(byte[] encryptedData, byte[] key)
     {
-        _encryptedData = encryptedData;
-        _key = key;
+        _encryptedData = encryptedData ?? throw new ArgumentNullException(nameof(encryptedData));
+        _key = key ?? throw new ArgumentNullException(nameof(key));
     }
 
     public int Read(Span<byte> buffer)
@@ -172,171 +248,63 @@ public class EncryptedStream : IUniassetStream
         int toRead = Math.Min(buffer.Length, available);
         if (toRead <= 0) return 0;
 
-        // 简单的 XOR 解密
         for (int i = 0; i < toRead; i++)
         {
-            buffer[i] = (byte)(_encryptedData[_position + i] ^ _key[i % _key.Length]);
+            buffer[i] = (byte)(_encryptedData[_position + i] ^ _key[(_position + i) % _key.Length]);
         }
-        
+
         _position += toRead;
         return toRead;
     }
 
     public long Seek(long offset, SeekOrigin origin)
     {
-        _position = origin switch
+        long newPosition = origin switch
         {
-            SeekOrigin.Begin => (int)offset,
-            SeekOrigin.Current => _position + (int)offset,
-            SeekOrigin.End => _encryptedData.Length + (int)offset,
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => _position + offset,
+            SeekOrigin.End => _encryptedData.Length + offset,
             _ => throw new ArgumentOutOfRangeException(nameof(origin))
         };
-        _position = Math.Clamp(_position, 0, _encryptedData.Length);
+
+        _position = (int)Math.Clamp(newPosition, 0, _encryptedData.Length);
         return _position;
     }
 }
 ```
 
-### 从 HTTP 流加载
+## 实现建议
 
-```csharp
-public class HttpStream : IUniassetStream, IDisposable
-{
-    private readonly HttpClient _client = new();
-    private byte[] _buffer;
-    private int _position;
+### 1. 始终支持随机定位
 
-    public HttpStream(string url)
-    {
-        // 预加载整个文件
-        // 对于大文件，可以考虑分块加载
-        _buffer = _client.GetByteArrayAsync(url).GetAwaiter().GetResult();
-    }
+不要把 `IUniassetStream` 实现成“只能顺序读一次”的接口。Uniasset 依赖 `Seek(...)` 在不同位置反复读取数据。
 
-    public int Read(Span<byte> buffer)
-    {
-        int available = _buffer.Length - _position;
-        int toRead = Math.Min(buffer.Length, available);
-        if (toRead <= 0) return 0;
+### 2. 正确处理 EOF
 
-        _buffer.AsSpan(_position, toRead).CopyTo(buffer);
-        _position += toRead;
-        return toRead;
-    }
+读到末尾时返回 `0`，不要抛异常，也不要返回负数。
 
-    public long Seek(long offset, SeekOrigin origin)
-    {
-        _position = origin switch
-        {
-            SeekOrigin.Begin => (int)offset,
-            SeekOrigin.Current => _position + (int)offset,
-            SeekOrigin.End => _buffer.Length + (int)offset,
-            _ => throw new ArgumentOutOfRangeException(nameof(origin))
-        };
-        _position = Math.Clamp(_position, 0, _buffer.Length);
-        return _position;
-    }
+### 3. 允许负偏移
 
-    public void Dispose()
-    {
-        _client.Dispose();
-    }
-}
-```
+`Seek(-10, SeekOrigin.Current)` 这样的调用是合法的，实现时要正确处理。
 
-## 使用示例
+### 4. 返回绝对位置
 
-### 加载图片
+`Seek(...)` 的返回值应是新的绝对位置，而不是偏移量。
 
-```csharp
-var stream = new CustomStream(imageBytes);
-var image = new ImageAsset();
-image.LoadIO(stream);
-Texture2D texture = image.ToTexture2D();
-image.Dispose();
-```
+### 5. 注意资源释放
 
-### 加载音频
-
-```csharp
-var stream = new CustomStream(audioBytes);
-var audio = new AudioAsset();
-audio.LoadIO(stream);
-AudioClip clip = audio.ToAudioClip();
-audio.Dispose();
-```
-
-## 最佳实践
-
-### 1. 缓冲区大小
-
-Uniasset 内部会按需调用 `Read` 方法，通常会传入较大的缓冲区。确保你的实现能处理任意大小的缓冲区。
-
-### 2. 边界检查
-
-始终进行边界检查，避免越界访问：
-
-```csharp
-public int Read(Span<byte> buffer)
-{
-    int available = _data.Length - _position;
-    int toRead = Math.Min(buffer.Length, available);
-    if (toRead <= 0) return 0;  // 到达末尾
-    // ...
-}
-```
-
-### 3. Seek 的正确实现
-
-确保 `Seek` 返回正确的位置值：
-
-```csharp
-public long Seek(long offset, SeekOrigin origin)
-{
-    long newPosition = origin switch
-    {
-        SeekOrigin.Begin => offset,
-        SeekOrigin.Current => _position + offset,
-        SeekOrigin.End => _data.Length + offset,
-        _ => throw new ArgumentOutOfRangeException(nameof(origin))
-    };
-    
-    // 边界检查
-    _position = (int)Math.Clamp(newPosition, 0, _data.Length);
-    return _position;
-}
-```
-
-### 4. 资源释放
-
-如果你的流持有非托管资源，记得实现 `IDisposable`：
-
-```csharp
-public class MyStream : IUniassetStream, IDisposable
-{
-    // ...
-    
-    public void Dispose()
-    {
-        // 释放资源
-    }
-}
-```
-
-### 5. 线程安全
-
-Uniasset 可能会在后台线程上调用你的流实现。如果数据源不是线程安全的，考虑添加同步机制。
+如果你的实现内部持有文件句柄、Socket、数据库游标或其他外部资源，应额外实现 `IDisposable`。
 
 ## 常见问题
 
-### Q: Read 返回 0 后还能继续 Seek 吗？
+### `Read` 返回 0 后还能继续 `Seek` 吗？
 
-可以。`Read` 返回 `0` 只是表示当前位置没有更多数据，但你可以通过 `Seek` 移动到其他位置继续读取。
+可以。`Read` 返回 `0` 只表示当前位置已经没有更多数据，并不意味着流失效。
 
-### Q: 需要支持负偏移的 Seek 吗？
+### 流长度必须提前知道吗？
 
-`Seek` 的 `offset` 参数可以是负数（例如 `Seek(-10, SeekOrigin.Current)`）。确保你的实现正确处理这种情况。
+不一定，但你的 `Seek(0, SeekOrigin.End)` 必须能够返回一个有效位置，否则依赖随机定位的读取逻辑会出问题。
 
-### Q: 流的长度需要提前知道吗？
+### 可以在 `Read` 里边读边下载网络数据吗？
 
-不需要。Uniasset 通过 `Seek(0, SeekEnd)` 的返回值来获取流的长度。确保你的实现支持这种用法。
+可以，但前提是你的实现仍然能满足 `Seek(...)` 的语义。对很多网络源来说，更实际的方式是先缓存到内存或临时文件，再通过 `IUniassetStream` 暴露给 Uniasset。

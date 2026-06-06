@@ -81,4 +81,5 @@ nav:
     - api/crop-options.md
     - api/sample-format.md
     - api/iostream.md
+    - api/stream-wrapper.md
   - 更新日志: changelog.md

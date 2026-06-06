@@ -1,6 +1,6 @@
 # AudioAsset
 
-`Uniasset.Audio.AudioAsset` 是 Uniasset 音频模块的核心类，提供音频加载、读取和转换功能。
+`Uniasset.Audio.AudioAsset` 是音频资源的高层封装，支持加载、顺序读取 PCM 数据、随机定位以及转换为 Unity `AudioClip`。
 
 ## 类定义
 
@@ -11,49 +11,22 @@ namespace Uniasset.Audio
 }
 ```
 
-## 属性
+## 只读属性
 
-### SampleRate
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `SampleRate` | `int` | 采样率，例如 `44100` |
+| `SampleCount` | `long` | 总采样点数 |
+| `ChannelCount` | `int` | 声道数 |
+| `FrameCount` | `long` | 总帧数 |
 
-```csharp
-public int SampleRate { get; }
-```
-
-音频采样率（Hz），例如 44100、48000。
-
-### SampleCount
-
-```csharp
-public long SampleCount { get; }
-```
-
-总采样点数。对于多声道音频，`SampleCount = FrameCount * ChannelCount`。
-
-### ChannelCount
+对多声道音频有：
 
 ```csharp
-public int ChannelCount { get; }
+SampleCount == FrameCount * ChannelCount
 ```
 
-声道数。1 = 单声道，2 = 立体声。
-
-### FrameCount
-
-```csharp
-public long FrameCount { get; }
-```
-
-总帧数。一帧包含所有声道的一个采样点。
-
-### UnsafeHandle
-
-```csharp
-public UnsafeAudioAsset UnsafeHandle { get; }
-```
-
-获取底层的不安全句柄。仅在需要直接调用 FFI 时使用。
-
-## 方法
+## 加载
 
 ### Load
 
@@ -63,21 +36,17 @@ public void Load(string path, SampleFormat sampleFormat = SampleFormat.Float)
 
 从文件路径加载音频。
 
-**参数：**
-
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `path` | `string` | — | 音频文件路径 |
-| `sampleFormat` | `SampleFormat` | `Float` | 采样格式 |
+| `sampleFormat` | `SampleFormat` | `Float` | 解码输出的采样格式 |
 
 ```csharp
-var audio = new AudioAsset();
+using var audio = new AudioAsset();
 audio.Load("music.mp3");
 ```
 
----
-
-### Load (Span\<byte\>)
+### Load(Span<byte>)
 
 ```csharp
 public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Float)
@@ -85,19 +54,15 @@ public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Float
 
 从字节数组加载音频。
 
-**参数：**
-
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `data` | `Span<byte>` | — | 音频数据 |
-| `sampleFormat` | `SampleFormat` | `Float` | 采样格式 |
+| `sampleFormat` | `SampleFormat` | `Float` | 解码输出的采样格式 |
 
 ```csharp
 byte[] audioData = File.ReadAllBytes("music.mp3");
 audio.Load(audioData);
 ```
-
----
 
 ### LoadIO
 
@@ -105,9 +70,14 @@ audio.Load(audioData);
 public void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Float)
 ```
 
-从自定义流加载音频。详见 [自定义流](iostream.md)。
+从自定义流加载音频。
 
----
+`stream` 为 `null` 时会抛出 `ArgumentNullException`。
+
+!!! note
+    当前 `AudioAsset` 不提供 `LoadAsync(...)` 系列重载，也不提供 `LoadIO(Stream)` 便捷重载。
+
+## 读取与定位
 
 ### Tell
 
@@ -115,16 +85,12 @@ public void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFor
 public long Tell()
 ```
 
-获取当前读取位置（帧索引）。
-
-**返回值：** 当前帧位置。
+获取当前读取位置，单位为帧。
 
 ```csharp
 long position = audio.Tell();
 Debug.Log($"当前位置: {position} / {audio.FrameCount}");
 ```
-
----
 
 ### Seek
 
@@ -134,20 +100,15 @@ public void Seek(long position)
 
 跳转到指定帧位置。
 
-**参数：**
-
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `position` | `long` | 目标帧位置 |
 
 ```csharp
-// 跳转到第 1000 帧
 audio.Seek(1000);
 ```
 
----
-
-### Read\<T\>
+### Read<T>
 
 ```csharp
 public int Read<T>(Span<T> buffer, int frameCount) where T : unmanaged
@@ -155,16 +116,12 @@ public int Read<T>(Span<T> buffer, int frameCount) where T : unmanaged
 
 读取 PCM 帧数据到缓冲区。
 
-**参数：**
-
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `buffer` | `Span<T>` | 目标缓冲区 |
 | `frameCount` | `int` | 要读取的帧数 |
 
-**返回值：** 实际读取的帧数。
-
-**类型参数 `T`：** 应与加载时指定的 `SampleFormat` 匹配：
+类型参数 `T` 应与加载时指定的 `SampleFormat` 匹配：
 
 | SampleFormat | T |
 |--------------|---|
@@ -172,12 +129,13 @@ public int Read<T>(Span<T> buffer, int frameCount) where T : unmanaged
 | `Int16` | `short` |
 
 ```csharp
-// 读取 1024 帧
 float[] buffer = new float[1024 * audio.ChannelCount];
 int framesRead = audio.Read<float>(buffer, 1024);
 ```
 
----
+返回值为实际读取的帧数。
+
+## 转换
 
 ### ToAudioClip
 
@@ -187,36 +145,27 @@ public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream 
 
 将音频转换为 Unity `AudioClip`。
 
-**参数：**
-
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `name` | `string` | `"created_from_uniasset"` | AudioClip 名称 |
 | `stream` | `bool` | `true` | 是否使用流式播放 |
 
-**返回值：** 创建的 `AudioClip` 实例。
-
 **流式播放 (`stream = true`)：**
 
 - 音频数据在播放时按需读取
 - 内存占用低，适合长音频
-- 适合背景音乐、播客等
 
 **全量加载 (`stream = false`)：**
 
-- 所有音频数据预先加载到内存
-- 播放延迟低，适合短音效
-- 适合游戏音效、UI 音效等
+- Unity 会在创建时拉取完整数据
+- 更适合短音效或需要快速重复播放的内容
 
 ```csharp
-// 流式播放（适合背景音乐）
 AudioClip bgm = audio.ToAudioClip("BGM", stream: true);
-
-// 全量加载（适合音效）
 AudioClip sfx = audio.ToAudioClip("Explosion", stream: false);
 ```
 
----
+## 生命周期
 
 ### Unload
 
@@ -226,22 +175,19 @@ public void Unload()
 
 卸载已加载的音频数据。卸载后可以重新调用 `Load` 方法加载新音频。
 
----
-
 ### Dispose
 
 ```csharp
 public void Dispose()
 ```
 
-释放所有资源。释放后不可再使用此实例。
+释放底层资源。释放后不应继续使用该实例。
 
 ## 示例
 
 ### 加载音频并播放
 
 ```csharp
-using Uniasset;
 using Uniasset.Audio;
 
 using var audio = new AudioAsset();
@@ -258,20 +204,16 @@ audioSource.Play();
 using var audio = new AudioAsset();
 audio.Load("music.flac", SampleFormat.Float);
 
-// 逐块读取
-float[] buffer = new float[4096];
+float[] buffer = new float[4096 * audio.ChannelCount];
 int totalFramesRead = 0;
 
 while (true)
 {
     int framesRead = audio.Read<float>(buffer, buffer.Length / audio.ChannelCount);
     if (framesRead == 0) break;
-    
-    totalFramesRead += framesRead;
-    // 处理 buffer 中的数据...
-}
 
-Debug.Log($"总共读取 {totalFramesRead} 帧");
+    totalFramesRead += framesRead;
+}
 ```
 
 ### 使用 Int16 格式
@@ -280,6 +222,6 @@ Debug.Log($"总共读取 {totalFramesRead} 帧");
 using var audio = new AudioAsset();
 audio.Load("sound.wav", SampleFormat.Int16);
 
-short[] buffer = new short[2048];
+short[] buffer = new short[1024 * audio.ChannelCount];
 int framesRead = audio.Read<short>(buffer, 1024);
 ```
