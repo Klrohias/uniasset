@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using Uniasset.Image;
@@ -9,23 +9,6 @@ namespace Uniasset.Unsafe
 {
     public readonly unsafe partial struct UnsafeImageAsset
     {
-        private enum PixelType : uint
-        {
-            Unknown = 0,
-            RGBA = 1,
-            ARGB = 2,
-            RGB = 3,
-            Grey = 4,
-        }
-
-        public enum ResizeFilter : uint
-        {
-            Nearest = 0,
-            Box = 1,
-            Lanczos3 = 2,
-            Gaussian = 3,
-        }
-
         public readonly void* Instance;
 
         public static UnsafeImageAsset Create()
@@ -55,10 +38,16 @@ namespace Uniasset.Unsafe
             return checked((int)result);
         }
 
+        public PixelType GetPixelType()
+        {
+            var result = (PixelType)Interop.Uniasset_ImageAsset_GetPixelType(Instance);
+            NativeException.ThrowIfNeeded();
+            return result;
+        }
+
         public int GetChannelCount()
         {
-            var pixelType = (PixelType)Interop.Uniasset_ImageAsset_GetPixelType(Instance);
-            NativeException.ThrowIfNeeded();
+            var pixelType = GetPixelType();
             return pixelType switch
             {
                 PixelType.RGB => 3,
@@ -135,17 +124,7 @@ namespace Uniasset.Unsafe
             }
         }
         
-        public void Resize(int width, int height)
-        {
-            Interop.Uniasset_ImageAsset_Resize(
-                Instance,
-                checked((uint)width),
-                checked((uint)height),
-                (uint)ResizeFilter.Nearest);
-            NativeException.ThrowIfNeeded();
-        }
-
-        public void Resize(int width, int height, ResizeFilter filter)
+        public void Resize(int width, int height, ResizeFilter filter = ResizeFilter.Nearest)
         {
             Interop.Uniasset_ImageAsset_Resize(
                 Instance,

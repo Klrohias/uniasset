@@ -21,6 +21,8 @@ namespace Uniasset.Image
 
         public int ChannelCount => UnsafeHandle.GetChannelCount();
 
+        public PixelType PixelType => UnsafeHandle.GetPixelType();
+
         public ImageAsset()
         {
             UnsafeHandle = UnsafeImageAsset.Create();
@@ -75,6 +77,28 @@ namespace Uniasset.Image
         public void LoadIO(Stream stream, int expectedWidth = 0, int expectedHeight = 0)
         {
             LoadIO(new StreamWrapper(stream), expectedWidth, expectedHeight);
+        }
+
+        public Task LoadIOAsync(IUniassetStream stream, int expectedWidth = 0, int expectedHeight = 0)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                lock (this)
+                {
+                    LoadIO(stream, expectedWidth, expectedHeight);
+                }
+            }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
+        public Task LoadIOAsync(Stream stream, int expectedWidth = 0, int expectedHeight = 0)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                lock (this)
+                {
+                    LoadIO(stream, expectedWidth, expectedHeight);
+                }
+            }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
         public Task LoadAsync(byte[] data, int expectedWidth = 0, int expectedHeight = 0)
@@ -134,18 +158,18 @@ namespace Uniasset.Image
             }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
-        public void Resize(int width, int height)
+        public void Resize(int width, int height, ResizeFilter filter = ResizeFilter.Nearest)
         {
-            UnsafeHandle.Resize(width, height);
+            UnsafeHandle.Resize(width, height, filter);
         }
 
-        public Task ResizeAsync(int width, int height)
+        public Task ResizeAsync(int width, int height, ResizeFilter filter = ResizeFilter.Nearest)
         {
             return Task.Factory.StartNew(() =>
             {
                 lock (this)
                 {
-                    Resize(width, height);
+                    Resize(width, height, filter);
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }

@@ -26,6 +26,7 @@ public ImageAsset()
 | `Width` | `int` | 当前图片宽度 |
 | `Height` | `int` | 当前图片高度 |
 | `ChannelCount` | `int` | 当前图片通道数 |
+| `PixelType` | `PixelType` | 当前图片像素类型 |
 
 `ChannelCount` 常见值：
 
@@ -116,8 +117,14 @@ public void LoadIO(Stream stream, int expectedWidth = 0, int expectedHeight = 0)
 
 从 `System.IO.Stream` 加载图片。内部会自动包装为 [`StreamWrapper`](stream-wrapper.md)。
 
-!!! note
-    当前 API 不提供 `LoadAsync(IUniassetStream)` 或 `LoadAsync(Stream)` 重载。
+### LoadIOAsync
+
+```csharp
+public Task LoadIOAsync(IUniassetStream stream, int expectedWidth = 0, int expectedHeight = 0)
+public Task LoadIOAsync(Stream stream, int expectedWidth = 0, int expectedHeight = 0)
+```
+
+异步从流加载图片。
 
 ## 资源生命周期
 
@@ -200,24 +207,26 @@ public Task<ImageAsset[]> CropMultipleAsync(CropOptions[] optionsArray)
 ### Resize
 
 ```csharp
-public void Resize(int width, int height)
+public void Resize(int width, int height, ResizeFilter filter = ResizeFilter.Nearest)
 ```
 
 缩放图片（原地修改）。
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `width` | `int` | 目标宽度 |
-| `height` | `int` | 目标高度 |
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `width` | `int` | — | 目标宽度 |
+| `height` | `int` | — | 目标高度 |
+| `filter` | `ResizeFilter` | `Nearest` | 缩放滤波算法 |
 
 ```csharp
 image.Resize(256, 256);
+image.Resize(256, 256, ResizeFilter.Lanczos3);
 ```
 
 ### ResizeAsync
 
 ```csharp
-public Task ResizeAsync(int width, int height)
+public Task ResizeAsync(int width, int height, ResizeFilter filter = ResizeFilter.Nearest)
 ```
 
 异步缩放图片。

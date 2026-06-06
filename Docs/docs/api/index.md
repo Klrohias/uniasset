@@ -45,6 +45,22 @@ var crops = new CropOptions[]
 ImageAsset[] results = image.CropMultiple(crops);
 ```
 
+### [`ResizeFilter`](resize-filter.md)
+
+缩放滤波算法枚举，支持 `Nearest`、`Box`、`Lanczos3`、`Gaussian`。
+
+```csharp
+image.Resize(256, 256, ResizeFilter.Lanczos3);
+```
+
+### [`PixelType`](pixel-type.md)
+
+像素格式枚举，用于判断图片的通道排列方式。
+
+```csharp
+if (image.PixelType == PixelType.RGBA) { ... }
+```
+
 ### [`SampleFormat`](sample-format.md)
 
 音频解码时使用的采样格式枚举，支持 `Float` 和 `Int16`。
@@ -97,6 +113,8 @@ Texture2D texture = image.ToTexture2D();
 |------|----------|------|
 | `ImageAsset` | `Uniasset.Image` | 图片加载、处理与转换 |
 | `CropOptions` | `Uniasset.Image` | 批量裁剪参数 |
+| `ResizeFilter` | `Uniasset.Image` | 缩放滤波算法 |
+| `PixelType` | `Uniasset.Image` | 像素格式 |
 | `AudioAsset` | `Uniasset.Audio` | 音频加载、读取与转换 |
 | `SampleFormat` | `Uniasset.Audio` | 音频采样格式 |
 | `IUniassetStream` | `Uniasset` | 自定义流接口 |

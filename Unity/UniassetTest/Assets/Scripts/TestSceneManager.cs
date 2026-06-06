@@ -151,7 +151,7 @@ public class TestSceneManager : MonoBehaviour
     private async void ResizeImageAsync()
     {
         var s = Stopwatch.StartNew();
-        await _imageAsset.ResizeAsync(800, 800);
+        await _imageAsset.ResizeAsync(800, 800, ResizeFilter.Lanczos3);
         Debug.Log("Resize: " + s.ElapsedMilliseconds + "ms");
 
         s.Restart();

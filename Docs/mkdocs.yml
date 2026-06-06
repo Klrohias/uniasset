@@ -79,6 +79,8 @@ nav:
     - api/image-asset.md
     - api/audio-asset.md
     - api/crop-options.md
+    - api/resize-filter.md
+    - api/pixel-type.md
     - api/sample-format.md
     - api/iostream.md
     - api/stream-wrapper.md
