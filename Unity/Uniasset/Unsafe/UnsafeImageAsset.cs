@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Uniasset;
 using Uniasset.Image;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -60,7 +61,7 @@ namespace Uniasset.Unsafe
 
         public void LoadFile(string path, uint expectedWidth = 0, uint expectedHeight = 0)
         {
-            var pathBytes = Encoding.Default.GetBytes(path);
+            var pathBytes = Encoding.UTF8.GetBytes(path + '\0');
             fixed (byte* pathPtr = pathBytes)
             {
                 Interop.Uniasset_ImageAsset_LoadFile(Instance, (sbyte*)pathPtr, expectedWidth, expectedHeight);
@@ -86,6 +87,25 @@ namespace Uniasset.Unsafe
         {
             Interop.Uniasset_ImageAsset_Unload(Instance);
             NativeException.ThrowIfNeeded();
+        }
+
+        public void LoadIO(IUniassetStream stream, uint expectedWidth = 0, uint expectedHeight = 0)
+        {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
+
+            var gcHandle = GCHandle.Alloc(stream);
+            try
+            {
+                var provider = Interop.NativeIOProvider.Default();
+                provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
+
+                Interop.Uniasset_ImageAsset_LoadIO(Instance, &provider, expectedWidth, expectedHeight);
+                NativeException.ThrowIfNeeded();
+            }
+            finally
+            {
+                gcHandle.Free();
+            }
         }
 
         public UnsafeImageAsset Clone()

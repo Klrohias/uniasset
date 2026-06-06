@@ -10,7 +10,7 @@ namespace Uniasset.Image
 {
     public sealed class ImageAsset : IDisposable, ICloneable
     {
-        private bool _disposed = false;
+        private int _disposed;
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         public UnsafeImageAsset UnsafeHandle { get; }
@@ -35,10 +35,10 @@ namespace Uniasset.Image
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0) return;
 
-            _disposed = true;
             _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Destroy();
             UnsafeHandle.Destroy();
         }
 

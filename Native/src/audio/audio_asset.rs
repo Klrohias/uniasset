@@ -37,27 +37,6 @@ impl AudioAsset {
         unsafe { &mut *self.0.1.get() }
     }
 
-    fn replace_decoder(&self, new_decoder: *mut AudioDecoderWrapper) {
-        let old_ptr = self
-            .unsafe_state()
-            .audio_decoder
-            .swap(new_decoder, Ordering::Release);
-
-        if !old_ptr.is_null() {
-            _ = unsafe { Box::from_raw(old_ptr) };
-        }
-    }
-
-    fn load_decoder(&self) -> Result<*mut AudioDecoderWrapper, AudioOperationError> {
-        let decoder_ptr = self.unsafe_state().audio_decoder.load(Ordering::Acquire);
-
-        if decoder_ptr.is_null() {
-            return Err(AudioOperationError::Unloaded);
-        }
-
-        Ok(decoder_ptr)
-    }
-
     pub fn load_file(
         &self,
         path: impl AsRef<str>,
@@ -97,7 +76,8 @@ impl AudioAsset {
 
         // Store audio decoder
         let boxed_decoder_wrapper = Box::new(decoder.into());
-        self.replace_decoder(Box::into_raw(boxed_decoder_wrapper));
+        self.unsafe_state()
+            .replace_decoder(Box::into_raw(boxed_decoder_wrapper));
 
         Ok(())
     }
@@ -105,7 +85,7 @@ impl AudioAsset {
     pub fn unload(&self) {
         let mut state = self.0.0.write();
         state.audio_info = None;
-        self.replace_decoder(null_mut());
+        self.unsafe_state().replace_decoder(null_mut());
     }
 
     pub fn get_channel_count(&self) -> Result<u16, AudioOperationError> {
@@ -149,17 +129,17 @@ impl AudioAsset {
     }
 
     pub fn tell(&self) -> Result<i64, AudioOperationError> {
-        Ok(unsafe { &*self.load_decoder()? }.tell())
+        Ok(unsafe { &*self.unsafe_state().get_decoder()? }.tell())
     }
 
     pub fn read(&self, buffer: &mut [u8], frame_count: u32) -> Result<u32, AudioOperationError> {
-        unsafe { &*self.load_decoder()? }
+        unsafe { &*self.unsafe_state().get_decoder()? }
             .read(buffer, frame_count)
             .map_err(Into::into)
     }
 
     pub fn seek(&self, position: i64) -> Result<(), AudioOperationError> {
-        unsafe { &*self.load_decoder()? }
+        unsafe { &*self.unsafe_state().get_decoder()? }
             .seek(position)
             .map_err(Into::into)
     }
@@ -178,6 +158,34 @@ impl NativeHandleExts for AudioAsset {
 #[derive(Default)]
 struct UnsafeState {
     audio_decoder: AtomicPtr<AudioDecoderWrapper>,
+}
+
+impl UnsafeState {
+    fn replace_decoder(&self, new_ptr: *mut AudioDecoderWrapper) {
+        let old_ptr = self.audio_decoder.swap(new_ptr, Ordering::Release);
+        if !old_ptr.is_null() {
+            drop(unsafe { Box::from_raw(old_ptr) });
+        }
+    }
+
+    fn get_decoder(&self) -> Result<*mut AudioDecoderWrapper, AudioOperationError> {
+        let decoder_ptr = self.audio_decoder.load(Ordering::Acquire);
+
+        if decoder_ptr.is_null() {
+            return Err(AudioOperationError::Unloaded);
+        }
+
+        Ok(decoder_ptr)
+    }
+}
+
+impl Drop for UnsafeState {
+    fn drop(&mut self) {
+        let current_ptr = self.audio_decoder.load(Ordering::Acquire);
+        if !current_ptr.is_null() {
+            drop(unsafe { Box::from_raw(current_ptr) });
+        }
+    }
 }
 
 #[derive(Default)]

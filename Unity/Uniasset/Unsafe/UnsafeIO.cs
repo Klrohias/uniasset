@@ -81,26 +81,4 @@ namespace Uniasset.Unsafe
             }
         }
     }
-
-    public readonly unsafe partial struct UnsafeImageAsset
-    {
-        public void LoadIO(IUniassetStream stream, uint expectedWidth = 0, uint expectedHeight = 0)
-        {
-            if (stream == null) throw new ArgumentNullException(nameof(stream));
-
-            var gcHandle = GCHandle.Alloc(stream);
-            try
-            {
-                var provider = Interop.NativeIOProvider.Default();
-                provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
-
-                Interop.Uniasset_ImageAsset_LoadIO(Instance, &provider, expectedWidth, expectedHeight);
-                NativeException.ThrowIfNeeded();
-            }
-            finally
-            {
-                gcHandle.Free();
-            }
-        }
-    }
 }

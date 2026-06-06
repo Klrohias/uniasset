@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Uniasset.Unsafe;
 using UnityEngine;
 
@@ -7,7 +8,9 @@ namespace Uniasset.Audio
 {
     public sealed class AudioAsset : IDisposable
     {
-        private bool _disposed = false;
+        private int _disposed;
+        private readonly object _streamLock = new();
+        private GCHandle? _streamHandle;
         public UnsafeAudioAsset UnsafeHandle { get; } = UnsafeAudioAsset.Create();
 
         public int SampleRate => UnsafeHandle.GetSampleRate();
@@ -17,11 +20,13 @@ namespace Uniasset.Audio
 
         public void Load(string path, SampleFormat sampleFormat = SampleFormat.Float)
         {
+            lock (_streamLock) ReleaseStreamHandle();
             UnsafeHandle.LoadFile(path, sampleFormat);
         }
 
         public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Float)
         {
+            lock (_streamLock) ReleaseStreamHandle();
             UnsafeHandle.LoadMemory(data.ToArray(), sampleFormat);
         }
 
@@ -29,17 +34,25 @@ namespace Uniasset.Audio
         {
             if (stream == null) throw new ArgumentNullException(nameof(stream));
 
-            var gcHandle = GCHandle.Alloc(stream);
-            try
+            lock (_streamLock)
             {
+                ReleaseStreamHandle();
+                var gcHandle = GCHandle.Alloc(stream);
+                _streamHandle = gcHandle;
+
                 var provider = Interop.NativeIOProvider.Default();
                 provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
 
                 UnsafeHandle.LoadIO(&provider, sampleFormat);
             }
-            finally
+        }
+
+        private void ReleaseStreamHandle()
+        {
+            if (_streamHandle is { IsAllocated: true } handle)
             {
-                gcHandle.Free();
+                handle.Free();
+                _streamHandle = null;
             }
         }
 
@@ -61,6 +74,7 @@ namespace Uniasset.Audio
 
         public void Unload()
         {
+            lock (_streamLock) ReleaseStreamHandle();
             UnsafeHandle.Unload();
         }
 
@@ -72,24 +86,28 @@ namespace Uniasset.Audio
 
         private void AudioClipSeek(int position)
         {
+            if (Volatile.Read(ref _disposed) != 0) return;
             lock (this)
             {
+                if (Volatile.Read(ref _disposed) != 0) return;
                 Seek(position);
             }
         }
 
         private void AudioClipRead(float[] data)
         {
+            if (Volatile.Read(ref _disposed) != 0) return;
             lock (this)
             {
+                if (Volatile.Read(ref _disposed) != 0) return;
                 Read(new Span<float>(data), data.Length / ChannelCount);
             }
         }
 
         public void Dispose()
         {
-            if (_disposed) return;
-            _disposed = true;
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0) return;
+            lock (_streamLock) ReleaseStreamHandle();
             UnsafeHandle.Destroy();
         }
 

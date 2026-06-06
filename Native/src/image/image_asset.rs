@@ -201,25 +201,33 @@ impl ImageAsset {
             return Err(ImageOperationError::WebPDecoderInitializationError);
         }
 
-        loop {
-            let status = unsafe { WebPIAppend(decoder, temp_buffer.as_ptr(), read_size) };
-            if status != VP8StatusCode::VP8_STATUS_OK
-                && status != VP8StatusCode::VP8_STATUS_SUSPENDED
-            {
-                unsafe { WebPIDelete(decoder) };
-                return Err(ImageOperationError::WebPError(status));
+        let mut decode_loop = || {
+            loop {
+                let status = unsafe { WebPIAppend(decoder, temp_buffer.as_ptr(), read_size) };
+                if status != VP8StatusCode::VP8_STATUS_OK
+                    && status != VP8StatusCode::VP8_STATUS_SUSPENDED
+                {
+                    return Err(ImageOperationError::WebPError(status));
+                }
+
+                read_size = stream.read(&mut temp_buffer)?;
+                if read_size == 0 {
+                    break;
+                }
             }
 
-            read_size = stream.read(&mut temp_buffer)?;
-            if read_size == 0 {
-                break;
-            }
-        }
+            Ok(())
+        };
+
+        // Avoid memory leak, store the result and handle after WebPIDelete/WebPFreeDecBuffer.
+        let decode_result = decode_loop();
 
         unsafe {
             WebPIDelete(decoder);
             WebPFreeDecBuffer(&mut decoder_config.output as *mut _);
         };
+
+        decode_result?;
 
         let info = ImageInfo {
             width: target_width,

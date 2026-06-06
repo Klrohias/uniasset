@@ -20,7 +20,7 @@ namespace Uniasset.Unsafe
 
         public void LoadFile(string path, SampleFormat sampleFormat = SampleFormat.Int16)
         {
-            var pathBytes = Encoding.UTF8.GetBytes(path);
+            var pathBytes = Encoding.UTF8.GetBytes(path + '\0');
             fixed (byte* pathPtr = pathBytes)
             {
                 Interop.Uniasset_AudioAsset_LoadFile(Instance, (sbyte*)pathPtr, (byte)sampleFormat);
