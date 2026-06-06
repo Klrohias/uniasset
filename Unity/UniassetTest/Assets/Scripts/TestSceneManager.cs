@@ -24,6 +24,8 @@ public class TestSceneManager : MonoBehaviour
     private Rect _draggableRect = new(0, 0, 10000, 20);
     private byte[] _testOgg;
 
+    private string _externalPathInput = "";
+
     private async void Start()
     {
         _testJpg = await Utils.LoadStreamingAsset("Test.jpg", this);
@@ -70,6 +72,14 @@ public class TestSceneManager : MonoBehaviour
         if (GUILayout.Button("Load Large (Async)")) LoadImageAsync(_test1080P, false);
 
         if (GUILayout.Button("Unload")) _imageAsset.Unload();
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+
+        _externalPathInput = GUILayout.TextField(_externalPathInput);
+        
+        if (GUILayout.Button("Load External")) LoadImageAsync(_externalPathInput);
 
         GUILayout.EndHorizontal();
     }
@@ -146,6 +156,21 @@ public class TestSceneManager : MonoBehaviour
         display.texture = await _imageAsset.ToTexture2DAsync();
         Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
     }
+
+    private async void LoadImageAsync(string path, bool displaying = true)
+    {
+        var s = Stopwatch.StartNew();
+        await _imageAsset.LoadAsync(path);
+        Debug.Log("Load: " + s.ElapsedMilliseconds + "ms");
+
+        Debug.Log($"Width = {_imageAsset.Width}, Height = {_imageAsset.Height}, Channels = {_imageAsset.ChannelCount}");
+
+        if (!displaying) return;
+        s.Restart();
+        display.texture = await _imageAsset.ToTexture2DAsync();
+        Debug.Log("ToTexture2D: " + s.ElapsedMilliseconds + "ms");
+    }
+
 
 
     private async void ResizeImageAsync()

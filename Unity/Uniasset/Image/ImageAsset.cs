@@ -38,7 +38,7 @@ namespace Uniasset.Image
             if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0) return;
 
             _cancellationTokenSource.Cancel();
-            _cancellationTokenSource.Destroy();
+            _cancellationTokenSource.Dispose();
             UnsafeHandle.Destroy();
         }
 
