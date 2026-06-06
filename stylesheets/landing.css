@@ -79,6 +79,10 @@
 
 /* ---------- Layout ---------- */
 /* Remove gap between header/tabs and hero — only on landing page */
+.md-header {
+  box-shadow: none;
+}
+
 .md-tabs {
   margin-bottom: 0;
   box-shadow: none;
@@ -101,6 +105,13 @@
 
 .md-content__inner:has(.landing-hero) {
   padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.md-main__inner:has(.landing-hero) {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Remove the spacing pseudo-element */
@@ -111,6 +122,14 @@
 /* Hide heading permalinks on the landing page only */
 .md-content:has(.landing-hero) .headerlink {
   display: none !important;
+}
+
+/* Normalize Material icon baseline on the landing page */
+.md-content:has(.landing-hero) .twemoji,
+.md-content:has(.landing-hero) .twemoji svg,
+.md-content:has(.landing-hero) .md-icon,
+.md-content:has(.landing-hero) .md-icon svg {
+  vertical-align: -0.125em;
 }
 
 /* ---------- Hero Section ---------- */
@@ -565,6 +584,7 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin: 2rem 0;
+  min-width: 0;
 }
 
 .step-card {
@@ -575,6 +595,8 @@
   box-shadow: var(--landing-card-shadow);
   transition: var(--landing-transition);
   position: relative;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .step-card:hover {
@@ -613,6 +635,11 @@
 .step-card code {
   font-size: 0.82rem;
   padding: 0.2em 0.5em;
+}
+
+.step-card pre {
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 /* ---------- CTA Section ---------- */
@@ -757,7 +784,11 @@
   .format-grid,
   .code-preview,
   .steps-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .step-card {
+    padding: 1.5rem;
   }
 
   .how-works-flow {

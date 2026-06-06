@@ -746,6 +746,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#resizefilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ResizeFilter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pixeltype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PixelType
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sampleformat" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -818,10 +840,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        使用 using 语句
+        释放资源
       
     </span>
   </a>
@@ -834,10 +856,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        异常处理
+        类型列表
       
     </span>
   </a>
@@ -944,6 +966,62 @@
   
   
     <li class="md-nav__item">
+      <a href="resize-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ResizeFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="pixel-type/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PixelType
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="sample-format/" class="md-nav__link">
         
   
@@ -980,6 +1058,34 @@
     
   
     IUniassetStream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="stream-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    StreamWrapper
   
 
     
@@ -1110,6 +1216,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#resizefilter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ResizeFilter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pixeltype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PixelType
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#sampleformat" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1182,10 +1310,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#using" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       
-        使用 using 语句
+        释放资源
       
     </span>
   </a>
@@ -1198,10 +1326,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       
-        异常处理
+        类型列表
       
     </span>
   </a>
@@ -1229,7 +1357,7 @@
 
 
 <h1 id="api">API 参考<a class="headerlink" href="#api" title="Permanent link">&para;</a></h1>
-<p>Uniasset 的 C# SDK 提供了高层级的 API，用于在 Unity 中加载和处理图片与音频资源。</p>
+<p>本节基于 <code>Unity/Uniasset/</code> 中当前公开的 C# API 编写，只包含高层封装，不包含 <code>Unsafe</code> / <code>Interop</code> 相关类型。</p>
 <h2 id="_1">命名空间概览<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1241,7 +1369,7 @@
 <tbody>
 <tr>
 <td><code>Uniasset</code></td>
-<td>核心类型，包括流接口和流包装器</td>
+<td>核心流接口与适配器</td>
 </tr>
 <tr>
 <td><code>Uniasset.Image</code></td>
@@ -1255,18 +1383,16 @@
 </table>
 <h2 id="_2">核心类型<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <h3 id="imageasset"><a href="image-asset/"><code>ImageAsset</code></a><a class="headerlink" href="#imageasset" title="Permanent link">&para;</a></h3>
-<p>图片资源类，支持从文件、字节数组或自定义流加载图片，提供裁剪、缩放、克隆等操作。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kt">var</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
+<p>图片资源类，支持从文件、内存或流加载编码后的图片数据，并提供裁剪、缩放、克隆与 <code>Texture2D</code> 转换能力。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">image</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;photo.png&quot;</span><span class="p">);</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Texture2D</span><span class="w"> </span><span class="n">texture</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">image</span><span class="p">.</span><span class="n">ToTexture2D</span><span class="p">();</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">image</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
 </code></pre></div>
 <h3 id="audioasset"><a href="audio-asset/"><code>AudioAsset</code></a><a class="headerlink" href="#audioasset" title="Permanent link">&para;</a></h3>
-<p>音频资源类，支持从文件、字节数组或自定义流加载音频，提供读取 PCM 数据、转换为 AudioClip 等操作。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kt">var</span><span class="w"> </span><span class="n">audio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AudioAsset</span><span class="p">();</span>
+<p>音频资源类，支持从文件、内存或自定义流加载音频，并提供 PCM 读取、定位和 <code>AudioClip</code> 转换能力。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">audio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">AudioAsset</span><span class="p">();</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">audio</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;music.mp3&quot;</span><span class="p">);</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">AudioClip</span><span class="w"> </span><span class="n">clip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">audio</span><span class="p">.</span><span class="n">ToAudioClip</span><span class="p">();</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">audio</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
 </code></pre></div>
 <h3 id="cropoptions"><a href="crop-options/"><code>CropOptions</code></a><a class="headerlink" href="#cropoptions" title="Permanent link">&para;</a></h3>
 <p>裁剪区域描述结构体，用于批量裁剪操作。</p>
@@ -1277,52 +1403,98 @@
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">};</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">ImageAsset</span><span class="p">[]</span><span class="w"> </span><span class="n">results</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">image</span><span class="p">.</span><span class="n">CropMultiple</span><span class="p">(</span><span class="n">crops</span><span class="p">);</span>
 </code></pre></div>
-<h3 id="sampleformat"><a href="sample-format/"><code>SampleFormat</code></a><a class="headerlink" href="#sampleformat" title="Permanent link">&para;</a></h3>
-<p>音频采样格式枚举，支持 <code>Float</code> 和 <code>Int16</code> 两种格式。</p>
-<h3 id="iuniassetstream"><a href="iostream/"><code>IUniassetStream</code></a><a class="headerlink" href="#iuniassetstream" title="Permanent link">&para;</a></h3>
-<p>自定义流接口，允许从任意数据源加载资源。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">public</span><span class="w"> </span><span class="k">interface</span><span class="w"> </span><span class="n">IUniassetStream</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="p">{</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">Read</span><span class="p">(</span><span class="n">Span</span><span class="o">&lt;</span><span class="kt">byte</span><span class="o">&gt;</span><span class="w"> </span><span class="n">buffer</span><span class="p">);</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="nf">Seek</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">SeekOrigin</span><span class="w"> </span><span class="n">origin</span><span class="p">);</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}</span>
+<h3 id="resizefilter"><a href="resize-filter/"><code>ResizeFilter</code></a><a class="headerlink" href="#resizefilter" title="Permanent link">&para;</a></h3>
+<p>缩放滤波算法枚举，支持 <code>Nearest</code>、<code>Box</code>、<code>Lanczos3</code>、<code>Gaussian</code>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">image</span><span class="p">.</span><span class="n">Resize</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"> </span><span class="n">ResizeFilter</span><span class="p">.</span><span class="n">Lanczos3</span><span class="p">);</span>
 </code></pre></div>
-<h3 id="streamwrapper"><a href="iostream/#streamwrapper"><code>StreamWrapper</code></a><a class="headerlink" href="#streamwrapper" title="Permanent link">&para;</a></h3>
+<h3 id="pixeltype"><a href="pixel-type/"><code>PixelType</code></a><a class="headerlink" href="#pixeltype" title="Permanent link">&para;</a></h3>
+<p>像素格式枚举，用于判断图片的通道排列方式。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">image</span><span class="p">.</span><span class="n">PixelType</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">PixelType</span><span class="p">.</span><span class="n">RGBA</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<h3 id="sampleformat"><a href="sample-format/"><code>SampleFormat</code></a><a class="headerlink" href="#sampleformat" title="Permanent link">&para;</a></h3>
+<p>音频解码时使用的采样格式枚举，支持 <code>Float</code> 和 <code>Int16</code>。</p>
+<h3 id="iuniassetstream"><a href="iostream/"><code>IUniassetStream</code></a><a class="headerlink" href="#iuniassetstream" title="Permanent link">&para;</a></h3>
+<p>自定义流接口。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">public</span><span class="w"> </span><span class="k">interface</span><span class="w"> </span><span class="n">IUniassetStream</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="p">{</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="nf">Read</span><span class="p">(</span><span class="n">Span</span><span class="o">&lt;</span><span class="kt">byte</span><span class="o">&gt;</span><span class="w"> </span><span class="n">buffer</span><span class="p">);</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="nf">Seek</span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">SeekOrigin</span><span class="w"> </span><span class="n">origin</span><span class="p">);</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="streamwrapper"><a href="stream-wrapper/"><code>StreamWrapper</code></a><a class="headerlink" href="#streamwrapper" title="Permanent link">&para;</a></h3>
 <p><code>System.IO.Stream</code> 到 <code>IUniassetStream</code> 的适配器。</p>
 <h2 id="_3">使用模式<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="_4">同步加载<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kt">var</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">asset</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;path/to/file.png&quot;</span><span class="p">);</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">// 使用资源...</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">asset</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">asset</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;path/to/file.png&quot;</span><span class="p">);</span>
 </code></pre></div>
 <h3 id="_5">异步加载<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kt">var</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">await</span><span class="w"> </span><span class="n">asset</span><span class="p">.</span><span class="n">LoadAsync</span><span class="p">(</span><span class="s">&quot;path/to/file.png&quot;</span><span class="p">);</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">// 使用资源...</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">asset</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">await</span><span class="w"> </span><span class="n">asset</span><span class="p">.</span><span class="n">LoadAsync</span><span class="p">(</span><span class="s">&quot;path/to/file.png&quot;</span><span class="p">);</span>
 </code></pre></div>
-<h3 id="using">使用 using 语句<a class="headerlink" href="#using" title="Permanent link">&para;</a></h3>
-<p>由于 <code>ImageAsset</code> 和 <code>AudioAsset</code> 都实现了 <code>IDisposable</code>，推荐使用 <code>using</code> 语句：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="kt">var</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">())</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="p">{</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="n">image</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;photo.png&quot;</span><span class="p">);</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">Texture2D</span><span class="w"> </span><span class="n">texture</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">image</span><span class="p">.</span><span class="n">ToTexture2D</span><span class="p">();</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="c1">// texture 在 using 块结束后仍然有效</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">}</span>
+<h3 id="_6">释放资源<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p><code>ImageAsset</code> 和 <code>AudioAsset</code> 都实现了 <code>IDisposable</code>，使用完成后应及时释放：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">image</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;photo.png&quot;</span><span class="p">);</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">Texture2D</span><span class="w"> </span><span class="n">texture</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">image</span><span class="p">.</span><span class="n">ToTexture2D</span><span class="p">();</span>
 </code></pre></div>
-<h2 id="_6">异常处理<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<p>当原生库发生错误时，会抛出 <code>NativeException</code>。建议在调用可能失败的操作时使用 try-catch：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">try</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p">{</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ImageAsset</span><span class="p">();</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">image</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="s">&quot;nonexistent.png&quot;</span><span class="p">);</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="p">}</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">NativeException</span><span class="w"> </span><span class="n">e</span><span class="p">)</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">{</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="n">Debug</span><span class="p">.</span><span class="n">LogError</span><span class="p">(</span><span class="s">$&quot;加载失败: {e.Message}&quot;</span><span class="p">);</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="p">}</span>
-</code></pre></div>
+<h2 id="_7">类型列表<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>命名空间</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ImageAsset</code></td>
+<td><code>Uniasset.Image</code></td>
+<td>图片加载、处理与转换</td>
+</tr>
+<tr>
+<td><code>CropOptions</code></td>
+<td><code>Uniasset.Image</code></td>
+<td>批量裁剪参数</td>
+</tr>
+<tr>
+<td><code>ResizeFilter</code></td>
+<td><code>Uniasset.Image</code></td>
+<td>缩放滤波算法</td>
+</tr>
+<tr>
+<td><code>PixelType</code></td>
+<td><code>Uniasset.Image</code></td>
+<td>像素格式</td>
+</tr>
+<tr>
+<td><code>AudioAsset</code></td>
+<td><code>Uniasset.Audio</code></td>
+<td>音频加载、读取与转换</td>
+</tr>
+<tr>
+<td><code>SampleFormat</code></td>
+<td><code>Uniasset.Audio</code></td>
+<td>音频采样格式</td>
+</tr>
+<tr>
+<td><code>IUniassetStream</code></td>
+<td><code>Uniasset</code></td>
+<td>自定义流接口</td>
+</tr>
+<tr>
+<td><code>SeekOrigin</code></td>
+<td><code>Uniasset</code></td>
+<td>流定位基准</td>
+</tr>
+<tr>
+<td><code>StreamWrapper</code></td>
+<td><code>Uniasset</code></td>
+<td><code>System.IO.Stream</code> 适配器</td>
+</tr>
+</tbody>
+</table>
 
 
 

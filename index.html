@@ -449,18 +449,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        原生加载缓慢
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GC 压力大
+        执行效率低
       
     </span>
   </a>
@@ -1052,6 +1041,62 @@
   
   
     <li class="md-nav__item">
+      <a href="api/resize-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ResizeFilter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/pixel-type/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PixelType
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="api/sample-format/" class="md-nav__link">
         
   
@@ -1088,6 +1133,34 @@
     
   
     IUniassetStream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/stream-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    StreamWrapper
   
 
     
@@ -1179,18 +1252,7 @@
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        原生加载缓慢
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gc" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        GC 压力大
+        执行效率低
       
     </span>
   </a>
@@ -1454,14 +1516,13 @@
 <div class="landing-hero">
 <h1 id="uniasset">Uniasset<a class="headerlink" href="#uniasset" title="Permanent link">&para;</a></h1>
 <p class="hero-subtitle">高性能 Unity 外部资源加载插件</p>
-<p class="hero-desc">基于 Rust 原生库，为 Unity 提供安全、高效、异步的图片与音频加载能力，让资源管理不再拖慢你的项目。</p>
+<p class="hero-desc">基于 Rust 原生库，为 Unity 提供异步、高效的外部图片与音频加载能力。</p>
 <div class="hero-actions">
 <p><a class="btn-primary" href="getting-started/">快速开始</a>
 <a class="btn-secondary" href="https://github.com/Klrohias/uniasset">GitHub <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg></span></a></p>
 </div>
 <div class="hero-badges">
-<p><span class="badge"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span> v0.2.0-rc8</span>
-<span class="badge"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c-1.27 0-2.4.8-2.82 2H3v2h1.95L2 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3L6.05 7h3.12c.33.85.98 1.5 1.83 1.83V20H2v2h20v-2h-9V8.82c.85-.32 1.5-.97 1.82-1.82h3.13L15 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3l-2.95-7H21V5h-6.17C14.4 3.8 13.27 3 12 3m0 2a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m-6.5 5.25L7 14H4zm13 0L20 14h-3z"/></svg></span> MIT</span>
+<p><span class="badge"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3c-1.27 0-2.4.8-2.82 2H3v2h1.95L2 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3L6.05 7h3.12c.33.85.98 1.5 1.83 1.83V20H2v2h20v-2h-9V8.82c.85-.32 1.5-.97 1.82-1.82h3.13L15 14c-.47 2 1 3 3.5 3s4.06-1 3.5-3l-2.95-7H21V5h-6.17C14.4 3.8 13.27 3 12 3m0 2a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m-6.5 5.25L7 14H4zm13 0L20 14h-3z"/></svg></span> MIT</span>
 <span class="badge"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m11.5 15.97.41 2.44c-.26.14-.68.27-1.24.39-.57.13-1.24.2-2.01.2-2.21-.04-3.87-.7-4.98-1.96Q2 15.135 2 12.21c.05-2.31.72-4.08 2-5.32C5.32 5.64 6.96 5 8.94 5c.75 0 1.4.07 1.94.19s.94.25 1.2.4l-.58 2.49-1.06-.34c-.4-.1-.86-.15-1.39-.15-1.16-.01-2.12.36-2.87 1.1-.76.73-1.15 1.85-1.18 3.34 0 1.36.37 2.42 1.08 3.2.71.77 1.71 1.17 2.99 1.18l1.33-.12c.43-.08.79-.19 1.1-.32M13.89 19l.61-4H13l.34-2h1.5l.32-2h-1.5L14 9h1.5l.61-4h2l-.61 4h1l.61-4h2l-.61 4H22l-.34 2h-1.5l-.32 2h1.5L21 15h-1.5l-.61 4h-2l.61-4h-1l-.61 4zm2.95-6h1l.32-2h-1z"/></svg></span> C# + Rust</span></p>
 </div>
 </div>
@@ -1469,7 +1530,7 @@
 <div class="landing-section">
 <div class="section-header">
 <h2 id="unity">Unity 资源加载的痛点<a class="headerlink" href="#unity" title="Permanent link">&para;</a></h2>
-<p>在 Unity 项目开发中，资源加载常常是性能瓶颈的来源。Uniasset 专为解决这些痛点而生。</p>
+<p>在 Unity 项目开发中，外部资源加载往往会遇到很多问题。Uniasset 专为解决这些痛点而生。</p>
 </div>
 <div class="pain-grid">
 <div class="pain-card">
@@ -1477,17 +1538,8 @@
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.47 5.95c.48-.28 1-.51 1.53-.67V4c0-1.1.87-2 1.97-2.03C13.13 2 14 2.9 14 4v1.28c.53.17 1.05.39 1.53.67l-1.6 2.12h-3.86zM19 12c0 .5-.05.95-.14 1.4l-2.53-.78-1.19-3.66 1.6-2.11q.645.6 1.14 1.35c.79-.07 1.55.05 2.23.39 1.03.53 1.73 1.54 1.89 2.69l-3 .36zM5 12v-.35l-3-.37c.16-1.15.86-2.16 1.89-2.69a3.54 3.54 0 0 1 2.19-.33c.33-.51.71-.98 1.16-1.39l1.62 2.08-1.19 3.67-2.53.78C5.05 12.95 5 12.5 5 12m5.24-2.43h3.52l1.09 3.36L12 15l-2.85-2.07zm-2.11 4.48 3.12 2.26v2.65c-.57-.06-1.12-.19-1.63-.38l-1.23 2.76a3.49 3.49 0 0 1-2.02-2.58c-.14-.76-.02-1.52.32-2.2-.45-.52-.82-1.1-1.1-1.74zm7.74 0 2.54.77c-.28.64-.65 1.22-1.1 1.74.34.68.46 1.44.33 2.2a3.52 3.52 0 0 1-2.03 2.58l-1.22-2.76c-.53.19-1.06.36-1.64.42v-2.69z"/></svg></span></p>
 </div>
 <div>
-<h4 id="_1">原生加载缓慢<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
-<p><code>UnityWebRequest</code> 和 <code>WWW</code> 在主线程造成卡顿，复杂资源解码耗时严重。</p>
-</div>
-</div>
-<div class="pain-card">
-<div class="pain-icon">
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6z"/></svg></span></p>
-</div>
-<div>
-<h4 id="gc">GC 压力大<a class="headerlink" href="#gc" title="Permanent link">&para;</a></h4>
-<p>大量托管内存分配导致频繁 GC 触发，运行时性能波动剧烈。</p>
+<h4 id="_1">执行效率低<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
+<p>若需要对 Texture 进行缩放裁切，需要自行 <code>SetPixels</code>，经过多轮复制、转换。</p>
 </div>
 </div>
 <div class="pain-card">
@@ -1496,7 +1548,7 @@
 </div>
 <div>
 <h4 id="_2">格式支持有限<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
-<p>Unity 原生支持的音频格式不足，处理 FLAC、AAC、Vorbis 等格式需要额外方案。</p>
+<p>Unity 原生支持的格式不足，处理 WebP、FLAC 等格式需要额外方案。</p>
 </div>
 </div>
 <div class="pain-card">
@@ -1521,7 +1573,7 @@
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m13.13 22.19-1.63-3.83c1.57-.58 3.04-1.36 4.4-2.27zM5.64 12.5l-3.83-1.63 6.1-2.77C7 9.46 6.22 10.93 5.64 12.5M21.61 2.39S16.66.269 11 5.93c-2.19 2.19-3.5 4.6-4.35 6.71-.28.75-.09 1.57.46 2.13l2.13 2.12c.55.56 1.37.74 2.12.46A19.1 19.1 0 0 0 18.07 13c5.66-5.66 3.54-10.61 3.54-10.61m-7.07 7.07c-.78-.78-.78-2.05 0-2.83s2.05-.78 2.83 0c.77.78.78 2.05 0 2.83s-2.05.78-2.83 0m-5.66 7.07-1.41-1.41zM6.24 22l3.64-3.64c-.34-.09-.67-.24-.97-.45L4.83 22zM2 22h1.41l4.77-4.76-1.42-1.41L2 20.59zm0-2.83 4.09-4.08c-.21-.3-.36-.62-.45-.97L2 17.76z"/></svg></span></p>
 </div>
 <h3 id="_5">极致性能<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p>底层由 Rust 编写，通过 P/Invoke FFI 直接调用原生代码。零 GC 压力，充分利用系统硬件加速。</p>
+<p>底层由 Rust 编写，通过 P/Invoke FFI 直接调用原生代码，充分利用 SIMD 等加速。</p>
 </div>
 <div class="feature-card">
 <div class="feature-icon">
@@ -1535,14 +1587,14 @@
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 16V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2m-11-4 2.03 2.71L16 11l4 5H8M2 6v14a2 2 0 0 0 2 2h14v-2H4V6"/></svg></span></p>
 </div>
 <h3 id="_7">多格式图片<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
-<p>支持 JPEG、WebP、PNG、BMP、TGA、PSD，内置裁剪、缩放、格式转换、克隆等完整图像处理管线。</p>
+<p>支持 JPEG、WebP、PNG、BMP、TGA、PSD，内置裁剪、缩放等图像处理方法。</p>
 </div>
 <div class="feature-card">
 <div class="feature-icon">
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 9V7h-4v5.5c-.42-.31-.93-.5-1.5-.5A2.5 2.5 0 0 0 8 14.5a2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5V9zm-4-7a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2"/></svg></span></p>
 </div>
 <h3 id="_8">多格式音频<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
-<p>覆盖 MP3、FLAC、WAV、PCM、Vorbis、OGG、AAC 七种音频格式，自动识别采样格式与声道布局。</p>
+<p>覆盖 MP3、FLAC、WAV、PCM、Vorbis、OGG、AAC 七种音频格式。</p>
 </div>
 <div class="feature-card">
 <div class="feature-icon">
@@ -1574,7 +1626,7 @@
 <p>C# SDK</p>
 </div>
 <div class="step-desc">
-<p>完全异步的 C# API 层，提供 <code>ImageAsset</code>、<code>AudioAsset</code> 等高级抽象，与 Unity 生态无缝集成。</p>
+<p>完全异步的 C# API 层，提供 <code>ImageAsset</code>、<code>AudioAsset</code> 等高级抽象。</p>
 </div>
 </div>
 <div class="how-connector">
@@ -1617,11 +1669,12 @@
 <h3 id="_13"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 19H5V5h14m0-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-5.04 9.29-2.75 3.54-1.96-2.36L6.5 17h11z"/></svg></span> 图片<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
 <ul>
 <li>JPEG</li>
-<li>WebP</li>
+<li>WebP (仅首帧)</li>
 <li>PNG</li>
 <li>BMP</li>
 <li>TGA</li>
 <li>PSD</li>
+<li>GIF (仅首帧)</li>
 </ul>
 </div>
 <div class="format-card">
@@ -1630,7 +1683,6 @@
 <li>MP3</li>
 <li>FLAC</li>
 <li>WAV</li>
-<li>PCM</li>
 <li>Vorbis (OGG)</li>
 <li>AAC</li>
 </ul>
@@ -1722,7 +1774,7 @@
 <hr />
 <div class="landing-cta">
 <h2 id="unity_1">准备好提升你的 Unity 项目了吗？<a class="headerlink" href="#unity_1" title="Permanent link">&para;</a></h2>
-<p>为你的项目添加高性能、异步、多格式的资源加载能力。</p>
+<p>为你的项目添加高性能、异步、多格式的外部资源加载能力。</p>
 <p><a class="cta-btn" href="getting-started/">阅读文档开始使用 <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span></a></p>
 </div>
 
