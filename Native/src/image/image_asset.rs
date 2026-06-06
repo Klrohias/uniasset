@@ -277,6 +277,10 @@ impl ImageAsset {
     fn load_stbi_io<S: Read + Seek>(
         stream: S,
     ) -> Result<(ImageBuffer, ImageInfo), ImageOperationError> {
+        unsafe {
+            stb_image::stbi_set_flip_vertically_on_load_thread(1);
+        }
+
         let mut wrapper = StbIoWrapper { reader: stream };
         let callbacks = stb_image::stbi_io_callbacks {
             read: Some(stb_read_callback::<S>),
