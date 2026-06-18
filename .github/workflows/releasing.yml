@@ -1,4 +1,4 @@
-name: 'Releasing'
+name: 'Release Uniasset'
 
 on: 
   push:
@@ -44,8 +44,8 @@ jobs:
       - name: Package unity scripts
         if: '!cancelled()'
         run: |
-          pushd "${{github.workspace}}/Unity"
-          zip -r "${{github.workspace}}/Unity/UnityScripts.zip" "Uniasset/" "Uniasset.Editor/"
+          pushd "${{github.workspace}}/Source/UnityDemo/Assets/Plugins/"
+          zip -r "${{github.workspace}}/uniasset-unity-scripts.zip" "Uniasset/" "Uniasset.Editor/"
           popd
 
       - name: Upload binaries to release
@@ -61,5 +61,5 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: "${{github.workspace}}/Unity/UnityScripts.zip"
+          file: "${{github.workspace}}/uniasset-unity-scripts.zip"
           asset_name: "uniasset-unity-scripts.zip"

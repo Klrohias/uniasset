@@ -1,4 +1,4 @@
-name: 'Build (Android)'
+name: 'Build Uniasset (Android)'
 
 on:
   workflow_dispatch: {}
@@ -27,61 +27,61 @@ jobs:
     - name: Build (Android armeabi-v7a)
       if: '!cancelled()'
       run: |
-        pushd Native
+        pushd Source/Core
         cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android arm64-v8a)
       if: '!cancelled()'
       run: |
-        pushd Native
+        pushd Source/Core
         cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android x86)
       if: '!cancelled()'
       run: |
-        pushd Native
+        pushd Source/Core
         cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android x86_64)
       if: '!cancelled()'
       run: |
-        pushd Native
+        pushd Source/Core
         cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml --release
         popd
 
     - name: List Android build outputs
       if: '!cancelled()'
       run: |
-        ls -R "${{github.workspace}}/Native/target/android-build" || true
-        ls -R "${{github.workspace}}/Native/target" || true
+        ls -R "${{github.workspace}}/Source/Core/target/android-build" || true
+        ls -R "${{github.workspace}}/Source/Core/target" || true
 
     - name: Upload Artifact (arm-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v7
       with:
         name: libuniasset-arm-neon-android
-        path: ${{github.workspace}}/Native/target/android-build/armeabi-v7a/libuniasset.so
+        path: ${{github.workspace}}/Source/Core/target/android-build/armeabi-v7a/libuniasset.so
 
     - name: Upload Artifact (aarch64-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v7
       with:
         name: libuniasset-aarch64-android
-        path: ${{github.workspace}}/Native/target/android-build/arm64-v8a/libuniasset.so
+        path: ${{github.workspace}}/Source/Core/target/android-build/arm64-v8a/libuniasset.so
 
     - name: Upload Artifact (x86-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v7
       with:
         name: libuniasset-x86-android
-        path: ${{github.workspace}}/Native/target/android-build/x86/libuniasset.so
+        path: ${{github.workspace}}/Source/Core/target/android-build/x86/libuniasset.so
 
     - name: Upload Artifact (x64-android)
       if: '!cancelled()'
       uses: actions/upload-artifact@v7
       with:
         name: libuniasset-x64-android
-        path: ${{github.workspace}}/Native/target/android-build/x86_64/libuniasset.so
+        path: ${{github.workspace}}/Source/Core/target/android-build/x86_64/libuniasset.so
