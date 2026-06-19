@@ -399,7 +399,7 @@ dependencies = [
 
 [[package]]
 name = "uniasset"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -412,7 +412,7 @@ dependencies = [
 
 [[package]]
 name = "uniasset-bridge"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "parking_lot",
