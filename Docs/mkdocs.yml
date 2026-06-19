@@ -8,7 +8,6 @@ repo_url: https://github.com/Klrohias/uniasset
 
 theme:
   name: material
-  language: zh
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -40,6 +39,61 @@ theme:
 
 plugins:
   - search
+  - i18n:
+      docs_structure: folder
+      languages:
+        - locale: zh
+          default: true
+          name: 简体中文
+          build: true
+          nav:
+            - 首页: index.md
+            - 快速开始: getting-started.md
+            - 使用指南:
+              - guide/image-loading.md
+              - guide/audio-loading.md
+              - guide/custom-streams.md
+            - API 参考:
+              - api/index.md
+              - api/image-asset.md
+              - api/audio-asset.md
+              - api/crop-options.md
+              - api/resize-filter.md
+              - api/pixel-type.md
+              - api/sample-format.md
+              - api/iostream.md
+              - api/stream-wrapper.md
+            - 更新日志: changelog.md
+        - locale: en
+          name: English
+          build: true
+          nav:
+            - Home: en/index.md
+            - Getting Started: en/getting-started.md
+            - Guides:
+              - en/guide/image-loading.md
+              - en/guide/audio-loading.md
+              - en/guide/custom-streams.md
+            - API Reference:
+              - en/api/index.md
+              - en/api/image-asset.md
+              - en/api/audio-asset.md
+              - en/api/crop-options.md
+              - en/api/resize-filter.md
+              - en/api/pixel-type.md
+              - en/api/sample-format.md
+              - en/api/iostream.md
+              - en/api/stream-wrapper.md
+            - Changelog: en/changelog.md
+
+extra:
+  alternate:
+    - name: 简体中文
+      link: /
+      lang: zh
+    - name: English
+      link: /en/
+      lang: en
 
 extra_css:
   - stylesheets/landing.css
@@ -66,22 +120,3 @@ markdown_extensions:
   - attr_list
   - def_list
   - abbr
-
-nav:
-  - 首页: index.md
-  - 快速开始: getting-started.md
-  - 使用指南:
-    - guide/image-loading.md
-    - guide/audio-loading.md
-    - guide/custom-streams.md
-  - API 参考:
-    - api/index.md
-    - api/image-asset.md
-    - api/audio-asset.md
-    - api/crop-options.md
-    - api/resize-filter.md
-    - api/pixel-type.md
-    - api/sample-format.md
-    - api/iostream.md
-    - api/stream-wrapper.md
-  - 更新日志: changelog.md
