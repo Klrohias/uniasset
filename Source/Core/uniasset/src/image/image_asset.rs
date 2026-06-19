@@ -8,23 +8,18 @@ use std::{
     path::Path,
     ptr::null_mut,
     slice,
-    sync::Arc,
 };
 
 use libwebp_sys::{
     VP8StatusCode, WEBP_CSP_MODE, WebPBitstreamFeatures, WebPDecode, WebPDecoderConfig,
     WebPFreeDecBuffer, WebPGetInfo, WebPIAppend, WebPIDecode, WebPIDelete,
 };
-use parking_lot::RwLock;
 use stb_image::stb_image;
 use zune_jpeg::{JpegDecoder, zune_core::bytestream::ZCursor};
 
-use crate::{
-    ffi::{NativeHandle, NativeHandleExts},
-    image::{
-        ImageBuffer, is_jpeg, is_webp,
-        resizer::{ResizeFilter, resize},
-    },
+use crate::image::{
+    ImageBuffer, is_jpeg, is_webp,
+    resizer::{ResizeFilter, resize},
 };
 
 fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels: usize) {
@@ -44,22 +39,15 @@ fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels:
     }
 }
 
-#[derive(Clone, Default)]
-pub struct ImageAsset(Box<Arc<RwLock<ImageAssetState>>>);
-
-impl NativeHandleExts for ImageAsset {
-    fn into_handle(self) -> NativeHandle {
-        self.0.into_handle()
-    }
-
-    fn from_handle(handle: NativeHandle) -> Self {
-        Self(NativeHandleExts::from_handle(handle))
-    }
+#[derive(Default)]
+pub struct ImageAsset {
+    buffer: Option<ImageBuffer>,
+    info: Option<ImageInfo>,
 }
 
 impl ImageAsset {
     pub fn load_file(
-        &self,
+        &mut self,
         file_path: impl AsRef<Path>,
         expected_width: u32,
         expected_height: u32,
@@ -68,7 +56,7 @@ impl ImageAsset {
     }
 
     pub fn load_io(
-        &self,
+        &mut self,
         mut stream: impl Read + Seek,
         expected_width: u32,
         expected_height: u32,
@@ -79,22 +67,15 @@ impl ImageAsset {
 
         // Check magic number and decode
         let (buffer, info) = if is_webp(&magic_number_buffer) {
-            // WebP
             Self::load_webp_io(stream, expected_width, expected_height)?
         } else if is_jpeg(&magic_number_buffer) {
-            // JPEG
             Self::load_jpeg_io(stream)?
         } else {
-            // Any STBI supported
             Self::load_stbi_io(stream)?
         };
 
-        let mut state = self.0.write();
-        state.buffer = Some(buffer);
-        state.info = Some(info.clone());
-
-        // Maybe someone wants write below, drop the lock here.
-        drop(state);
+        self.buffer = Some(buffer);
+        self.info = Some(info.clone());
 
         // Specified size is expected, but the current image data doesn't match
         if expected_height != 0
@@ -337,28 +318,21 @@ impl ImageAsset {
     }
 
     pub fn load_memory(
-        &self,
+        &mut self,
         data: &[u8],
         expected_width: u32,
         expected_height: u32,
     ) -> Result<(), ImageOperationError> {
         let (buffer, info) = if is_webp(data) {
-            // WebP
             Self::load_webp_memory(data, expected_width, expected_height)?
         } else if is_jpeg(data) {
-            // JPEG
             Self::load_jpeg_memory(data)?
         } else {
-            // Any STBI supported
             Self::load_stbi_memory(data)?
         };
 
-        let mut state = self.0.write();
-        state.buffer = Some(buffer);
-        state.info = Some(info.clone());
-
-        // Maybe someone wants write below, drop the lock here.
-        drop(state);
+        self.buffer = Some(buffer);
+        self.info = Some(info.clone());
 
         // Specified size is expected, but the current image data doesn't match
         if expected_height != 0
@@ -566,47 +540,38 @@ impl ImageAsset {
     }
 
     pub fn get_width(&self) -> Result<u32, ImageOperationError> {
-        let state = self.0.read();
-
-        match state.info.as_ref() {
+        match self.info.as_ref() {
             Some(info) => Ok(info.width),
             None => Err(ImageOperationError::Unavailable),
         }
     }
 
     pub fn get_height(&self) -> Result<u32, ImageOperationError> {
-        let state = self.0.read();
-
-        match state.info.as_ref() {
+        match self.info.as_ref() {
             Some(info) => Ok(info.height),
             None => Err(ImageOperationError::Unavailable),
         }
     }
 
     pub fn get_pixel_type(&self) -> Result<PixelType, ImageOperationError> {
-        let state = self.0.read();
-
-        match state.info.as_ref() {
+        match self.info.as_ref() {
             Some(info) => Ok(info.pixel_type),
             None => Err(ImageOperationError::Unavailable),
         }
     }
 
-    pub fn unload(&self) {
-        let mut state = self.0.write();
-        state.buffer = None;
-        state.info = None;
+    pub fn unload(&mut self) {
+        self.buffer = None;
+        self.info = None;
     }
 
-    pub fn crop(&self, x: u32, y: u32, width: u32, height: u32) -> Result<(), ImageOperationError> {
-        let mut state = self.0.write();
-
-        if state.info.is_none() || state.buffer.is_none() {
+    pub fn crop(&mut self, x: u32, y: u32, width: u32, height: u32) -> Result<(), ImageOperationError> {
+        if self.info.is_none() || self.buffer.is_none() {
             return Err(ImageOperationError::Unavailable);
         }
 
         // Check the crop range
-        let old_info = state.info.take().unwrap();
+        let old_info = self.info.take().unwrap();
         if x > old_info.width
             || x + width > old_info.width
             || y > old_info.height
@@ -622,7 +587,7 @@ impl ImageAsset {
         let src_stride = old_info.width * pixel_size;
         let dst_stride = width * pixel_size;
 
-        let old_buffer = state.buffer.take().unwrap();
+        let old_buffer = self.buffer.take().unwrap();
         let mut new_buffer =
             ImageBuffer::new((width * height) as usize * old_info.pixel_type.get_size());
 
@@ -645,24 +610,23 @@ impl ImageAsset {
         new_info.width = width;
         new_info.height = height;
 
-        state.info = Some(new_info);
-        state.buffer = Some(new_buffer);
+        self.info = Some(new_info);
+        self.buffer = Some(new_buffer);
         Ok(())
     }
 
     pub fn resize(
-        &self,
+        &mut self,
         new_width: u32,
         new_height: u32,
         filter_type: ResizeFilter,
     ) -> Result<(), ImageOperationError> {
-        let mut state = self.0.write();
-        if state.info.is_none() || state.buffer.is_none() {
+        if self.info.is_none() || self.buffer.is_none() {
             return Err(ImageOperationError::Unavailable);
         }
 
-        let old_info = state.info.take().unwrap();
-        let old_buffer = state.buffer.take().unwrap();
+        let old_info = self.info.take().unwrap();
+        let old_buffer = self.buffer.take().unwrap();
 
         // Resize
         let mut new_buffer =
@@ -684,21 +648,16 @@ impl ImageAsset {
         new_info.width = new_width;
         new_info.height = new_height;
 
-        state.info = Some(new_info);
-        state.buffer = Some(new_buffer);
+        self.info = Some(new_info);
+        self.buffer = Some(new_buffer);
         Ok(())
     }
 
     pub fn deep_clone(&self) -> ImageAsset {
-        let new_instance = ImageAsset::default();
-        let state = self.0.read();
-        {
-            let mut new_state = new_instance.0.write();
-
-            new_state.buffer = state.buffer.clone();
-            new_state.info = state.info.clone();
+        ImageAsset {
+            buffer: self.buffer.clone(),
+            info: self.info.clone(),
         }
-        new_instance
     }
 
     pub fn crop_multiple(
@@ -708,7 +667,7 @@ impl ImageAsset {
         let mut results = Vec::with_capacity(items.len());
 
         for item in items {
-            let cloned = self.deep_clone();
+            let mut cloned = self.deep_clone();
             cloned.crop(item.x, item.y, item.width, item.height)?;
             results.push(cloned);
         }
@@ -717,12 +676,10 @@ impl ImageAsset {
     }
 
     pub fn copy_pixel(&self, target: &mut [u8]) -> Result<(), ImageOperationError> {
-        let state = self.0.read();
-        if let Some(buffer) = state.buffer.as_ref() {
+        if let Some(buffer) = self.buffer.as_ref() {
             if target.len() < buffer.len() {
                 target.copy_from_slice(&buffer.as_ref()[..target.len()]);
             } else {
-                // target.len() >= buffer.len()
                 target[..buffer.len()].copy_from_slice(buffer.as_ref());
             }
             Ok(())
@@ -762,12 +719,6 @@ struct ImageInfo {
     pixel_type: PixelType,
     width: u32,
     height: u32,
-}
-
-#[derive(Default)]
-struct ImageAssetState {
-    buffer: Option<ImageBuffer>,
-    info: Option<ImageInfo>,
 }
 
 #[derive(Debug)]

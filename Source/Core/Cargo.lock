@@ -411,6 +411,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "uniasset-bridge"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "parking_lot",
+ "uniasset",
+]
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,5 +1,5 @@
 [workspace]
-members = ["uniasset"]
+members = ["uniasset", "uniasset-bridge"]
 resolver = "3"
 
 [profile.release]

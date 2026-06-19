@@ -1,21 +1,23 @@
 use std::{error::Error, os::raw::c_void, sync::Arc};
 
-use crate::ffi::set_error;
+use parking_lot::RwLock;
+
+use crate::error::set_error;
 
 pub type NativeHandle = *const c_void;
 
-pub(crate) trait NativeHandleExts {
+pub trait NativeHandleExts {
     fn into_handle(self) -> NativeHandle;
     fn from_handle(handle: NativeHandle) -> Self;
 }
 
-impl<T: ?Sized> NativeHandleExts for Box<Arc<T>> {
+impl<T: ?Sized> NativeHandleExts for Box<Arc<RwLock<T>>> {
     fn into_handle(self) -> NativeHandle {
         Box::into_raw(self) as NativeHandle
     }
 
     fn from_handle(handle: NativeHandle) -> Self {
-        unsafe { Box::from_raw(handle as *mut Arc<T>) }
+        unsafe { Box::from_raw(handle as *mut Arc<RwLock<T>>) }
     }
 }
 

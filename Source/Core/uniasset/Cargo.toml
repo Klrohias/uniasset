@@ -22,4 +22,3 @@ parking_lot = "0.12.5"
 
 [lib]
 name = "uniasset"
-crate-type = ["staticlib", "cdylib"]

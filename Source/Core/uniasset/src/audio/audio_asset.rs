@@ -4,41 +4,62 @@ use std::{
     fs::File,
     io::{self, Cursor, Read, Seek},
     ptr::null_mut,
-    sync::{
-        Arc,
-        atomic::{AtomicPtr, Ordering},
-    },
+    sync::atomic::{AtomicPtr, Ordering},
 };
 
-use parking_lot::RwLock;
-
-use crate::{
-    audio::{
-        AudioDecoder, AudioDecoderWrapper, AudioFormatProbe, DecoderError, SampleFormat,
-        SymphoniaDecoder, probe_format_from_stream,
-    },
-    ffi::{NativeHandle, NativeHandleExts},
-    thread::SyncUnsafeCell,
+use crate::audio::{
+    AudioDecoder, AudioDecoderWrapper, AudioFormatProbe, DecoderError, SampleFormat,
+    SymphoniaDecoder, probe_format_from_stream,
 };
 
-pub struct AudioAsset(Box<Arc<(RwLock<SafeState>, SyncUnsafeCell<UnsafeState>)>>);
+pub struct AudioAsset {
+    audio_info: Option<AudioInfo>,
+    audio_decoder: AtomicPtr<AudioDecoderWrapper>,
+}
 
 impl Default for AudioAsset {
     fn default() -> Self {
-        Self(Box::new(Arc::new((
-            SafeState::default().into(),
-            UnsafeState::default().into(),
-        ))))
+        Self {
+            audio_info: None,
+            audio_decoder: AtomicPtr::new(null_mut()),
+        }
     }
 }
 
+impl Drop for AudioAsset {
+    fn drop(&mut self) {
+        let ptr = self.audio_decoder.load(Ordering::Acquire);
+        if !ptr.is_null() {
+            drop(unsafe { Box::from_raw(ptr) });
+        }
+    }
+}
+
+struct AudioInfo {
+    frame_count: u64,
+    sample_count: u64,
+    sample_rate: u32,
+    channel_count: u16,
+}
+
 impl AudioAsset {
-    fn unsafe_state<'a>(&'a self) -> &'a mut UnsafeState {
-        unsafe { &mut *self.0.1.get() }
+    fn get_decoder(&self) -> Result<*mut AudioDecoderWrapper, AudioOperationError> {
+        let ptr = self.audio_decoder.load(Ordering::Acquire);
+        if ptr.is_null() {
+            return Err(AudioOperationError::Unloaded);
+        }
+        Ok(ptr)
+    }
+
+    fn replace_decoder(&self, new_ptr: *mut AudioDecoderWrapper) {
+        let old_ptr = self.audio_decoder.swap(new_ptr, Ordering::Release);
+        if !old_ptr.is_null() {
+            drop(unsafe { Box::from_raw(old_ptr) });
+        }
     }
 
     pub fn load_file(
-        &self,
+        &mut self,
         path: impl AsRef<str>,
         sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
@@ -46,7 +67,7 @@ impl AudioAsset {
     }
 
     pub fn load_memory(
-        &self,
+        &mut self,
         data: impl AsRef<[u8]> + Send + Sync + 'static,
         sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
@@ -54,7 +75,7 @@ impl AudioAsset {
     }
 
     pub fn load_io(
-        &self,
+        &mut self,
         mut stream: impl Read + Seek + Send + Sync + 'static,
         sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
@@ -63,7 +84,6 @@ impl AudioAsset {
         }
 
         let decoder = SymphoniaDecoder::from_io(stream, sample_format)?;
-        let mut state = self.0.0.write();
 
         // Read audio info
         let info = AudioInfo {
@@ -72,132 +92,67 @@ impl AudioAsset {
             sample_rate: decoder.get_sample_rate(),
             channel_count: decoder.get_channel_count() as u16,
         };
-        state.audio_info = Some(info);
+        self.audio_info = Some(info);
 
         // Store audio decoder
         let boxed_decoder_wrapper = Box::new(decoder.into());
-        self.unsafe_state()
-            .replace_decoder(Box::into_raw(boxed_decoder_wrapper));
+        self.replace_decoder(Box::into_raw(boxed_decoder_wrapper));
 
         Ok(())
     }
 
-    pub fn unload(&self) {
-        let mut state = self.0.0.write();
-        state.audio_info = None;
-        self.unsafe_state().replace_decoder(null_mut());
+    pub fn unload(&mut self) {
+        self.audio_info = None;
+        self.replace_decoder(null_mut());
     }
 
     pub fn get_channel_count(&self) -> Result<u16, AudioOperationError> {
-        let state = self.0.0.read();
-
-        Ok(state
+        Ok(self
             .audio_info
             .as_ref()
-            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .ok_or(AudioOperationError::Unloaded)?
             .channel_count)
     }
 
     pub fn get_sample_count(&self) -> Result<u64, AudioOperationError> {
-        let state = self.0.0.read();
-
-        Ok(state
+        Ok(self
             .audio_info
             .as_ref()
-            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .ok_or(AudioOperationError::Unloaded)?
             .sample_count)
     }
 
     pub fn get_sample_rate(&self) -> Result<u32, AudioOperationError> {
-        let state = self.0.0.read();
-
-        Ok(state
+        Ok(self
             .audio_info
             .as_ref()
-            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .ok_or(AudioOperationError::Unloaded)?
             .sample_rate)
     }
 
     pub fn get_frame_count(&self) -> Result<u64, AudioOperationError> {
-        let state = self.0.0.read();
-
-        Ok(state
+        Ok(self
             .audio_info
             .as_ref()
-            .ok_or_else(|| AudioOperationError::Unloaded)?
+            .ok_or(AudioOperationError::Unloaded)?
             .frame_count)
     }
 
     pub fn tell(&self) -> Result<i64, AudioOperationError> {
-        Ok(unsafe { &*self.unsafe_state().get_decoder()? }.tell())
+        Ok(unsafe { &*self.get_decoder()? }.tell())
     }
 
     pub fn read(&self, buffer: &mut [u8], frame_count: u32) -> Result<u32, AudioOperationError> {
-        unsafe { &*self.unsafe_state().get_decoder()? }
+        unsafe { &*self.get_decoder()? }
             .read(buffer, frame_count)
             .map_err(Into::into)
     }
 
     pub fn seek(&self, position: i64) -> Result<(), AudioOperationError> {
-        unsafe { &*self.unsafe_state().get_decoder()? }
+        unsafe { &*self.get_decoder()? }
             .seek(position)
             .map_err(Into::into)
     }
-}
-
-impl NativeHandleExts for AudioAsset {
-    fn into_handle(self) -> NativeHandle {
-        self.0.into_handle()
-    }
-
-    fn from_handle(handle: NativeHandle) -> Self {
-        Self(NativeHandleExts::from_handle(handle))
-    }
-}
-
-#[derive(Default)]
-struct UnsafeState {
-    audio_decoder: AtomicPtr<AudioDecoderWrapper>,
-}
-
-impl UnsafeState {
-    fn replace_decoder(&self, new_ptr: *mut AudioDecoderWrapper) {
-        let old_ptr = self.audio_decoder.swap(new_ptr, Ordering::Release);
-        if !old_ptr.is_null() {
-            drop(unsafe { Box::from_raw(old_ptr) });
-        }
-    }
-
-    fn get_decoder(&self) -> Result<*mut AudioDecoderWrapper, AudioOperationError> {
-        let decoder_ptr = self.audio_decoder.load(Ordering::Acquire);
-
-        if decoder_ptr.is_null() {
-            return Err(AudioOperationError::Unloaded);
-        }
-
-        Ok(decoder_ptr)
-    }
-}
-
-impl Drop for UnsafeState {
-    fn drop(&mut self) {
-        let current_ptr = self.audio_decoder.load(Ordering::Acquire);
-        if !current_ptr.is_null() {
-            drop(unsafe { Box::from_raw(current_ptr) });
-        }
-    }
-}
-
-#[derive(Default)]
-struct SafeState {
-    audio_info: Option<AudioInfo>,
-}
-
-struct AudioInfo {
-    frame_count: u64,
-    sample_count: u64,
-    sample_rate: u32,
-    channel_count: u16,
 }
 
 #[derive(Debug)]

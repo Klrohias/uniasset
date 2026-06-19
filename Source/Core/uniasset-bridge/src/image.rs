@@ -3,28 +3,31 @@ use std::{
     mem::ManuallyDrop,
     path::PathBuf,
     slice,
+    sync::Arc,
 };
 
 use anyhow::anyhow;
+use parking_lot::RwLock;
 
 use crate::{
-    ffi::{
-        NativeHandle, NativeHandleExts, NativeIOProvider, clear_error, failible_to_native,
-        set_error,
-    },
-    image::{CropOptions, ImageAsset, resizer::ResizeFilter},
+    error::{clear_error, set_error},
+    io::NativeIOProvider,
+    object::{NativeHandle, NativeHandleExts, failible_to_native},
 };
+use uniasset::image::{CropOptions, ImageAsset, resizer::ResizeFilter};
+
+pub type ImageAssetWrapper = Box<Arc<RwLock<ImageAsset>>>;
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Create() -> NativeHandle {
     clear_error();
-    ImageAsset::default().into_handle()
+    Box::new(Arc::new(RwLock::new(ImageAsset::default()))).into_handle()
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Destory(handle: NativeHandle) {
     clear_error();
-    drop(ImageAsset::from_handle(handle));
+    drop(ImageAssetWrapper::from_handle(handle));
 }
 
 #[unsafe(no_mangle)]
@@ -36,12 +39,10 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Load(
     expected_height: c_uint,
 ) {
     clear_error();
-
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
     let result = failible_to_native(
         || {
-            obj.load_memory(
+            wrapper.write().load_memory(
                 unsafe { slice::from_raw_parts(data, size as usize) },
                 expected_width as u32,
                 expected_height as u32,
@@ -49,7 +50,6 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Load(
         },
         || (),
     );
-
     result
 }
 
@@ -61,13 +61,13 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadFile(
     expected_height: c_uint,
 ) {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
     let path_slice = unsafe { CStr::from_ptr(path) };
     let path_str = path_slice.to_string_lossy();
     let path_buf = PathBuf::from(path_str.as_ref());
 
     _ = failible_to_native(
-        || obj.load_file(path_buf, expected_width, expected_height),
+        || wrapper.write().load_file(path_buf, expected_width, expected_height),
         || (),
     );
 }
@@ -86,10 +86,10 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadIO(
         return;
     }
 
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
     _ = failible_to_native(
         || {
-            obj.load_io(
+            wrapper.write().load_io(
                 unsafe { &mut *provider },
                 expected_width as u32,
                 expected_height as u32,
@@ -102,25 +102,22 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadIO(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetWidth(handle: NativeHandle) -> c_uint {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-    let result = failible_to_native(|| obj.get_width(), || 0);
-    result
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
+    failible_to_native(|| wrapper.read().get_width(), || 0)
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetHeight(handle: NativeHandle) -> c_uint {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-    let result = failible_to_native(|| obj.get_height(), || 0);
-    result
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
+    failible_to_native(|| wrapper.read().get_height(), || 0)
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_GetPixelType(handle: NativeHandle) -> c_uint {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-    let result = failible_to_native(|| obj.get_pixel_type().map(|x| x as _), || 0);
-    result
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
+    failible_to_native(|| wrapper.read().get_pixel_type().map(|x| x as _), || 0)
 }
 
 #[unsafe(no_mangle)]
@@ -132,9 +129,8 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Crop(
     h: c_uint,
 ) {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-    let result = failible_to_native(|| obj.crop(l, t, w, h), || ());
-    result
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
+    failible_to_native(|| wrapper.write().crop(l, t, w, h), || ())
 }
 
 #[unsafe(no_mangle)]
@@ -145,7 +141,7 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Resize(
     filter: c_uint,
 ) {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
     let filter = match filter {
         0 => ResizeFilter::Nearest,
         1 => ResizeFilter::Box,
@@ -156,23 +152,22 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Resize(
             return;
         }
     };
-    let result = failible_to_native(|| obj.resize(w, h, filter), || ());
-    result
+    failible_to_native(|| wrapper.write().resize(w, h, filter), || ())
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Unload(handle: NativeHandle) {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-    obj.unload();
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
+    wrapper.write().unload();
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_ImageAsset_Clone(handle: NativeHandle) -> NativeHandle {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
-    let result = obj.deep_clone().into_handle();
-    result
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
+    let cloned = wrapper.read().deep_clone();
+    Box::new(Arc::new(RwLock::new(cloned))).into_handle()
 }
 
 #[unsafe(no_mangle)]
@@ -182,9 +177,13 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_CopyTo(
     size: c_ulong,
 ) {
     clear_error();
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
     _ = failible_to_native(
-        || obj.copy_pixel(unsafe { std::slice::from_raw_parts_mut(dst, size as usize) }),
+        || {
+            wrapper
+                .read()
+                .copy_pixel(unsafe { std::slice::from_raw_parts_mut(dst, size as usize) })
+        },
         || (),
     );
 }
@@ -203,19 +202,19 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_CropMultiple(
         return;
     }
 
-    let obj = ManuallyDrop::new(ImageAsset::from_handle(handle));
+    let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
 
     _ = failible_to_native(
         || {
             let items = unsafe { slice::from_raw_parts(items, count as usize) };
             let output = unsafe { slice::from_raw_parts_mut(output, count as usize) };
 
-            let results = obj.crop_multiple(items)?;
+            let results = wrapper.read().crop_multiple(items)?;
             for (i, asset) in results.into_iter().enumerate() {
-                output[i] = asset.into_handle();
+                output[i] = Box::new(Arc::new(RwLock::new(asset))).into_handle();
             }
 
-            Ok::<(), crate::image::ImageOperationError>(())
+            Ok::<(), uniasset::image::ImageOperationError>(())
         },
         || (),
     );

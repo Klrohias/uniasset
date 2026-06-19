@@ -1,0 +1,13 @@
+[package]
+name = "uniasset-bridge"
+version = "0.2.0"
+edition = "2024"
+
+[dependencies]
+uniasset = { path = "../uniasset" }
+anyhow = "1.0.102"
+parking_lot = "0.12.5"
+
+[lib]
+name = "uniasset"
+crate-type = ["staticlib", "cdylib"]
