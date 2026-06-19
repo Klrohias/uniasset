@@ -135,6 +135,61 @@ int framesRead = audio.Read<float>(buffer, 1024);
 
 返回值为实际读取的帧数。
 
+### SeekUnsafe
+
+```csharp
+public void SeekUnsafe(long position)
+```
+
+跳转到指定帧位置。
+
+!!! warning "线程安全性"
+    该函数不保证线程安全，应在只有单个线程会访问该资源的场景中使用。多线程场景请使用 `Seek` 方法。
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `position` | `long` | 目标帧位置 |
+
+该方法与 `Seek` 功能相同，但跳过内部同步机制以提升性能。仅在确认不存在并发访问时使用。
+
+```csharp
+// 单线程场景下的使用示例
+audio.SeekUnsafe(1000);
+```
+
+### ReadUnsafe<T>
+
+```csharp
+public int ReadUnsafe<T>(Span<T> buffer, int frameCount) where T : unmanaged
+```
+
+读取 PCM 帧数据到缓冲区。
+
+!!! warning "线程安全性"
+    该函数不保证线程安全，应在只有单个线程会访问该资源的场景中使用。多线程场景请使用 `Read` 方法。
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `buffer` | `Span<T>` | 目标缓冲区 |
+| `frameCount` | `int` | 要读取的帧数 |
+
+类型参数 `T` 应与加载时指定的 `SampleFormat` 匹配：
+
+| SampleFormat | T |
+|--------------|---|
+| `Float` | `float` |
+| `Int16` | `short` |
+
+该方法与 `Read<T>` 功能相同，但跳过内部同步机制以提升性能。仅在确认不存在并发访问时使用。
+
+```csharp
+// 单线程场景下的使用示例
+float[] buffer = new float[1024 * audio.ChannelCount];
+int framesRead = audio.ReadUnsafe<float>(buffer, 1024);
+```
+
+返回值为实际读取的帧数。
+
 ## 转换
 
 ### ToAudioClip
