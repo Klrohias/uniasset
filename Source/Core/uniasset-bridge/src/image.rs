@@ -67,7 +67,11 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_LoadFile(
     let path_buf = PathBuf::from(path_str.as_ref());
 
     _ = failible_to_native(
-        || wrapper.write().load_file(path_buf, expected_width, expected_height),
+        || {
+            wrapper
+                .write()
+                .load_file(path_buf, expected_width, expected_height)
+        },
         || (),
     );
 }
@@ -166,7 +170,7 @@ pub unsafe extern "C" fn Uniasset_ImageAsset_Unload(handle: NativeHandle) {
 pub unsafe extern "C" fn Uniasset_ImageAsset_Clone(handle: NativeHandle) -> NativeHandle {
     clear_error();
     let wrapper = ManuallyDrop::new(ImageAssetWrapper::from_handle(handle));
-    let cloned = wrapper.read().deep_clone();
+    let cloned = wrapper.read().clone();
     Box::new(Arc::new(RwLock::new(cloned))).into_handle()
 }
 

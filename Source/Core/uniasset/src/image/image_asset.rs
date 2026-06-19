@@ -39,7 +39,7 @@ fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels:
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ImageAsset {
     buffer: Option<ImageBuffer>,
     info: Option<ImageInfo>,
@@ -565,7 +565,13 @@ impl ImageAsset {
         self.info = None;
     }
 
-    pub fn crop(&mut self, x: u32, y: u32, width: u32, height: u32) -> Result<(), ImageOperationError> {
+    pub fn crop(
+        &mut self,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    ) -> Result<(), ImageOperationError> {
         if self.info.is_none() || self.buffer.is_none() {
             return Err(ImageOperationError::Unavailable);
         }
@@ -653,13 +659,6 @@ impl ImageAsset {
         Ok(())
     }
 
-    pub fn deep_clone(&self) -> ImageAsset {
-        ImageAsset {
-            buffer: self.buffer.clone(),
-            info: self.info.clone(),
-        }
-    }
-
     pub fn crop_multiple(
         &self,
         items: &[crate::image::CropOptions],
@@ -667,7 +666,7 @@ impl ImageAsset {
         let mut results = Vec::with_capacity(items.len());
 
         for item in items {
-            let mut cloned = self.deep_clone();
+            let mut cloned = self.clone();
             cloned.crop(item.x, item.y, item.width, item.height)?;
             results.push(cloned);
         }

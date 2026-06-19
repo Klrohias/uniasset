@@ -3,8 +3,6 @@ use std::{
     fmt::Display,
     fs::File,
     io::{self, Cursor, Read, Seek},
-    ptr::null_mut,
-    sync::atomic::{AtomicPtr, Ordering},
 };
 
 use crate::audio::{
@@ -14,23 +12,14 @@ use crate::audio::{
 
 pub struct AudioAsset {
     audio_info: Option<AudioInfo>,
-    audio_decoder: AtomicPtr<AudioDecoderWrapper>,
+    audio_decoder: Option<AudioDecoderWrapper>,
 }
 
 impl Default for AudioAsset {
     fn default() -> Self {
         Self {
             audio_info: None,
-            audio_decoder: AtomicPtr::new(null_mut()),
-        }
-    }
-}
-
-impl Drop for AudioAsset {
-    fn drop(&mut self) {
-        let ptr = self.audio_decoder.load(Ordering::Acquire);
-        if !ptr.is_null() {
-            drop(unsafe { Box::from_raw(ptr) });
+            audio_decoder: None,
         }
     }
 }
@@ -43,19 +32,8 @@ struct AudioInfo {
 }
 
 impl AudioAsset {
-    fn get_decoder(&self) -> Result<*mut AudioDecoderWrapper, AudioOperationError> {
-        let ptr = self.audio_decoder.load(Ordering::Acquire);
-        if ptr.is_null() {
-            return Err(AudioOperationError::Unloaded);
-        }
-        Ok(ptr)
-    }
-
-    fn replace_decoder(&self, new_ptr: *mut AudioDecoderWrapper) {
-        let old_ptr = self.audio_decoder.swap(new_ptr, Ordering::Release);
-        if !old_ptr.is_null() {
-            drop(unsafe { Box::from_raw(old_ptr) });
-        }
+    fn get_decoder(&self) -> Result<&AudioDecoderWrapper, AudioOperationError> {
+        self.audio_decoder.as_ref().ok_or(AudioOperationError::Unloaded)
     }
 
     pub fn load_file(
@@ -95,15 +73,14 @@ impl AudioAsset {
         self.audio_info = Some(info);
 
         // Store audio decoder
-        let boxed_decoder_wrapper = Box::new(decoder.into());
-        self.replace_decoder(Box::into_raw(boxed_decoder_wrapper));
+        self.audio_decoder = Some(decoder.into());
 
         Ok(())
     }
 
     pub fn unload(&mut self) {
         self.audio_info = None;
-        self.replace_decoder(null_mut());
+        self.audio_decoder = None;
     }
 
     pub fn get_channel_count(&self) -> Result<u16, AudioOperationError> {
@@ -139,17 +116,17 @@ impl AudioAsset {
     }
 
     pub fn tell(&self) -> Result<i64, AudioOperationError> {
-        Ok(unsafe { &*self.get_decoder()? }.tell())
+        Ok(self.get_decoder()?.tell())
     }
 
     pub fn read(&self, buffer: &mut [u8], frame_count: u32) -> Result<u32, AudioOperationError> {
-        unsafe { &*self.get_decoder()? }
+        self.get_decoder()?
             .read(buffer, frame_count)
             .map_err(Into::into)
     }
 
     pub fn seek(&self, position: i64) -> Result<(), AudioOperationError> {
-        unsafe { &*self.get_decoder()? }
+        self.get_decoder()?
             .seek(position)
             .map_err(Into::into)
     }
