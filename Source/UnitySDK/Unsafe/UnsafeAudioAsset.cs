@@ -134,6 +134,13 @@ namespace Uniasset.Unsafe
             NativeException.ThrowIfNeeded();
         }
 
+        public UnsafeAudioAsset TryClone()
+        {
+            var result = Interop.Uniasset_AudioAsset_TryClone(Instance);
+            NativeException.ThrowIfNeeded();
+            return new UnsafeAudioAsset(result);
+        }
+
         public void Unload()
         {
             Interop.Uniasset_AudioAsset_Unload(Instance);

@@ -198,3 +198,17 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_SeekUnsafe(handle: NativeHandle, po
     let wrapper = ManuallyDrop::new(AudioAssetWrapper::from_handle(handle));
     _ = failible_to_native(|| unsafe { wrapper.seek_unsafe(position) }, || ());
 }
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_AudioAsset_TryClone(handle: NativeHandle) -> NativeHandle {
+    clear_error();
+    let wrapper = ManuallyDrop::new(AudioAssetWrapper::from_handle(handle));
+    failible_to_native(
+        || {
+            wrapper
+                .try_clone()
+                .map(|cloned| Box::new(Arc::new(cloned)).into_handle())
+        },
+        || std::ptr::null(),
+    )
+}
