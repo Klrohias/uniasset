@@ -1,26 +1,36 @@
 use std::{
+    cell::UnsafeCell,
     error::Error,
     fmt::Display,
     fs::File,
     io::{self, Cursor, Read, Seek},
 };
 
+use parking_lot::RwLock;
+
 use crate::audio::{
     AudioDecoder, AudioDecoderWrapper, AudioFormatProbe, DecoderError, SampleFormat,
     SymphoniaDecoder, probe_format_from_stream,
 };
 
-pub struct AudioAsset {
+struct SafeState {
     audio_info: Option<AudioInfo>,
+}
+
+struct UnsafeState {
     audio_decoder: Option<AudioDecoderWrapper>,
 }
 
+pub struct AudioAsset(RwLock<SafeState>, UnsafeCell<UnsafeState>);
+
 impl Default for AudioAsset {
     fn default() -> Self {
-        Self {
-            audio_info: None,
-            audio_decoder: None,
-        }
+        Self(
+            RwLock::new(SafeState { audio_info: None }),
+            UnsafeCell::new(UnsafeState {
+                audio_decoder: None,
+            }),
+        )
     }
 }
 
@@ -32,12 +42,13 @@ struct AudioInfo {
 }
 
 impl AudioAsset {
-    fn get_decoder(&self) -> Result<&AudioDecoderWrapper, AudioOperationError> {
-        self.audio_decoder.as_ref().ok_or(AudioOperationError::Unloaded)
+    #[inline]
+    fn unsafe_state(&self) -> &mut UnsafeState {
+        unsafe { &mut *self.1.get() }
     }
 
     pub fn load_file(
-        &mut self,
+        &self,
         path: impl AsRef<str>,
         sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
@@ -45,7 +56,7 @@ impl AudioAsset {
     }
 
     pub fn load_memory(
-        &mut self,
+        &self,
         data: impl AsRef<[u8]> + Send + Sync + 'static,
         sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
@@ -53,7 +64,7 @@ impl AudioAsset {
     }
 
     pub fn load_io(
-        &mut self,
+        &self,
         mut stream: impl Read + Seek + Send + Sync + 'static,
         sample_format: SampleFormat,
     ) -> Result<(), AudioOperationError> {
@@ -63,28 +74,35 @@ impl AudioAsset {
 
         let decoder = SymphoniaDecoder::from_io(stream, sample_format)?;
 
-        // Read audio info
         let info = AudioInfo {
             frame_count: decoder.get_frame_count(),
             sample_count: decoder.get_sample_count(),
             sample_rate: decoder.get_sample_rate(),
             channel_count: decoder.get_channel_count() as u16,
         };
-        self.audio_info = Some(info);
 
-        // Store audio decoder
-        self.audio_decoder = Some(decoder.into());
+        // Write audio_info to SafeState with lock
+        let mut safe_state = self.0.write();
+        safe_state.audio_info = Some(info);
+
+        // Write decoder to UnsafeState
+        self.unsafe_state().audio_decoder = Some(decoder.into());
 
         Ok(())
     }
 
-    pub fn unload(&mut self) {
-        self.audio_info = None;
-        self.audio_decoder = None;
+    pub fn unload(&self) {
+        // Clear SafeState with lock
+        let mut safe_state = self.0.write();
+        safe_state.audio_info = None;
+
+        // Clear UnsafeState
+        self.unsafe_state().audio_decoder = None;
     }
 
     pub fn get_channel_count(&self) -> Result<u16, AudioOperationError> {
-        Ok(self
+        let state = self.0.read();
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or(AudioOperationError::Unloaded)?
@@ -92,7 +110,8 @@ impl AudioAsset {
     }
 
     pub fn get_sample_count(&self) -> Result<u64, AudioOperationError> {
-        Ok(self
+        let state = self.0.read();
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or(AudioOperationError::Unloaded)?
@@ -100,7 +119,8 @@ impl AudioAsset {
     }
 
     pub fn get_sample_rate(&self) -> Result<u32, AudioOperationError> {
-        Ok(self
+        let state = self.0.read();
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or(AudioOperationError::Unloaded)?
@@ -108,7 +128,8 @@ impl AudioAsset {
     }
 
     pub fn get_frame_count(&self) -> Result<u64, AudioOperationError> {
-        Ok(self
+        let state = self.0.read();
+        Ok(state
             .audio_info
             .as_ref()
             .ok_or(AudioOperationError::Unloaded)?
@@ -116,19 +137,55 @@ impl AudioAsset {
     }
 
     pub fn tell(&self) -> Result<i64, AudioOperationError> {
-        Ok(self.get_decoder()?.tell())
+        let _safe_state = self.0.read();
+        let decoder = self
+            .unsafe_state()
+            .audio_decoder
+            .as_ref()
+            .ok_or(AudioOperationError::Unloaded)?;
+        Ok(decoder.tell())
     }
 
     pub fn read(&self, buffer: &mut [u8], frame_count: u32) -> Result<u32, AudioOperationError> {
-        self.get_decoder()?
-            .read(buffer, frame_count)
-            .map_err(Into::into)
+        let _safe_state = self.0.read();
+        let decoder = self
+            .unsafe_state()
+            .audio_decoder
+            .as_ref()
+            .ok_or(AudioOperationError::Unloaded)?;
+        decoder.read(buffer, frame_count).map_err(Into::into)
     }
 
     pub fn seek(&self, position: i64) -> Result<(), AudioOperationError> {
-        self.get_decoder()?
-            .seek(position)
-            .map_err(Into::into)
+        let _safe_state = self.0.read();
+        let decoder = self
+            .unsafe_state()
+            .audio_decoder
+            .as_ref()
+            .ok_or(AudioOperationError::Unloaded)?;
+        decoder.seek(position).map_err(Into::into)
+    }
+
+    pub unsafe fn read_unsafe(
+        &self,
+        buffer: &mut [u8],
+        frame_count: u32,
+    ) -> Result<u32, AudioOperationError> {
+        let decoder = self
+            .unsafe_state()
+            .audio_decoder
+            .as_ref()
+            .ok_or(AudioOperationError::Unloaded)?;
+        decoder.read(buffer, frame_count).map_err(Into::into)
+    }
+
+    pub unsafe fn seek_unsafe(&self, position: i64) -> Result<(), AudioOperationError> {
+        let decoder = self
+            .unsafe_state()
+            .audio_decoder
+            .as_ref()
+            .ok_or(AudioOperationError::Unloaded)?;
+        decoder.seek(position).map_err(Into::into)
     }
 }
 

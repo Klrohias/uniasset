@@ -106,6 +106,34 @@ namespace Uniasset.Unsafe
             NativeException.ThrowIfNeeded();
         }
 
+        public int ReadUnsafe(byte[] buffer, int frameCount)
+        {
+            fixed (byte* bufferPtr = buffer)
+            {
+                var result = (int)Interop.Uniasset_AudioAsset_ReadUnsafe(Instance, bufferPtr, (ulong)buffer.Length, (uint)frameCount);
+                NativeException.ThrowIfNeeded();
+                return result;
+            }
+        }
+
+        public int ReadUnsafe<T>(Span<T> buffer, int frameCount)
+            where T : unmanaged
+        {
+            fixed (T* bufferPtr = buffer)
+            {
+                var byteSize = (ulong)(buffer.Length * sizeof(T));
+                var result = (int)Interop.Uniasset_AudioAsset_ReadUnsafe(Instance, (byte*)bufferPtr, byteSize, (uint)frameCount);
+                NativeException.ThrowIfNeeded();
+                return result;
+            }
+        }
+
+        public void SeekUnsafe(long position)
+        {
+            Interop.Uniasset_AudioAsset_SeekUnsafe(Instance, position);
+            NativeException.ThrowIfNeeded();
+        }
+
         public void Unload()
         {
             Interop.Uniasset_AudioAsset_Unload(Instance);

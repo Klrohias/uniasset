@@ -133,5 +133,12 @@ namespace Uniasset.Unsafe
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void Uniasset_AudioAsset_Seek(void* self, [NativeTypeName("int64_t")] long position);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("unsigned int")]
+        public static extern uint Uniasset_AudioAsset_ReadUnsafe(void* self, [NativeTypeName("uint8_t *")] byte* buffer, [NativeTypeName("size_t")] ulong bufferSize, [NativeTypeName("unsigned int")] uint frameCount);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_AudioAsset_SeekUnsafe(void* self, [NativeTypeName("int64_t")] long position);
     }
 }

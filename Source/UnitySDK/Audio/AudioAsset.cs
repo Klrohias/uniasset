@@ -90,7 +90,7 @@ namespace Uniasset.Audio
             lock (this)
             {
                 if (Volatile.Read(ref _disposed) != 0) return;
-                Seek(position);
+                UnsafeHandle.SeekUnsafe(position);
             }
         }
 
@@ -100,7 +100,7 @@ namespace Uniasset.Audio
             lock (this)
             {
                 if (Volatile.Read(ref _disposed) != 0) return;
-                Read(new Span<float>(data), data.Length / ChannelCount);
+                UnsafeHandle.ReadUnsafe(new Span<float>(data), data.Length / ChannelCount);
             }
         }
 

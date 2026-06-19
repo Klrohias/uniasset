@@ -4,7 +4,6 @@ use std::{
     sync::atomic::{AtomicI64, Ordering},
 };
 
-use parking_lot::Mutex;
 use symphonia::core::{
     audio::GenericAudioBufferRef,
     codecs::audio::{AudioDecoderOptions, CODEC_ID_NULL_AUDIO},
@@ -66,7 +65,6 @@ pub struct SymphoniaDecoder {
     symphonia_state: SymphoniaState,
     frame_position: AtomicI64,
     frame_buffer: AudioFrameBuffer,
-    mutex: Mutex<()>,
 }
 
 impl SymphoniaDecoder {
@@ -151,7 +149,6 @@ impl SymphoniaDecoder {
                 bytes_per_frame,
             },
             frame_position: AtomicI64::new(0),
-            mutex: Mutex::new(()),
             symphonia_state: SymphoniaState {
                 reader: format,
                 decoder,
@@ -194,8 +191,6 @@ impl AudioDecoder for SymphoniaDecoder {
     }
 
     fn seek(&mut self, position: i64) -> Result<(), DecoderError> {
-        let _guard = self.mutex.lock();
-
         // Argument range check
         if position < 0 {
             return Err(DecoderError::IOError(io::Error::new(
@@ -299,8 +294,6 @@ impl AudioDecoder for SymphoniaDecoder {
     }
 
     fn read(&mut self, buffer: &mut [u8], frame_count: u32) -> Result<u32, DecoderError> {
-        let _guard = self.mutex.lock();
-
         let mut position = 0usize;
         let mut required_frames = frame_count as usize;
 
