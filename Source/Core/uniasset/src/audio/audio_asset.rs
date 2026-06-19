@@ -10,8 +10,8 @@ use std::{
 use parking_lot::RwLock;
 
 use crate::audio::{
-    AudioDecoder, AudioFormatProbe, DecoderError, PcmDecoder, SampleFormat, SymphoniaDecoder,
-    probe_format_from_stream,
+    probe_format_from_stream, AudioDecoder, AudioFormatProbe, DecoderError, PcmDecoder,
+    SampleFormat, SymphoniaDecoder,
 };
 
 /// Concrete decoder variant stored inside [`UnsafeState`].
@@ -52,6 +52,7 @@ struct AudioInfo {
 
 impl AudioAsset {
     #[inline]
+    #[allow(clippy::mut_from_ref)]
     fn unsafe_state(&self) -> &mut UnsafeState {
         unsafe { &mut *self.1.get() }
     }
@@ -318,5 +319,164 @@ impl From<DecoderError> for AudioOperationError {
             DecoderError::UnsupportedFormat => AudioOperationError::UnsupportedFormat,
             other => AudioOperationError::DecoderError(other),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_wav_bytes(
+        sample_rate: u32,
+        channels: u16,
+        sample_format: SampleFormat,
+        num_frames: u32,
+    ) -> Vec<u8> {
+        let bits_per_sample = (sample_format.byte_size() * 8) as u16;
+        let bytes_per_frame = channels * (bits_per_sample / 8);
+        let data_size = num_frames * bytes_per_frame as u32;
+
+        let mut wav = Vec::new();
+        wav.extend_from_slice(b"RIFF");
+        wav.extend_from_slice(&(36 + data_size).to_le_bytes());
+        wav.extend_from_slice(b"WAVE");
+        wav.extend_from_slice(b"fmt ");
+        wav.extend_from_slice(&16u32.to_le_bytes());
+
+        let format_tag = match sample_format {
+            SampleFormat::Float32 => 3u16,
+            SampleFormat::Int16 => 1u16,
+        };
+        wav.extend_from_slice(&format_tag.to_le_bytes());
+        wav.extend_from_slice(&channels.to_le_bytes());
+        wav.extend_from_slice(&sample_rate.to_le_bytes());
+
+        let byte_rate = sample_rate * bytes_per_frame as u32;
+        wav.extend_from_slice(&byte_rate.to_le_bytes());
+        wav.extend_from_slice(&bytes_per_frame.to_le_bytes());
+        wav.extend_from_slice(&bits_per_sample.to_le_bytes());
+
+        wav.extend_from_slice(b"data");
+        wav.extend_from_slice(&data_size.to_le_bytes());
+
+        for i in 0..num_frames {
+            for _ch in 0..channels {
+                let t = i as f32 / sample_rate as f32;
+                let val = (2.0 * std::f32::consts::PI * 440.0 * t).sin() * 0.5;
+                match sample_format {
+                    SampleFormat::Float32 => wav.extend_from_slice(&val.to_le_bytes()),
+                    SampleFormat::Int16 => {
+                        let sample = (val * 16000.0) as i16;
+                        wav.extend_from_slice(&sample.to_le_bytes());
+                    }
+                }
+            }
+        }
+        wav
+    }
+
+    #[test]
+    fn audio_asset_load_wav_float32() {
+        let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 100);
+        let asset = AudioAsset::default();
+
+        asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
+
+        assert_eq!(asset.get_sample_rate().unwrap(), 44100);
+        assert_eq!(asset.get_channel_count().unwrap(), 2);
+        assert_eq!(asset.get_frame_count().unwrap(), 100);
+        assert_eq!(asset.get_sample_count().unwrap(), 200);
+    }
+
+    #[test]
+    fn audio_asset_load_wav_int16() {
+        let wav_data = create_wav_bytes(16000, 1, SampleFormat::Int16, 80);
+        let asset = AudioAsset::default();
+
+        asset.load_memory(wav_data, SampleFormat::Int16).unwrap();
+
+        assert_eq!(asset.get_sample_rate().unwrap(), 16000);
+        assert_eq!(asset.get_channel_count().unwrap(), 1);
+        assert_eq!(asset.get_frame_count().unwrap(), 80);
+    }
+
+    #[test]
+    fn audio_asset_unloaded_error() {
+        let asset = AudioAsset::default();
+        assert!(matches!(
+            asset.get_sample_rate(),
+            Err(AudioOperationError::Unloaded)
+        ));
+        assert!(matches!(asset.tell(), Err(AudioOperationError::Unloaded)));
+    }
+
+    #[test]
+    fn audio_asset_read_and_seek() {
+        let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 100);
+        let asset = AudioAsset::default();
+        asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
+
+        let mut buffer = vec![0u8; 2 * 4 * 10];
+        let frames_read = asset.read(&mut buffer, 10).unwrap();
+        assert_eq!(frames_read, 10);
+        assert_eq!(asset.tell().unwrap(), 10);
+
+        asset.seek(0).unwrap();
+        assert_eq!(asset.tell().unwrap(), 0);
+
+        asset.seek(50).unwrap();
+        assert_eq!(asset.tell().unwrap(), 50);
+    }
+
+    #[test]
+    fn audio_asset_try_clone() {
+        let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 100);
+        let asset = AudioAsset::default();
+        asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
+
+        asset.seek(25).unwrap();
+
+        let cloned = asset.try_clone().unwrap();
+        assert_eq!(cloned.get_sample_rate().unwrap(), 44100);
+        assert_eq!(cloned.get_channel_count().unwrap(), 2);
+        assert_eq!(cloned.tell().unwrap(), 25);
+
+        assert_eq!(asset.tell().unwrap(), 25);
+    }
+
+    #[test]
+    fn audio_asset_unload() {
+        let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 50);
+        let asset = AudioAsset::default();
+        asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
+
+        assert!(asset.get_sample_rate().is_ok());
+
+        asset.unload();
+        assert!(matches!(
+            asset.get_sample_rate(),
+            Err(AudioOperationError::Unloaded)
+        ));
+    }
+
+    #[test]
+    fn audio_asset_unsupported_format() {
+        let asset = AudioAsset::default();
+        let invalid_data = vec![0u8; 100];
+        let result = asset.load_memory(invalid_data, SampleFormat::Float32);
+        assert!(matches!(
+            result,
+            Err(AudioOperationError::UnsupportedFormat)
+        ));
+    }
+
+    #[test]
+    fn audio_asset_load_from_file() {
+        let asset = AudioAsset::default();
+        let test_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../CoreTestAssets/test.wav");
+        asset.load_file(test_path, SampleFormat::Float32).unwrap();
+
+        assert_eq!(asset.get_sample_rate().unwrap(), 44100);
+        assert_eq!(asset.get_channel_count().unwrap(), 2);
     }
 }

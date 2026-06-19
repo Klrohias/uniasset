@@ -24,7 +24,7 @@ pub fn lanczos3_dispatch(
         }
     }
 
-    #[cfg(all(target_arch = "aarch64"))]
+    #[cfg(target_arch = "aarch64")]
     {
         if std::arch::is_aarch64_feature_detected!("neon") {
             unsafe {

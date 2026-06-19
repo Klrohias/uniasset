@@ -2,8 +2,8 @@ use std::{
     cmp::min,
     io,
     sync::{
-        Arc,
         atomic::{AtomicU64, Ordering},
+        Arc,
     },
 };
 
@@ -124,12 +124,108 @@ impl AudioDecoder for PcmDecoder {
         let byte_offset = current_pos * self.bytes_per_frame;
         let byte_count = frames_to_read * self.bytes_per_frame;
 
-        buffer[..byte_count]
-            .copy_from_slice(&self.data[byte_offset..byte_offset + byte_count]);
+        buffer[..byte_count].copy_from_slice(&self.data[byte_offset..byte_offset + byte_count]);
 
         self.position
             .store((current_pos + frames_to_read) as u64, Ordering::Relaxed);
 
         Ok(frames_to_read as u32)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pcm_decoder_new() {
+        let data: Vec<u8> = (0..400).map(|i| (i % 256) as u8).collect();
+        let data_arc = Arc::from(data.into_boxed_slice());
+
+        let decoder = PcmDecoder::new(data_arc, SampleFormat::Float32, 44100, 2, 50);
+
+        assert_eq!(decoder.get_sample_rate(), 44100);
+        assert_eq!(decoder.get_channel_count(), 2);
+        assert_eq!(decoder.get_frame_count(), 50);
+        assert_eq!(decoder.get_sample_count(), 100);
+        assert_eq!(decoder.get_sample_format(), SampleFormat::Float32);
+        assert_eq!(decoder.tell(), 0);
+    }
+
+    #[test]
+    fn pcm_decoder_read() {
+        let data: Vec<u8> = (0..80).map(|i| (i % 256) as u8).collect();
+        let data_arc = Arc::from(data.into_boxed_slice());
+
+        let mut decoder = PcmDecoder::new(data_arc, SampleFormat::Int16, 16000, 1, 40);
+
+        let mut buffer = vec![0u8; 20];
+        let frames_read = decoder.read(&mut buffer, 10).unwrap();
+        assert_eq!(frames_read, 10);
+        assert_eq!(decoder.tell(), 10);
+
+        for i in 0..20 {
+            assert_eq!(buffer[i], (i % 256) as u8);
+        }
+    }
+
+    #[test]
+    fn pcm_decoder_seek() {
+        let data: Vec<u8> = (0..80).map(|i| (i % 256) as u8).collect();
+        let data_arc = Arc::from(data.into_boxed_slice());
+
+        let mut decoder = PcmDecoder::new(data_arc, SampleFormat::Int16, 16000, 1, 40);
+
+        decoder.seek(20).unwrap();
+        assert_eq!(decoder.tell(), 20);
+
+        decoder.seek(0).unwrap();
+        assert_eq!(decoder.tell(), 0);
+    }
+
+    #[test]
+    fn pcm_decoder_seek_invalid() {
+        let data: Vec<u8> = vec![0u8; 80];
+        let data_arc = Arc::from(data.into_boxed_slice());
+
+        let mut decoder = PcmDecoder::new(data_arc, SampleFormat::Int16, 16000, 1, 40);
+
+        assert!(decoder.seek(-1).is_err());
+        assert!(decoder.seek(50).is_err());
+    }
+
+    #[test]
+    fn pcm_decoder_read_beyond_end() {
+        let data: Vec<u8> = vec![0u8; 20];
+        let data_arc = Arc::from(data.into_boxed_slice());
+
+        let mut decoder = PcmDecoder::new(data_arc, SampleFormat::Int16, 16000, 1, 10);
+
+        decoder.seek(8).unwrap();
+
+        let mut buffer = vec![0u8; 10];
+        let frames_read = decoder.read(&mut buffer, 5).unwrap();
+        assert_eq!(frames_read, 2);
+    }
+
+    #[test]
+    fn pcm_decoder_clone() {
+        let data: Vec<u8> = (0..80).map(|i| (i % 256) as u8).collect();
+        let data_arc = Arc::from(data.into_boxed_slice());
+
+        let mut decoder = PcmDecoder::new(data_arc, SampleFormat::Int16, 16000, 1, 40);
+
+        decoder.seek(15).unwrap();
+
+        let cloned = decoder.clone();
+        assert_eq!(cloned.tell(), 15);
+        assert_eq!(cloned.get_sample_rate(), 16000);
+        assert_eq!(cloned.get_channel_count(), 1);
+
+        let mut buffer1 = vec![0u8; 4];
+        let mut buffer2 = vec![0u8; 4];
+        decoder.read(&mut buffer1, 2).unwrap();
+        cloned.clone().read(&mut buffer2, 2).unwrap();
+        assert_eq!(buffer1, buffer2);
     }
 }

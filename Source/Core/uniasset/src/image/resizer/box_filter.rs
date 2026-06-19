@@ -24,7 +24,7 @@ pub fn box_resize_dispatch(
         }
     }
 
-    #[cfg(all(target_arch = "aarch64"))]
+    #[cfg(target_arch = "aarch64")]
     {
         if std::arch::is_aarch64_feature_detected!("neon") {
             unsafe {
@@ -125,7 +125,7 @@ fn box_resize_const<const PS: usize>(
                 .max(sx_start + 1);
             let col_count = sx_end - sx_start;
 
-            let pixel_count = (row_count * col_count) as u32;
+            let pixel_count = row_count * col_count;
             let mut sums = [0u32; PS];
 
             for sy in sy_start..sy_end {

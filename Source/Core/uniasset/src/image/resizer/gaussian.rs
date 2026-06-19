@@ -24,7 +24,7 @@ pub fn gaussian_dispatch(
         }
     }
 
-    #[cfg(all(target_arch = "aarch64"))]
+    #[cfg(target_arch = "aarch64")]
     {
         if std::arch::is_aarch64_feature_detected!("neon") {
             unsafe {
@@ -136,7 +136,7 @@ fn precompute_gaussian_weights(src_dim: u32, dst_dim: u32, sigma: f32) -> Vec<We
 // ----------------------------- aarch64 NEON -----------------------------
 #[cfg(target_arch = "aarch64")]
 mod arm_neon {
-    use super::{WeightInfo, precompute_gaussian_weights};
+    use super::{precompute_gaussian_weights, WeightInfo};
     use std::arch::aarch64::*;
 
     #[target_feature(enable = "neon")]

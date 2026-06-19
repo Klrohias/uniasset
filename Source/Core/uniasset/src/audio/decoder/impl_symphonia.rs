@@ -8,7 +8,7 @@ use symphonia::core::{
     audio::GenericAudioBufferRef,
     codecs::audio::{AudioDecoderOptions, CODEC_ID_NULL_AUDIO},
     errors::Error as SymphoniaError,
-    formats::{FormatOptions, FormatReader, SeekMode, SeekTo, probe::Hint},
+    formats::{probe::Hint, FormatOptions, FormatReader, SeekMode, SeekTo},
     io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions},
     meta::MetadataOptions,
     units::Timestamp,
@@ -230,9 +230,7 @@ impl AudioDecoder for SymphoniaDecoder {
                     track_id: self.symphonia_state.track_id,
                 },
             )
-            .map_err(|_| {
-                DecoderError::IOError(io::Error::new(io::ErrorKind::Other, "Failed to seek"))
-            })?;
+            .map_err(|_| DecoderError::IOError(io::Error::other("Failed to seek")))?;
 
         // 2. Calculate how many frames to skip to reach the exact target frame.
         //    With SeekMode::Accurate, actual_ts <= required_ts, so delta >= 0.
@@ -304,7 +302,7 @@ impl AudioDecoder for SymphoniaDecoder {
         if let Some(frame_offset) = self.frame_buffer.frame_offset {
             let available_frames = self.frame_buffer.frame_count - frame_offset;
 
-            let take_frames = min(required_frames as usize, available_frames);
+            let take_frames = min(required_frames, available_frames);
             let take_frame_bytes = take_frames * frame_byte_size;
 
             let buffer_begin = frame_offset * frame_byte_size;

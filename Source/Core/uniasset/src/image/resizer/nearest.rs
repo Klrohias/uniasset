@@ -25,7 +25,7 @@ pub fn nearest_resize_dispatch(
         }
     }
 
-    #[cfg(all(target_arch = "aarch64"))]
+    #[cfg(target_arch = "aarch64")]
     {
         if std::arch::is_aarch64_feature_detected!("neon") {
             unsafe {
@@ -44,7 +44,7 @@ pub fn nearest_resize_dispatch(
         }
     }
 
-    #[cfg(all(target_arch = "x86_64"))]
+    #[cfg(target_arch = "x86_64")]
     {
         if std::arch::is_x86_feature_detected!("sse2") {
             unsafe {
@@ -155,9 +155,9 @@ fn nearest_rows_const<const PS: usize>(
     dest_height: u32,
     x_offsets: &[usize],
 ) {
-    let dw = (row_out / PS) as usize;
+    let dw = row_out / PS;
     for dy in 0..dest_height {
-        let sy = src_y(origin_height, dest_height, dy) as usize;
+        let sy = src_y(origin_height, dest_height, dy);
         let src = &input[sy * row_in..sy * row_in + row_in];
         let dst = &mut output[dy as usize * row_out..dy as usize * row_out + row_out];
         for dx in 0..dw {
@@ -183,7 +183,7 @@ fn nearest_rows_generic(
 ) {
     let dw = row_out / ps;
     for dy in 0..dest_height {
-        let sy = src_y(origin_height, dest_height, dy) as usize;
+        let sy = src_y(origin_height, dest_height, dy);
         let src_row_start = sy * row_in;
         let dst_row_start = dy as usize * row_out;
         for dx in 0..dw {
@@ -322,7 +322,7 @@ mod arm_neon {
         let x_offsets = build_x_offsets(origin_width, dest_width, ps);
 
         for dy in 0..dest_height {
-            let sy = src_y(origin_height, dest_height, dy) as usize;
+            let sy = src_y(origin_height, dest_height, dy);
             let src_row = unsafe { input.as_ptr().add(sy * row_in) };
             let dst_row = unsafe { output.as_mut_ptr().add(dy as usize * row_out) };
 

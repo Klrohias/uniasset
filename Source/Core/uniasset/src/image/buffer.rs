@@ -25,6 +25,10 @@ impl ImageBuffer {
             ImageBuffer::Alloc(items) => items.len(),
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl Clone for ImageBuffer {
@@ -59,5 +63,48 @@ impl Drop for ImageBuffer {
             },
             ImageBuffer::Alloc(_) => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn image_buffer_new() {
+        let buffer = ImageBuffer::new(100);
+        assert_eq!(buffer.len(), 100);
+        assert_eq!(buffer.as_ref().len(), 100);
+    }
+
+    #[test]
+    fn image_buffer_alloc_as_ref() {
+        let buffer = ImageBuffer::new(50);
+        let slice = buffer.as_ref();
+        assert_eq!(slice.len(), 50);
+        assert!(slice.iter().all(|&x| x == 0));
+    }
+
+    #[test]
+    fn image_buffer_alloc_as_mut() {
+        let mut buffer = ImageBuffer::new(10);
+        let slice = buffer.as_mut();
+        slice[0] = 42;
+        slice[5] = 99;
+
+        assert_eq!(buffer.as_ref()[0], 42);
+        assert_eq!(buffer.as_ref()[5], 99);
+    }
+
+    #[test]
+    fn image_buffer_clone() {
+        let mut buffer = ImageBuffer::new(20);
+        buffer.as_mut()[0] = 123;
+        buffer.as_mut()[19] = 234;
+
+        let cloned = buffer.clone();
+        assert_eq!(cloned.len(), 20);
+        assert_eq!(cloned.as_ref()[0], 123);
+        assert_eq!(cloned.as_ref()[19], 234);
     }
 }

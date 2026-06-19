@@ -1,0 +1,49 @@
+name: Rust Tests
+
+on:
+  push:
+    paths:
+      - 'Source/Core/**/*.rs'
+      - 'Source/Core/**/Cargo.toml'
+      - 'Source/Core/**/Cargo.lock'
+      - 'Source/CoreTestAssets/**'
+      - '.github/workflows/rust-tests.yml'
+  pull_request:
+    paths:
+      - 'Source/Core/**/*.rs'
+      - 'Source/Core/**/Cargo.toml'
+      - 'Source/Core/**/Cargo.lock'
+      - 'Source/CoreTestAssets/**'
+      - '.github/workflows/rust-tests.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUST_BACKTRACE: short
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  test:
+    name: Run Rust Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: Source/Core/uniasset
+          cache-on-failure: true
+          shared-key: rust-tests
+
+      - name: Run tests
+        working-directory: Source/Core/uniasset
+        run: cargo test --lib --verbose

@@ -11,15 +11,16 @@ use std::{
 };
 
 use libwebp_sys::{
-    VP8StatusCode, WEBP_CSP_MODE, WebPBitstreamFeatures, WebPDecode, WebPDecoderConfig,
-    WebPFreeDecBuffer, WebPGetInfo, WebPIAppend, WebPIDecode, WebPIDelete,
+    VP8StatusCode, WebPBitstreamFeatures, WebPDecode, WebPDecoderConfig, WebPFreeDecBuffer,
+    WebPGetInfo, WebPIAppend, WebPIDecode, WebPIDelete, WEBP_CSP_MODE,
 };
 use stb_image::stb_image;
-use zune_jpeg::{JpegDecoder, zune_core::bytestream::ZCursor};
+use zune_jpeg::{zune_core::bytestream::ZCursor, JpegDecoder};
 
 use crate::image::{
-    ImageBuffer, is_jpeg, is_webp,
-    resizer::{ResizeFilter, resize},
+    is_jpeg, is_webp,
+    resizer::{resize, ResizeFilter},
+    ImageBuffer,
 };
 
 fn flip_vertical_inplace(data: &mut [u8], width: usize, height: usize, channels: usize) {
@@ -506,7 +507,7 @@ impl ImageAsset {
             )
         };
 
-        if data == null_mut() {
+        if data.is_null() {
             return Err(ImageOperationError::UnsupportedImage);
         }
 
@@ -688,7 +689,7 @@ impl ImageAsset {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PixelType {
     RGBA = 1,
     ARGB = 2,
@@ -796,5 +797,287 @@ unsafe extern "C" fn stb_eof_callback<R: Read + Seek>(user: *mut c_void) -> i32 
             0
         }
         Err(_) => 1,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::image::resizer::ResizeFilter;
+    use crate::image::CropOptions;
+    use std::fs;
+
+    #[test]
+    fn pixel_type_size() {
+        assert_eq!(PixelType::RGBA.get_size(), 4);
+        assert_eq!(PixelType::ARGB.get_size(), 4);
+        assert_eq!(PixelType::RGB.get_size(), 3);
+        assert_eq!(PixelType::Grey.get_size(), 1);
+    }
+
+    #[test]
+    fn pixel_type_into_i32() {
+        let rgba: i32 = PixelType::RGBA.into();
+        assert_eq!(rgba, 1);
+        let rgb: i32 = PixelType::RGB.into();
+        assert_eq!(rgb, 3);
+    }
+
+    #[test]
+    fn image_asset_load_png() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        assert_eq!(asset.get_width().unwrap(), 4);
+        assert_eq!(asset.get_height().unwrap(), 4);
+        assert_eq!(asset.get_pixel_type().unwrap(), PixelType::RGBA);
+    }
+
+    #[test]
+    fn image_asset_load_jpeg() {
+        let test_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../CoreTestAssets/test.jpg");
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        assert_eq!(asset.get_pixel_type().unwrap(), PixelType::RGB);
+    }
+
+    #[test]
+    fn image_asset_load_webp() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.webp"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        assert_eq!(asset.get_width().unwrap(), 4);
+        assert_eq!(asset.get_height().unwrap(), 4);
+        assert_eq!(asset.get_pixel_type().unwrap(), PixelType::RGBA);
+    }
+
+    #[test]
+    fn image_asset_load_with_resize() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_8x8.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 4, 4).unwrap();
+
+        assert_eq!(asset.get_width().unwrap(), 4);
+        assert_eq!(asset.get_height().unwrap(), 4);
+    }
+
+    #[test]
+    fn image_asset_unload() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+        assert!(asset.get_width().is_ok());
+
+        asset.unload();
+        assert!(matches!(
+            asset.get_width(),
+            Err(ImageOperationError::Unavailable)
+        ));
+    }
+
+    #[test]
+    fn image_asset_crop() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_8x8.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        asset.crop(2, 2, 4, 4).unwrap();
+
+        assert_eq!(asset.get_width().unwrap(), 4);
+        assert_eq!(asset.get_height().unwrap(), 4);
+    }
+
+    #[test]
+    fn image_asset_crop_overflow() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        let result = asset.crop(2, 2, 10, 10);
+        assert!(matches!(result, Err(ImageOperationError::Overflow)));
+    }
+
+    #[test]
+    fn image_asset_resize() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        asset.resize(8, 8, ResizeFilter::Nearest).unwrap();
+
+        assert_eq!(asset.get_width().unwrap(), 8);
+        assert_eq!(asset.get_height().unwrap(), 8);
+    }
+
+    #[test]
+    fn image_asset_resize_filters() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_8x8.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        for filter in [
+            ResizeFilter::Nearest,
+            ResizeFilter::Box,
+            ResizeFilter::Lanczos3,
+            ResizeFilter::Gaussian,
+        ] {
+            let mut asset = ImageAsset::default();
+            asset.load_memory(&data, 0, 0).unwrap();
+            asset.resize(4, 4, filter).unwrap();
+            assert_eq!(asset.get_width().unwrap(), 4);
+            assert_eq!(asset.get_height().unwrap(), 4);
+        }
+    }
+
+    #[test]
+    fn image_asset_clone() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        let cloned = asset.clone();
+        assert_eq!(cloned.get_width().unwrap(), asset.get_width().unwrap());
+        assert_eq!(cloned.get_height().unwrap(), asset.get_height().unwrap());
+        assert_eq!(
+            cloned.get_pixel_type().unwrap(),
+            asset.get_pixel_type().unwrap()
+        );
+    }
+
+    #[test]
+    fn image_asset_copy_pixel() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        let pixel_count = 4 * 4 * 4;
+        let mut buffer = vec![0u8; pixel_count];
+        asset.copy_pixel(&mut buffer).unwrap();
+
+        assert!(buffer.iter().any(|&x| x != 0));
+    }
+
+    #[test]
+    fn image_asset_crop_multiple() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_8x8.png"
+        );
+        let data = fs::read(test_path).unwrap();
+
+        let mut asset = ImageAsset::default();
+        asset.load_memory(&data, 0, 0).unwrap();
+
+        let crops = [
+            CropOptions {
+                x: 0,
+                y: 0,
+                width: 4,
+                height: 4,
+            },
+            CropOptions {
+                x: 4,
+                y: 0,
+                width: 4,
+                height: 4,
+            },
+            CropOptions {
+                x: 0,
+                y: 4,
+                width: 4,
+                height: 4,
+            },
+        ];
+
+        let results = asset.crop_multiple(&crops).unwrap();
+        assert_eq!(results.len(), 3);
+
+        for result in results {
+            assert_eq!(result.get_width().unwrap(), 4);
+            assert_eq!(result.get_height().unwrap(), 4);
+        }
+    }
+
+    #[test]
+    fn image_asset_unavailable_error() {
+        let asset = ImageAsset::default();
+        assert!(matches!(
+            asset.get_width(),
+            Err(ImageOperationError::Unavailable)
+        ));
+        assert!(matches!(
+            asset.get_height(),
+            Err(ImageOperationError::Unavailable)
+        ));
+        assert!(matches!(
+            asset.get_pixel_type(),
+            Err(ImageOperationError::Unavailable)
+        ));
+    }
+
+    #[test]
+    fn image_asset_load_from_file() {
+        let test_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../CoreTestAssets/test_rgba.png"
+        );
+
+        let mut asset = ImageAsset::default();
+        asset.load_file(test_path, 0, 0).unwrap();
+
+        assert_eq!(asset.get_width().unwrap(), 4);
+        assert_eq!(asset.get_height().unwrap(), 4);
     }
 }
