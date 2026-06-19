@@ -28,28 +28,28 @@ jobs:
       if: '!cancelled()'
       run: |
         pushd Source/Core
-        cargo ndk -t armeabi-v7a -o target/android-build build --manifest-path Cargo.toml --release
+        cargo ndk -t armeabi-v7a -o target/android-build build -p uniasset-bridge --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android arm64-v8a)
       if: '!cancelled()'
       run: |
         pushd Source/Core
-        cargo ndk -t arm64-v8a -o target/android-build build --manifest-path Cargo.toml --release
+        cargo ndk -t arm64-v8a -o target/android-build build -p uniasset-bridge --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android x86)
       if: '!cancelled()'
       run: |
         pushd Source/Core
-        cargo ndk -t x86 -o target/android-build build --manifest-path Cargo.toml --release
+        cargo ndk -t x86 -o target/android-build build -p uniasset-bridge --manifest-path Cargo.toml --release
         popd
 
     - name: Build (Android x86_64)
       if: '!cancelled()'
       run: |
         pushd Source/Core
-        cargo ndk -t x86_64 -o target/android-build build --manifest-path Cargo.toml --release
+        cargo ndk -t x86_64 -o target/android-build build -p uniasset-bridge --manifest-path Cargo.toml --release
         popd
 
     - name: List Android build outputs

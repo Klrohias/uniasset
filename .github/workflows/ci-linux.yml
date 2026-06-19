@@ -20,7 +20,7 @@ jobs:
 
     - name: Build (x86_64-unknown-linux-gnu)
       run: |
-        cargo build --manifest-path Source/Core/Cargo.toml --release --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
+        cargo build -p uniasset-bridge --manifest-path Source/Core/Cargo.toml --release --target x86_64-unknown-linux-gnu -Z build-std=std,panic_abort
 
     - name: Upload Artifact (x64-linux)
       uses: actions/upload-artifact@v7

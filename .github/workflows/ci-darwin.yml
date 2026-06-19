@@ -21,12 +21,12 @@ jobs:
     - name: Build macOS (x86_64-apple-darwin)
       if: '!cancelled()'
       run: |
-        cargo build --manifest-path Source/Core/Cargo.toml --release --target x86_64-apple-darwin -Z build-std=std,panic_abort
+        cargo build -p uniasset-bridge --manifest-path Source/Core/Cargo.toml --release --target x86_64-apple-darwin -Z build-std=std,panic_abort
 
     - name: Build macOS (aarch64-apple-darwin)
       if: '!cancelled()'
       run: |
-        cargo build --manifest-path Source/Core/Cargo.toml --release --target aarch64-apple-darwin -Z build-std=std,panic_abort
+        cargo build -p uniasset-bridge --manifest-path Source/Core/Cargo.toml --release --target aarch64-apple-darwin -Z build-std=std,panic_abort
 
     - name: Build iOS (aarch64-apple-ios)
       if: '!cancelled()'
@@ -34,7 +34,7 @@ jobs:
         # iOS does not support dylib outputs; build staticlib only.
         # Also set deployment target for C deps compiled via `cc` crate.
         export IPHONEOS_DEPLOYMENT_TARGET=10.0
-        cargo rustc --manifest-path Source/Core/Cargo.toml --release --target aarch64-apple-ios --lib -Z build-std=std,panic_abort -- --crate-type staticlib
+        cargo rustc -p uniasset-bridge --manifest-path Source/Core/Cargo.toml --release --target aarch64-apple-ios -Z build-std=std,panic_abort -- --crate-type staticlib
 
 
     - name: Upload Artifact (x64-osx)
