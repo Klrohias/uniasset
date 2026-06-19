@@ -5,24 +5,22 @@
 
 # 使用
 ## 安装
-1. 进入 [发行（Releases）](https://github.com/Klrohias/uniasset/releases) 页面，找到最新的发行版，在发行版提供的文件中找到 `uniasset-unity-scripts.zip` 文件，下载并将其解压到 Unity 工程中。
-2. 根据项目的需求，下载对应的本机库（ `.dll` 为 Windows 的本机库，`.so` 为 Linux / Android 的本机库， `.a` 为 iOS 的本机库， `.dylib` 为 macOS 的本机库）放置到工程的 `Assets/Plugins` 路径内，在 Inspector 中配置好本机库的平台。
+1. 进入 [Releases](https://github.com/Klrohias/uniasset/releases) 页面，下载最新版本中的 `uniasset-unity-scripts.zip`。
+2. 将压缩包解压到 Unity 工程中。
+3. 在 Unity Editor 中点击 `Tools > Uniasset > Download Native Libraries`。
+4. 下载完成后，点击 `Tools > Uniasset > Configure Native Libraries`。
 
 ## 基本使用
 ```csharp
-using System.IO;
 using System.Threading.Tasks;
 using Uniasset.Image;
 using Uniasset.Audio;
 
-async void LoadAsync()
+async Task LoadAssetsAsync(RawImage image, AudioSource audioSource)
 {
     // 载入图像
-    var pathToResource = "/path/to/your/image.png";
-    var fileContent = await File.ReadAllBytesAsync(pathToResource);
-
     using var imageAsset = new ImageAsset();
-    await imageAsset.LoadAsync(fileContent);
+    await imageAsset.LoadAsync("/path/to/your/image.png");
 
     // 裁切
     await imageAsset.CropAsync(100, 100, 100, 100);
@@ -31,24 +29,19 @@ async void LoadAsync()
     await imageAsset.ResizeAsync(50, 50);
 
     // 转为 Texture2D 并显示
-    // 注意，尽管这里是 Async，但受限于 Unity，仍有部分代码在主线程执行，所以请务必在调用时确定在主线程调用
     image.texture = await imageAsset.ToTexture2DAsync();
 
     // 载入音频
-    pathToResource = "/path/to/your/audio.ogg";
-    fileContent = await File.ReadAllBytesAsync(pathToResource);
-
     using var audioAsset = new AudioAsset();
-    await audioAsset.LoadAsync(fileContent);
+    audioAsset.Load("/path/to/your/audio.ogg");
 
     // 转为 AudioClip 播放
-    using var decoder = audioAsset.GetAudioDecoder();
-    audioSource.clip = decoder.ToAudioClip();
-    audioSource.play();
+    audioSource.clip = audioAsset.ToAudioClip("BGM", stream: true);
+    audioSource.Play();
 
     await Task.Delay(5000);
 
-    audioSource.pause();
+    audioSource.Pause();
 }
 
 ```

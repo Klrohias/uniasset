@@ -5,24 +5,22 @@
 
 # Usage
 ## Installation
-1. Navigate to the [Releases](https://github.com/Klrohias/uniasset/releases) page, locate the latest release, and download the `uniasset-unity-scripts.zip` file from the assets provided in the release.
-2. Depending on your project's requirements, download the corresponding native libraries (`.dll` for Windows, `.so` for Linux / Android, `.a` for iOS, `.dylib` for macOS) and place them in the `Assets/Plugins` directory of your Unity project. Configure the platform of the native libraries in the Inspector.
+1. Navigate to the [Releases](https://github.com/Klrohias/uniasset/releases) page and download `uniasset-unity-scripts.zip` from the latest release.
+2. Extract it into your Unity project.
+3. In Unity Editor, click `Tools > Uniasset > Download Native Libraries`.
+4. After the download finishes, click `Tools > Uniasset > Configure Native Libraries`.
 
 ## Basic Usage
 ```csharp
-using System.IO;
 using System.Threading.Tasks;
 using Uniasset.Image;
 using Uniasset.Audio;
 
-async void LoadAsync()
+async Task LoadAssetsAsync(RawImage image, AudioSource audioSource)
 {
     // Load image
-    var pathToResource = "/path/to/your/image.png";
-    var fileContent = await File.ReadAllBytesAsync(pathToResource);
-
     using var imageAsset = new ImageAsset();
-    await imageAsset.LoadAsync(fileContent);
+    await imageAsset.LoadAsync("/path/to/your/image.png");
 
     // Crop
     await imageAsset.CropAsync(100, 100, 100, 100);
@@ -31,19 +29,14 @@ async void LoadAsync()
     await imageAsset.ResizeAsync(50, 50);
 
     // Convert to Texture2D and display
-    // Note that although this is Async, due to Unity restrictions, some code still executes on the main thread, so make sure to call this on the main thread
     image.texture = await imageAsset.ToTexture2DAsync();
 
     // Load audio
-    pathToResource = "/path/to/your/audio.ogg";
-    fileContent = await File.ReadAllBytesAsync(pathToResource);
-
     using var audioAsset = new AudioAsset();
-    await audioAsset.LoadAsync(fileContent);
+    audioAsset.Load("/path/to/your/audio.ogg");
 
     // Convert to AudioClip and play
-    using var decoder = audioAsset.GetAudioDecoder();
-    audioSource.clip = decoder.ToAudioClip();
+    audioSource.clip = audioAsset.ToAudioClip("BGM", stream: true);
     audioSource.Play();
 
     await Task.Delay(5000);
