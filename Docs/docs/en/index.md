@@ -123,7 +123,7 @@ Supports JPEG, WebP, PNG, BMP, TGA, PSD, with built-in cropping and resizing.
 
 ### Multi-format audio
 
-Covers MP3, FLAC, WAV, PCM, Vorbis, OGG, and AAC decoding.
+Covers MP3, FLAC, WAV, PCM, Vorbis and OGG decoding.
 
 </div>
 
@@ -221,7 +221,6 @@ Download `uniasset-unity-scripts.zip` from [Releases](https://github.com/Klrohia
 - FLAC
 - WAV
 - Vorbis (OGG)
-- AAC
 
 </div>
 

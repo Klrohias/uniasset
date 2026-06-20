@@ -14,7 +14,6 @@ Uniasset currently supports:
 | PCM | `.pcm` | Raw PCM data |
 | Vorbis | — | Vorbis-encoded audio |
 | OGG | `.ogg` | Common Vorbis container |
-| AAC | `.aac`, `.m4a` | Common lossy format |
 
 ## Basic loading
 

@@ -14,7 +14,6 @@ Uniasset 当前支持以下音频格式：
 | PCM | `.pcm` | 原始 PCM 数据 |
 | Vorbis | — | Vorbis 编码音频 |
 | OGG | `.ogg` | 常见 Vorbis 容器 |
-| AAC | `.aac`, `.m4a` | 常见有损压缩格式 |
 
 ## 基本加载
 
