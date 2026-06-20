@@ -11,7 +11,17 @@ namespace Uniasset.Audio
         private int _disposed;
         private readonly object _streamLock = new();
         private GCHandle? _streamHandle;
-        public UnsafeAudioAsset UnsafeHandle { get; } = UnsafeAudioAsset.Create();
+        public UnsafeAudioAsset UnsafeHandle { get; }
+
+        public AudioAsset()
+        {
+            UnsafeHandle = UnsafeAudioAsset.Create();
+        }
+
+        internal AudioAsset(UnsafeAudioAsset handle)
+        {
+            UnsafeHandle = handle;
+        }
 
         public int SampleRate => UnsafeHandle.GetSampleRate();
         public long SampleCount => UnsafeHandle.GetSampleCount();
@@ -76,6 +86,17 @@ namespace Uniasset.Audio
         {
             lock (_streamLock) ReleaseStreamHandle();
             UnsafeHandle.Unload();
+        }
+
+        public void Prepare()
+        {
+            UnsafeHandle.Prepare();
+        }
+
+        public AudioAsset TryClone()
+        {
+            var cloned = UnsafeHandle.TryClone();
+            return new AudioAsset(cloned);
         }
 
         public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream = true)

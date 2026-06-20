@@ -200,6 +200,13 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_SeekUnsafe(handle: NativeHandle, po
 }
 
 #[unsafe(no_mangle)]
+pub unsafe extern "C" fn Uniasset_AudioAsset_Prepare(handle: NativeHandle) {
+    clear_error();
+    let wrapper = ManuallyDrop::new(AudioAssetWrapper::from_handle(handle));
+    _ = failible_to_native(|| wrapper.prepare(), || ());
+}
+
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn Uniasset_AudioAsset_TryClone(handle: NativeHandle) -> NativeHandle {
     clear_error();
     let wrapper = ManuallyDrop::new(AudioAssetWrapper::from_handle(handle));

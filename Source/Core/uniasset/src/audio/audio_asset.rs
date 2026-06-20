@@ -193,29 +193,18 @@ impl AudioAsset {
         }
     }
 
-    pub fn try_clone(&self) -> Result<Self, AudioOperationError> {
-        // Take write lock and block the safe version of read and seek.
-        let safe_state = self.0.write();
-        let safe_clone = safe_state.audio_info.clone();
-
-        // Take ownership of the decoder, process, and write back
+    pub fn prepare(&self) -> Result<(), AudioOperationError> {
+        // Take write lock to block concurrent read/seek
+        let _safe_state = self.0.write();
         let unsafe_ref = self.unsafe_state();
+
         let old_decoder = std::mem::replace(&mut unsafe_ref.audio_decoder, DecoderOption::None);
 
-        let clone_decoder = match old_decoder {
-            DecoderOption::None => DecoderOption::None,
-
-            DecoderOption::Pcm(pcm) => {
-                let cloned = pcm.clone();
-                unsafe_ref.audio_decoder = DecoderOption::Pcm(pcm);
-                DecoderOption::Pcm(cloned)
-            }
-
+        match old_decoder {
             DecoderOption::Symphonia(mut symph) => {
-                // Record current position
+                // Save current position
                 let saved_pos = symph.tell();
 
-                // Extract metadata before consuming the decoder
                 let sample_format = symph.get_sample_format();
                 let sample_rate = symph.get_sample_rate();
                 let channel_count = symph.get_channel_count();
@@ -223,7 +212,6 @@ impl AudioAsset {
                 let bytes_per_frame = sample_format.byte_size() * channel_count;
                 let total_bytes = frame_count as usize * bytes_per_frame;
 
-                // Seek to start and read all frames
                 symph.seek(0)?;
 
                 let mut pcm_data = vec![0u8; total_bytes];
@@ -244,19 +232,8 @@ impl AudioAsset {
                     offset += frames_read as usize * bytes_per_frame;
                 }
 
-                // Wrap in Arc<[u8]>
                 let shared_data = Arc::from(pcm_data.into_boxed_slice());
-
-                // Create two PcmDecoders sharing the same backing data
-                let mut pcm_self = PcmDecoder::new(
-                    Arc::clone(&shared_data),
-                    sample_format,
-                    sample_rate,
-                    channel_count,
-                    frame_count,
-                );
-
-                let mut pcm_clone = PcmDecoder::new(
+                let mut pcm = PcmDecoder::new(
                     shared_data,
                     sample_format,
                     sample_rate,
@@ -264,14 +241,46 @@ impl AudioAsset {
                     frame_count,
                 );
 
-                // Seek both to the saved position
-                pcm_self.seek(saved_pos)?;
-                pcm_clone.seek(saved_pos)?;
+                // Restore position
+                pcm.seek(saved_pos)?;
 
-                // Replace self's decoder with Pcm variant
-                unsafe_ref.audio_decoder = DecoderOption::Pcm(pcm_self);
+                unsafe_ref.audio_decoder = DecoderOption::Pcm(pcm);
+                Ok(())
+            }
+            DecoderOption::Pcm(pcm) => {
+                // Already prepared, put it back
+                unsafe_ref.audio_decoder = DecoderOption::Pcm(pcm);
+                Ok(())
+            }
+            DecoderOption::None => {
+                unsafe_ref.audio_decoder = DecoderOption::None;
+                Err(AudioOperationError::Unloaded)
+            }
+        }
+    }
 
-                DecoderOption::Pcm(pcm_clone)
+    pub fn try_clone(&self) -> Result<Self, AudioOperationError> {
+        // Take write lock and block the safe version of read and seek.
+        let safe_state = self.0.write();
+        let safe_clone = safe_state.audio_info.clone();
+
+        // Take ownership of the decoder, process, and write back
+        let unsafe_ref = self.unsafe_state();
+        let old_decoder = std::mem::replace(&mut unsafe_ref.audio_decoder, DecoderOption::None);
+
+        let clone_decoder = match old_decoder {
+            DecoderOption::None => DecoderOption::None,
+
+            DecoderOption::Pcm(pcm) => {
+                let cloned = pcm.clone();
+                unsafe_ref.audio_decoder = DecoderOption::Pcm(pcm);
+                DecoderOption::Pcm(cloned)
+            }
+
+            DecoderOption::Symphonia(symph) => {
+                // Put the decoder back — must prepare() first
+                unsafe_ref.audio_decoder = DecoderOption::Symphonia(symph);
+                return Err(AudioOperationError::NotPrepared);
             }
         };
 
@@ -292,6 +301,7 @@ pub enum AudioOperationError {
     DecoderError(DecoderError),
     UnsupportedFormat,
     Unloaded,
+    NotPrepared,
 }
 
 impl Error for AudioOperationError {}
@@ -303,6 +313,9 @@ impl Display for AudioOperationError {
             AudioOperationError::UnsupportedFormat => write!(f, "Unsupported audio format"),
             AudioOperationError::DecoderError(error) => write!(f, "Decoder Error: {error}"),
             AudioOperationError::Unloaded => write!(f, "No audio asset loaded"),
+            AudioOperationError::NotPrepared => {
+                write!(f, "Audio asset must be prepared before cloning; call prepare() first")
+            }
         }
     }
 }
@@ -429,12 +442,40 @@ mod tests {
     }
 
     #[test]
+    fn audio_asset_prepare() {
+        let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 100);
+        let asset = AudioAsset::default();
+        asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
+
+        asset.prepare().unwrap();
+
+        // After prepare, all properties should still be accessible
+        assert_eq!(asset.get_sample_rate().unwrap(), 44100);
+        assert_eq!(asset.get_channel_count().unwrap(), 2);
+        assert_eq!(asset.get_frame_count().unwrap(), 100);
+
+        // Should be idempotent
+        asset.prepare().unwrap();
+        assert_eq!(asset.get_sample_rate().unwrap(), 44100);
+    }
+
+    #[test]
+    fn audio_asset_prepare_unloaded() {
+        let asset = AudioAsset::default();
+        assert!(matches!(
+            asset.prepare(),
+            Err(AudioOperationError::Unloaded)
+        ));
+    }
+
+    #[test]
     fn audio_asset_try_clone() {
         let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 100);
         let asset = AudioAsset::default();
         asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
 
         asset.seek(25).unwrap();
+        asset.prepare().unwrap();
 
         let cloned = asset.try_clone().unwrap();
         assert_eq!(cloned.get_sample_rate().unwrap(), 44100);
@@ -442,6 +483,18 @@ mod tests {
         assert_eq!(cloned.tell().unwrap(), 25);
 
         assert_eq!(asset.tell().unwrap(), 25);
+    }
+
+    #[test]
+    fn audio_asset_try_clone_without_prepare() {
+        let wav_data = create_wav_bytes(44100, 2, SampleFormat::Float32, 100);
+        let asset = AudioAsset::default();
+        asset.load_memory(wav_data, SampleFormat::Float32).unwrap();
+
+        assert!(matches!(
+            asset.try_clone(),
+            Err(AudioOperationError::NotPrepared)
+        ));
     }
 
     #[test]

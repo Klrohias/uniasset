@@ -79,6 +79,28 @@ If `stream` is `null`, the method throws `ArgumentNullException`.
 
 ## Reading and seeking
 
+### `Prepare`
+
+```csharp
+public void Prepare()
+```
+
+Fully decodes the audio into PCM data. After this call, the underlying decoder switches from streaming decode to in-memory PCM.
+
+This method is a prerequisite for `TryClone` — a streaming-decoded audio asset must call `Prepare` before it can be cloned. If the asset is already in PCM mode (previously prepared or cloned), this method is a no-op.
+
+| Exception | Condition |
+|------|------|
+| `NativeException` | IO error or unsupported format during decode, or asset not loaded |
+
+```csharp
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
+audio.Prepare();  // fully decode
+
+var clone = audio.TryClone();  // now cloneable
+```
+
 ### `Tell`
 
 ```csharp
@@ -189,6 +211,30 @@ int framesRead = audio.ReadUnsafe<float>(buffer, 1024);
 The return value is the number of frames actually read.
 
 ## Conversion
+
+### `TryClone`
+
+```csharp
+public AudioAsset TryClone()
+```
+
+Clones the current audio asset, returning a new `AudioAsset` instance. Both instances share the same PCM data (reference-counted) and maintain independent read positions.
+
+**Precondition**: `Prepare()` must be called first. If the asset is still in streaming-decode mode, an exception is thrown.
+
+| Exception | Condition |
+|------|------|
+| `NativeException` | `Prepare()` not called, or asset not loaded |
+
+```csharp
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
+audio.Prepare();
+
+var clone = audio.TryClone();
+// audio and clone share PCM data, each with independent seek/read
+clone.Seek(0);
+```
 
 ### `ToAudioClip`
 

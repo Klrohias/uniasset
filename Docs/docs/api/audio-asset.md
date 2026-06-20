@@ -79,6 +79,28 @@ public void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFor
 
 ## 读取与定位
 
+### Prepare
+
+```csharp
+public void Prepare()
+```
+
+将音频全量解码为 PCM 数据。调用后，底层解码器从流式解码切换为内存中的 PCM 数据。
+
+此方法是 `TryClone` 的前置条件——基于流式解码器的音频资源必须先调用 `Prepare` 才能克隆。若已经是 PCM 模式（已 prepare 或 clone 过），则不执行任何操作。
+
+| 异常 | 条件 |
+|------|------|
+| `NativeException` | 解码过程中发生 IO 错误或格式不支持，或资源未加载 |
+
+```csharp
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
+audio.Prepare();  // 全量解码
+
+var clone = audio.TryClone();  // 现在可以克隆了
+```
+
 ### Tell
 
 ```csharp
@@ -191,6 +213,30 @@ int framesRead = audio.ReadUnsafe<float>(buffer, 1024);
 返回值为实际读取的帧数。
 
 ## 转换
+
+### TryClone
+
+```csharp
+public AudioAsset TryClone()
+```
+
+克隆当前音频资源，返回一个新的 `AudioAsset` 实例。两个实例共享同一份 PCM 数据（引用计数），各自维护独立的读取位置。
+
+**前置条件**：必须先调用 `Prepare()`。若当前仍为流式解码模式，将抛出异常。
+
+| 异常 | 条件 |
+|------|------|
+| `NativeException` | 未调用 `Prepare()`，或资源未加载 |
+
+```csharp
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
+audio.Prepare();
+
+var clone = audio.TryClone();
+// audio 和 clone 共享 PCM 数据，各自独立 seek/read
+clone.Seek(0);
+```
 
 ### ToAudioClip
 

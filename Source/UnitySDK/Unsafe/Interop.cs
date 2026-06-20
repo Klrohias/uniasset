@@ -142,6 +142,9 @@ namespace Uniasset.Unsafe
         public static extern void Uniasset_AudioAsset_SeekUnsafe(void* self, [NativeTypeName("int64_t")] long position);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        public static extern void Uniasset_AudioAsset_Prepare(void* self);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_AudioAsset_TryClone(void* self);
     }
 }
