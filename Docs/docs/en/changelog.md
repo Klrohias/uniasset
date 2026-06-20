@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.2.1-rc1
+
+### Added
+
+- Added `try_clone` to `AudioAsset`
+
+### Improvements
+
+- Introduced Cargo workspace structure
+- Unified FFI exports with `uniasset-bridge`
+- Replaced `AtomicPtr` with safe `Option`
+- Lock-free PCM read performance optimization
+
+### Fixes
+
+- Fixed CI workflow issues
+
 ## v0.2.0
 
 **Current version**

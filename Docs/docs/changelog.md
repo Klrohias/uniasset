@@ -1,5 +1,22 @@
 # 更新日志
 
+## v0.2.1-rc1
+
+### 新增
+
+- `AudioAsset` 新增 `try_clone` 方法
+
+### 改进
+
+- 引入 Cargo 工作区结构
+- 使用 `uniasset-bridge` 统一 FFI 导出
+- 使用安全的 `Option` 替代 `AtomicPtr`
+- 无锁 PCM 读取性能优化
+
+### 修复
+
+- 修复 CI 工作流问题
+
 ## v0.2.0
 
 **当前版本**
