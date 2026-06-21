@@ -9,8 +9,11 @@ namespace Uniasset.Audio
 {
     public sealed class AudioAsset : IDisposable
     {
-        private int _disposed;
-        private readonly object _streamLock = new();
+        /// <summary>
+        /// Merged state: -1 = disposed, 0 = idle, &gt;0 = active unsafe callbacks.
+        /// </summary>
+        private int _inUse;
+        private readonly object _lock = new();
         private GCHandle? _streamHandle;
         private CancellationTokenSource _cancellationTokenSource = new();
         public UnsafeAudioAsset UnsafeHandle { get; }
@@ -25,28 +28,31 @@ namespace Uniasset.Audio
             UnsafeHandle = handle;
         }
 
-        public int SampleRate => UnsafeHandle.GetSampleRate();
-        public long SampleCount => UnsafeHandle.GetSampleCount();
-        public int ChannelCount => UnsafeHandle.GetChannelCount();
-        public long FrameCount => UnsafeHandle.GetFrameCount();
+        public int SampleRate { get { ThrowIfDisposed(); return UnsafeHandle.GetSampleRate(); } }
+        public long SampleCount { get { ThrowIfDisposed(); return UnsafeHandle.GetSampleCount(); } }
+        public int ChannelCount { get { ThrowIfDisposed(); return UnsafeHandle.GetChannelCount(); } }
+        public long FrameCount { get { ThrowIfDisposed(); return UnsafeHandle.GetFrameCount(); } }
 
         public void Load(string path, SampleFormat sampleFormat = SampleFormat.Float)
         {
-            lock (_streamLock) ReleaseStreamHandle();
+            ThrowIfDisposed();
             UnsafeHandle.LoadFile(path, sampleFormat);
+            lock (_lock) ReleaseStreamHandle();
         }
 
         public void Load(Span<byte> data, SampleFormat sampleFormat = SampleFormat.Float)
         {
-            lock (_streamLock) ReleaseStreamHandle();
+            ThrowIfDisposed();
             UnsafeHandle.LoadMemory(data.ToArray(), sampleFormat);
+            lock (_lock) ReleaseStreamHandle();
         }
 
         public unsafe void LoadIO(IUniassetStream stream, SampleFormat sampleFormat = SampleFormat.Float)
         {
+            ThrowIfDisposed();
             if (stream == null) throw new ArgumentNullException(nameof(stream));
 
-            lock (_streamLock)
+            lock (_lock)
             {
                 ReleaseStreamHandle();
                 var gcHandle = GCHandle.Alloc(stream);
@@ -68,83 +74,131 @@ namespace Uniasset.Audio
             }
         }
 
+        private void ThrowIfDisposed()
+        {
+            if (Volatile.Read(ref _inUse) == -1)
+                throw new ObjectDisposedException(nameof(AudioAsset));
+        }
+
         public long Tell()
         {
+            ThrowIfDisposed();
             return UnsafeHandle.Tell();
         }
 
         public int Read<T>(Span<T> buffer, int frameCount)
             where T : unmanaged
         {
+            ThrowIfDisposed();
             return UnsafeHandle.Read(buffer, frameCount);
         }
 
         public void Seek(long position)
         {
+            ThrowIfDisposed();
             UnsafeHandle.Seek(position);
         }
 
         public void Unload()
         {
-            lock (_streamLock) ReleaseStreamHandle();
+            ThrowIfDisposed();
             UnsafeHandle.Unload();
+            lock (_lock) ReleaseStreamHandle();
         }
 
         public void Prepare()
         {
+            ThrowIfDisposed();
             UnsafeHandle.Prepare();
         }
 
         public Task PrepareAsync()
         {
+            ThrowIfDisposed();
             return Task.Factory.StartNew(() =>
             {
-                lock (this)
-                {
-                    Prepare();
-                }
+                Prepare();
             }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
         }
 
         public AudioAsset TryClone()
         {
+            ThrowIfDisposed();
             var cloned = UnsafeHandle.TryClone();
             return new AudioAsset(cloned);
         }
 
         public AudioClip ToAudioClip(string name = "created_from_uniasset", bool stream = true)
         {
+            ThrowIfDisposed();
             return AudioClip.Create(name, (int)(SampleCount / ChannelCount),
                 ChannelCount, SampleRate, stream, AudioClipRead, AudioClipSeek);
         }
 
         private void AudioClipSeek(int position)
         {
-            if (Volatile.Read(ref _disposed) != 0) return;
-            lock (this)
+            int oldState, newState;
+            do
             {
-                if (Volatile.Read(ref _disposed) != 0) return;
+                oldState = Volatile.Read(ref _inUse);
+                if (oldState == -1) return;
+                newState = oldState + 1;
+            } while (Interlocked.CompareExchange(ref _inUse, newState, oldState) != oldState);
+
+            try
+            {
                 UnsafeHandle.SeekUnsafe(position);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _inUse);
             }
         }
 
         private void AudioClipRead(float[] data)
         {
-            if (Volatile.Read(ref _disposed) != 0) return;
-            lock (this)
+            int oldState, newState;
+            do
             {
-                if (Volatile.Read(ref _disposed) != 0) return;
+                oldState = Volatile.Read(ref _inUse);
+                if (oldState == -1) return;
+                newState = oldState + 1;
+            } while (Interlocked.CompareExchange(ref _inUse, newState, oldState) != oldState);
+
+            try
+            {
                 UnsafeHandle.ReadUnsafe(new Span<float>(data), data.Length / ChannelCount);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _inUse);
             }
         }
 
         public void Dispose()
         {
-            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0) return;
+            // Claim the disposed state: spin until _inUse == 0, then CAS to -1.
+            var spinWait = new SpinWait();
+            while (true)
+            {
+                var current = Volatile.Read(ref _inUse);
+                if (current == -1) return;
+                if (current == 0)
+                {
+                    if (Interlocked.CompareExchange(ref _inUse, -1, 0) == 0)
+                        break;
+                }
+                spinWait.SpinOnce();
+            }
+
             _cancellationTokenSource.Cancel();
             _cancellationTokenSource.Dispose();
-            lock (_streamLock) ReleaseStreamHandle();
-            UnsafeHandle.Destroy();
+
+            lock (_lock)
+            {
+                UnsafeHandle.Destroy();
+                ReleaseStreamHandle();
+            }
         }
 
         ~AudioAsset()
