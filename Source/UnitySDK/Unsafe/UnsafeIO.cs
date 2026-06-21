@@ -16,37 +16,37 @@ namespace Uniasset.Unsafe
     /// and it may be changed or removed in future versions without notice.
     /// </remarks>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate long NativeReadFn(void* userData, byte* buf, nuint count);
-
-    /// <summary>
-    /// <para><b>WARNING: INTERNAL / ADVANCED API.</b></para>
-    /// <para>This type is public solely for advanced hacking, extension, and performance tuning purposes.</para>
-    /// <para>It does <b>NOT</b> guarantee memory safety or API stability. Misuse can lead to memory corruption,
-    /// undefined behavior, or application crashes.</para>
-    /// </summary>
-    /// <remarks>
-    /// Use this type at your own risk. The maintainers provide no support for issues arising from the use of this API,
-    /// and it may be changed or removed in future versions without notice.
-    /// </remarks>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate long NativeSeekFn(void* userData, long offset, int whence);
-
-    /// <summary>
-    /// <para><b>WARNING: INTERNAL / ADVANCED API.</b></para>
-    /// <para>This type is public solely for advanced hacking, extension, and performance tuning purposes.</para>
-    /// <para>It does <b>NOT</b> guarantee memory safety or API stability. Misuse can lead to memory corruption,
-    /// undefined behavior, or application crashes.</para>
-    /// </summary>
-    /// <remarks>
-    /// Use this type at your own risk. The maintainers provide no support for issues arising from the use of this API,
-    /// and it may be changed or removed in future versions without notice.
-    /// </remarks>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     [StructLayout(LayoutKind.Sequential)]
-    public struct NativeIOProvider
+    public unsafe struct NativeIOProvider
     {
+        /// <summary>
+        /// <para><b>WARNING: INTERNAL / ADVANCED API.</b></para>
+        /// <para>This type is public solely for advanced hacking, extension, and performance tuning purposes.</para>
+        /// <para>It does <b>NOT</b> guarantee memory safety or API stability. Misuse can lead to memory corruption,
+        /// undefined behavior, or application crashes.</para>
+        /// </summary>
+        /// <remarks>
+        /// Use this type at your own risk. The maintainers provide no support for issues arising from the use of this API,
+        /// and it may be changed or removed in future versions without notice.
+        /// </remarks>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate long NativeReadFn(void* userData, byte* buf, nuint count);
+
+        /// <summary>
+        /// <para><b>WARNING: INTERNAL / ADVANCED API.</b></para>
+        /// <para>This type is public solely for advanced hacking, extension, and performance tuning purposes.</para>
+        /// <para>It does <b>NOT</b> guarantee memory safety or API stability. Misuse can lead to memory corruption,
+        /// undefined behavior, or application crashes.</para>
+        /// </summary>
+        /// <remarks>
+        /// Use this type at your own risk. The maintainers provide no support for issues arising from the use of this API,
+        /// and it may be changed or removed in future versions without notice.
+        /// </remarks>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate long NativeSeekFn(void* userData, long offset, int whence);
+
         public void* userData;
         public void* readCb;
         public void* seekCb;

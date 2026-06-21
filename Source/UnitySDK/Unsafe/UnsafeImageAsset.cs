@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Uniasset;
@@ -149,7 +148,17 @@ namespace Uniasset.Unsafe
                 NativeException.ThrowIfNeeded();
             }
 
-            if (resultArray.Any(p => p == null))
+            var anyNull = false;
+            for (int i = 0; i < resultArray.Length; i++)
+            {
+                if (resultArray[i] == null)
+                {
+                    anyNull = true;
+                    break;
+                }
+            }
+
+            if (anyNull)
             {
                 foreach (var p in resultArray)
                 {
