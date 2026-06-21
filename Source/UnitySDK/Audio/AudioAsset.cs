@@ -52,7 +52,7 @@ namespace Uniasset.Audio
                 var gcHandle = GCHandle.Alloc(stream);
                 _streamHandle = gcHandle;
 
-                var provider = Interop.NativeIOProvider.Default();
+                var provider = NativeIOProvider.Default();
                 provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
 
                 UnsafeHandle.LoadIO(&provider, sampleFormat);

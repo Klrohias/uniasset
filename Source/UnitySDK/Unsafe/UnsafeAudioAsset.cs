@@ -1,9 +1,21 @@
 using System;
+using System.ComponentModel;
 using System.Text;
 using Uniasset.Audio;
 
 namespace Uniasset.Unsafe
 {
+    /// <summary>
+    /// <para><b>WARNING: INTERNAL / ADVANCED API.</b></para>
+    /// <para>This type is public solely for advanced hacking, extension, and performance tuning purposes.</para>
+    /// <para>It does <b>NOT</b> guarantee memory safety or API stability. Misuse can lead to memory corruption,
+    /// undefined behavior, or application crashes.</para>
+    /// </summary>
+    /// <remarks>
+    /// Use this type at your own risk. The maintainers provide no support for issues arising from the use of this API,
+    /// and it may be changed or removed in future versions without notice.
+    /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly unsafe struct UnsafeAudioAsset
     {
         public readonly void* Instance;
@@ -11,6 +23,9 @@ namespace Uniasset.Unsafe
         public UnsafeAudioAsset(void* instance)
         {
             Instance = instance;
+
+            if (Instance == null)
+                throw new Exception("Failed to create AudioAsset instance");
         }
 
         public static UnsafeAudioAsset Create()
@@ -37,7 +52,7 @@ namespace Uniasset.Unsafe
             }
         }
 
-        public void LoadIO(Interop.NativeIOProvider* provider, SampleFormat sampleFormat = SampleFormat.Int16)
+        public void LoadIO(NativeIOProvider* provider, SampleFormat sampleFormat = SampleFormat.Int16)
         {
             Interop.Uniasset_AudioAsset_LoadIO(Instance, provider, (byte)sampleFormat);
             NativeException.ThrowIfNeeded();

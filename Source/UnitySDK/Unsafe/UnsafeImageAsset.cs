@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Uniasset;
@@ -8,6 +10,17 @@ using Unity.Collections.LowLevel.Unsafe;
 
 namespace Uniasset.Unsafe
 {
+    /// <summary>
+    /// <para><b>WARNING: INTERNAL / ADVANCED API.</b></para>
+    /// <para>This type is public solely for advanced hacking, extension, and performance tuning purposes.</para>
+    /// <para>It does <b>NOT</b> guarantee memory safety or API stability. Misuse can lead to memory corruption,
+    /// undefined behavior, or application crashes.</para>
+    /// </summary>
+    /// <remarks>
+    /// Use this type at your own risk. The maintainers provide no support for issues arising from the use of this API,
+    /// and it may be changed or removed in future versions without notice.
+    /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly unsafe partial struct UnsafeImageAsset
     {
         public readonly void* Instance;
@@ -96,7 +109,7 @@ namespace Uniasset.Unsafe
             var gcHandle = GCHandle.Alloc(stream);
             try
             {
-                var provider = Interop.NativeIOProvider.Default();
+                var provider = NativeIOProvider.Default();
                 provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
 
                 Interop.Uniasset_ImageAsset_LoadIO(Instance, &provider, expectedWidth, expectedHeight);
@@ -128,20 +141,31 @@ namespace Uniasset.Unsafe
 
         public UnsafeImageAsset[] CropMultiple(CropOptions[] optionsArray)
         {
+            var resultArray = new void*[optionsArray.Length];
             fixed (CropOptions* options = optionsArray)
-            fixed (void** result = new void*[optionsArray.Length])
+            fixed (void** result = resultArray)
             {
                 Interop.Uniasset_ImageAsset_CropMultiple(Instance, options, (uint)optionsArray.Length, result);
                 NativeException.ThrowIfNeeded();
-
-                var handleResult = new UnsafeImageAsset[optionsArray.Length];
-                for (int i = 0; i < optionsArray.Length; i++)
-                {
-                    handleResult[i] = new UnsafeImageAsset(result[i]);
-                }
-
-                return handleResult;
             }
+
+            if (resultArray.Any(p => p == null))
+            {
+                foreach (var p in resultArray)
+                {
+                    if (p != null)
+                        Interop.Uniasset_ImageAsset_Destory(p);
+                }
+                throw new Exception("CropMultiple failed: one or more output pointers are null");
+            }
+
+            var handleResult = new UnsafeImageAsset[optionsArray.Length];
+            for (int i = 0; i < optionsArray.Length; i++)
+            {
+                handleResult[i] = new UnsafeImageAsset(resultArray[i]);
+            }
+
+            return handleResult;
         }
         
         public void Resize(int width, int height, ResizeFilter filter = ResizeFilter.Nearest)
