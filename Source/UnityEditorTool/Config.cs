@@ -3,6 +3,6 @@ namespace Uniasset.Editor
     public static class Config
     {
         public const string GitHubRepoURL = "https://github.com/Klrohias/uniasset";
-        public const string Version = "v0.2.1-rc1";
+        public const string Version = "v0.2.1-rc2";
     }
 }
