@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Uniasset.Unsafe;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ namespace Uniasset.Audio
         private int _disposed;
         private readonly object _streamLock = new();
         private GCHandle? _streamHandle;
+        private CancellationTokenSource _cancellationTokenSource = new();
         public UnsafeAudioAsset UnsafeHandle { get; }
 
         public AudioAsset()
@@ -93,6 +95,17 @@ namespace Uniasset.Audio
             UnsafeHandle.Prepare();
         }
 
+        public Task PrepareAsync()
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                lock (this)
+                {
+                    Prepare();
+                }
+            }, _cancellationTokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+        }
+
         public AudioAsset TryClone()
         {
             var cloned = UnsafeHandle.TryClone();
@@ -128,6 +141,8 @@ namespace Uniasset.Audio
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0) return;
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
             lock (_streamLock) ReleaseStreamHandle();
             UnsafeHandle.Destroy();
         }

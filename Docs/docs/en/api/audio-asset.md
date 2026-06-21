@@ -101,6 +101,28 @@ audio.Prepare();  // fully decode
 var clone = audio.TryClone();  // now cloneable
 ```
 
+### `PrepareAsync`
+
+```csharp
+public Task PrepareAsync()
+```
+
+Asynchronously fully decodes the audio into PCM data. This method runs the decode on a background thread pool thread and returns a `Task` that completes when the operation is finished.
+
+This is the async counterpart to `Prepare`. It is useful for avoiding main-thread stalls when preparing large audio files. Otherwise, the behavior is identical to `Prepare`: the underlying decoder switches from streaming decode to in-memory PCM, and the asset becomes cloneable via `TryClone`.
+
+| Exception | Condition |
+|------|------|
+| `NativeException` | IO error or unsupported format during decode, or asset not loaded |
+
+```csharp
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
+await audio.PrepareAsync();  // fully decode on background thread
+
+var clone = audio.TryClone();  // now cloneable
+```
+
 ### `Tell`
 
 ```csharp

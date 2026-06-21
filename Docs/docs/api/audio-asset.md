@@ -101,6 +101,28 @@ audio.Prepare();  // 全量解码
 var clone = audio.TryClone();  // 现在可以克隆了
 ```
 
+### PrepareAsync
+
+```csharp
+public Task PrepareAsync()
+```
+
+异步将音频全量解码为 PCM 数据。该方法在后台线程池线程上运行解码操作，并返回一个 `Task`，在操作完成后完成。
+
+此方法是 `Prepare` 的异步版本，适用于避免在准备大型音频文件时阻塞主线程。其他行为与 `Prepare` 一致：底层解码器从流式解码切换为内存中的 PCM 数据，此后资源可以通过 `TryClone` 进行克隆。
+
+| 异常 | 条件 |
+|------|------|
+| `NativeException` | 解码过程中发生 IO 错误或格式不支持，或资源未加载 |
+
+```csharp
+using var audio = new AudioAsset();
+audio.Load("music.mp3");
+await audio.PrepareAsync();  // 在后台线程上全量解码
+
+var clone = audio.TryClone();  // 现在可以克隆了
+```
+
 ### Tell
 
 ```csharp
