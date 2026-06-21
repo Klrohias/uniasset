@@ -15,6 +15,7 @@ namespace Uniasset.Audio
         private int _inUse;
         private readonly object _lock = new();
         private GCHandle? _streamHandle;
+        private IntPtr _ioProviderPtr;
         private CancellationTokenSource _cancellationTokenSource = new();
         public UnsafeAudioAsset UnsafeHandle { get; }
 
@@ -55,13 +56,18 @@ namespace Uniasset.Audio
             lock (_lock)
             {
                 ReleaseStreamHandle();
+
                 var gcHandle = GCHandle.Alloc(stream);
                 _streamHandle = gcHandle;
 
+                // Allocate on unmanaged heap — native caches the provider pointer
+                // for streaming callbacks beyond the LoadIO call.
+                _ioProviderPtr = Marshal.AllocHGlobal(sizeof(NativeIOProvider));
                 var provider = NativeIOProvider.Default();
                 provider.userData = GCHandle.ToIntPtr(gcHandle).ToPointer();
+                Marshal.StructureToPtr(provider, _ioProviderPtr, false);
 
-                UnsafeHandle.LoadIO(&provider, sampleFormat);
+                UnsafeHandle.LoadIO((NativeIOProvider*)_ioProviderPtr, sampleFormat);
             }
         }
 
@@ -71,6 +77,12 @@ namespace Uniasset.Audio
             {
                 handle.Free();
                 _streamHandle = null;
+            }
+
+            if (_ioProviderPtr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(_ioProviderPtr);
+                _ioProviderPtr = IntPtr.Zero;
             }
         }
 
