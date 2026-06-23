@@ -10,8 +10,8 @@ use std::{
 use parking_lot::RwLock;
 
 use crate::audio::{
-    probe_format_from_stream, AudioDecoder, AudioFormatProbe, DecoderError, PcmDecoder,
-    SampleFormat, SymphoniaDecoder,
+    AudioDecoder, AudioFormatProbe, DecoderError, PcmDecoder, SampleFormat, SymphoniaDecoder,
+    probe_format_from_stream,
 };
 
 /// Concrete decoder variant stored inside [`UnsafeState`].
@@ -48,6 +48,7 @@ struct AudioInfo {
     sample_count: u64,
     sample_rate: u32,
     channel_count: u16,
+    sample_format: SampleFormat,
 }
 
 impl AudioAsset {
@@ -89,6 +90,7 @@ impl AudioAsset {
             sample_count: decoder.get_sample_count(),
             sample_rate: decoder.get_sample_rate(),
             channel_count: decoder.get_channel_count() as u16,
+            sample_format,
         };
 
         // Write audio_info to SafeState with lock
@@ -135,6 +137,15 @@ impl AudioAsset {
             .as_ref()
             .ok_or(AudioOperationError::Unloaded)?
             .sample_rate)
+    }
+
+    pub fn get_sample_format(&self) -> Result<SampleFormat, AudioOperationError> {
+        let state = self.0.read();
+        Ok(state
+            .audio_info
+            .as_ref()
+            .ok_or(AudioOperationError::Unloaded)?
+            .sample_format)
     }
 
     pub fn get_frame_count(&self) -> Result<u64, AudioOperationError> {
@@ -314,7 +325,10 @@ impl Display for AudioOperationError {
             AudioOperationError::DecoderError(error) => write!(f, "Decoder Error: {error}"),
             AudioOperationError::Unloaded => write!(f, "No audio asset loaded"),
             AudioOperationError::NotPrepared => {
-                write!(f, "Audio asset must be prepared before cloning; call prepare() first")
+                write!(
+                    f,
+                    "Audio asset must be prepared before cloning; call prepare() first"
+                )
             }
         }
     }
