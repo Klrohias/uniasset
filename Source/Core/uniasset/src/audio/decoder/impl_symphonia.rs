@@ -8,7 +8,7 @@ use symphonia::core::{
     audio::GenericAudioBufferRef,
     codecs::audio::{AudioDecoderOptions, CODEC_ID_NULL_AUDIO},
     errors::Error as SymphoniaError,
-    formats::{probe::Hint, FormatOptions, FormatReader, SeekMode, SeekTo},
+    formats::{FormatOptions, FormatReader, SeekMode, SeekTo, probe::Hint},
     io::{MediaSource, MediaSourceStream, MediaSourceStreamOptions},
     meta::MetadataOptions,
     units::Timestamp,

@@ -1,15 +1,13 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum SampleFormat {
-    None,
-    Float32 = 1,
-    Int16 = 2,
+    Float32 = 0,
+    Int16 = 1,
 }
 
 impl SampleFormat {
     pub fn byte_size(&self) -> usize {
         match self {
-            SampleFormat::None => 0,
             SampleFormat::Float32 => 4,
             SampleFormat::Int16 => 2,
         }

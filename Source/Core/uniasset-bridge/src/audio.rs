@@ -139,7 +139,7 @@ pub unsafe extern "C" fn Uniasset_AudioAsset_GetSampleRate(handle: NativeHandle)
 pub unsafe extern "C" fn Uniasset_AudioAsset_GetSampleFormat(handle: NativeHandle) -> u8 {
     clear_error();
     let wrapper = ManuallyDrop::new(AudioAssetWrapper::from_handle(handle));
-    failible_to_native(|| wrapper.get_sample_format().map(|it| it.into()), || 0u8)
+    failible_to_native(|| wrapper.get_sample_format().map(|it| it as u8), || 0u8)
 }
 
 #[unsafe(no_mangle)]
