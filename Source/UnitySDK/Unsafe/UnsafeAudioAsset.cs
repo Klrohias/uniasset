@@ -162,6 +162,13 @@ namespace Uniasset.Unsafe
             return new UnsafeAudioAsset(result);
         }
 
+        public SampleFormat GetSampleFormat()
+        {
+            var result = (SampleFormat)Interop.Uniasset_AudioAsset_GetSampleFormat(Instance);
+            NativeException.ThrowIfNeeded();
+            return result;
+        }
+
         public void Unload()
         {
             Interop.Uniasset_AudioAsset_Unload(Instance);

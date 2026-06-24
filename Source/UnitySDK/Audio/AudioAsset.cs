@@ -33,6 +33,7 @@ namespace Uniasset.Audio
         public long SampleCount { get { ThrowIfDisposed(); return UnsafeHandle.GetSampleCount(); } }
         public int ChannelCount { get { ThrowIfDisposed(); return UnsafeHandle.GetChannelCount(); } }
         public long FrameCount { get { ThrowIfDisposed(); return UnsafeHandle.GetFrameCount(); } }
+        public SampleFormat SampleFormat { get { ThrowIfDisposed(); return UnsafeHandle.GetSampleFormat(); } }
 
         public void Load(string path, SampleFormat sampleFormat = SampleFormat.Float)
         {

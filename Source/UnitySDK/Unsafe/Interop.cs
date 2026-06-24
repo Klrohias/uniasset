@@ -146,5 +146,9 @@ namespace Uniasset.Unsafe
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
         public static extern void* Uniasset_AudioAsset_TryClone(void* self);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+        [return: NativeTypeName("uint8_t")]
+        public static extern byte Uniasset_AudioAsset_GetSampleFormat(void* self);
     }
 }
