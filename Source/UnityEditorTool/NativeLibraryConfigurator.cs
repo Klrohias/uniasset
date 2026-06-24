@@ -74,7 +74,7 @@ namespace Uniasset.Editor
             File.WriteAllText(gitignorePath, content);
         }
 
-        private static (string? arch, string? platform) ParseDirectoryName(string dirName)
+        private static (string arch, string platform) ParseDirectoryName(string dirName)
         {
             // Expected format: {prefix}{arch}-{platform}
             // e.g. "libuniasset-aarch64-android", "uniasset-x64-windows", "libuniasset-arm-neon-android"
