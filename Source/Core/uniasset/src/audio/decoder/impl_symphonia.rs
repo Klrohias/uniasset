@@ -200,17 +200,16 @@ impl AudioDecoder for SymphoniaDecoder {
         }
 
         let position = position as u64;
-        if position >= self.metadata.frame_count {
-            return Err(DecoderError::IOError(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "seek position exceeds total frame count",
-            )));
-        }
+        // 超限 seek 钳制到最后一帧而不是报错：上层（BufferedAudioStream）在
+        // inner.seek 失败时会直接返回，不清缓冲、不改位置基准——谱面时间已重
+        // 对齐到 seek 目标而音乐停在原处（可能已播完），音画永久错位。
+        // 钳制后 seek 总成功：音乐停在末尾，行为等价于"音乐就是到这儿结束"。
+        let position = position.min(self.metadata.frame_count.saturating_sub(1));
 
-        let current_position = self.frame_position.load(Ordering::Relaxed) as u64;
-        if position == current_position {
-            return Ok(());
-        }
+        // ⚠️ 不能按 `position == frame_position` 提前返回：frame_position 反映的是
+        // 「上次 seek 目标 + 已读帧数」，并不等于解码器内部位置——worker 预填已把
+        // 解码器推进到缓冲末尾，此刻相等说明解码器停在中途，直接返回会漏掉
+        // decoder.reset，seek 后的数据仍从旧位置解码（音画错位）。一律完整执行。
 
         // Clear frame buffer
         self.frame_buffer.clear();
