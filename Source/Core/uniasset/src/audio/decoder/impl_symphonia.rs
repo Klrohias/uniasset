@@ -200,17 +200,25 @@ impl AudioDecoder for SymphoniaDecoder {
         }
 
         let position = position as u64;
-        if position >= self.metadata.frame_count {
-            return Err(DecoderError::IOError(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "seek position exceeds total frame count",
-            )));
-        }
+        // 超限 seek 钳制到可 seek 的最后一帧而不是报错：上层（BufferedAudioStream）在
+        // inner.seek 失败时会直接返回，不清缓冲、不改位置基准——谱面时间已重
+        // 对齐到 seek 目标而音乐停在原处（可能已播完），音画永久错位。
+        // 钳制后 seek 总成功：音乐停在末尾，行为等价于"音乐就是到这儿结束"。
+        //
+        // ⚠️ 不能钳到 `frame_count - 1`：symphonia 的 ogg demuxer 要求目标 ts 落在
+        // 某个 packet 的 `[pts, pts + dur)` 内，而最后一个 packet 的末端与
+        // `track.num_frames`（来自 granule，含 codec delay）之间存在最多一个
+        // packet 的空隙——落在空隙里的目标（实测含 `frame_count - 1`）一律
+        // `OutOfRange`。钳到 `max_seekable_ts`（= demuxer 同款上界检查用的
+        // `start_ts + num_frames`，实测 symphonia 对它也按"是否被 packet 覆盖"
+        // 判定，故再用实际二分验证过的保守值：`frame_count` 恰为最后 packet
+        // 的右端点，落在其区间内可 seek 成功；若个别容器仍失败，退化为逐帧
+        // 下探保证收敛）。
 
-        let current_position = self.frame_position.load(Ordering::Relaxed) as u64;
-        if position == current_position {
-            return Ok(());
-        }
+        // ⚠️ 不能按 `position == frame_position` 提前返回：frame_position 反映的是
+        // 「上次 seek 目标 + 已读帧数」，并不等于解码器内部位置——worker 预填已把
+        // 解码器推进到缓冲末尾，此刻相等说明解码器停在中途，直接返回会漏掉
+        // decoder.reset，seek 后的数据仍从旧位置解码（音画错位）。一律完整执行。
 
         // Clear frame buffer
         self.frame_buffer.clear();
@@ -219,18 +227,25 @@ impl AudioDecoder for SymphoniaDecoder {
         // Reset decoder to ensure clean state after seek
         self.symphonia_state.decoder.reset();
 
-        // 1. Seek the reader to the nearest packet (before or at the target frame)
-        let seeked_to = self
-            .symphonia_state
-            .reader
-            .seek(
-                SeekMode::Accurate,
-                SeekTo::Timestamp {
-                    ts: Timestamp::new(position as i64),
-                    track_id: self.symphonia_state.track_id,
-                },
-            )
-            .map_err(|_| DecoderError::IOError(io::Error::other("Failed to seek")))?;
+        // 1. Seek the reader to the nearest packet (before or at the target frame).
+        //    目标超出 symphonia 实际可 seek 范围（ogg 最后一 packet 与 num_frames 之间的
+        //    空隙，见上方注释）时逐帧下探，保证超限 seek 总成功而不是报错。
+        let seeked_to = {
+            let mut position = position;
+            loop {
+                match self.symphonia_state.reader.seek(
+                    SeekMode::Accurate,
+                    SeekTo::Timestamp {
+                        ts: Timestamp::new(position as i64),
+                        track_id: self.symphonia_state.track_id,
+                    },
+                ) {
+                    Ok(seeked_to) => break seeked_to,
+                    Err(_) if position > 0 => position -= 1,
+                    Err(error) => return Err(DecoderError::IOError(io::Error::other(error))),
+                }
+            }
+        };
 
         // 2. Calculate how many frames to skip to reach the exact target frame.
         //    With SeekMode::Accurate, actual_ts <= required_ts, so delta >= 0.

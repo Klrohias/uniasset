@@ -15,6 +15,10 @@ symphonia = { version = "0.6", default-features = false, features = [
     "pcm",
     "vorbis",
     "ogg",
+    # 注册 ID3v2 metadata reader：MP3 帧头前的超大 ID3v2 标签（如内嵌封面 >1MB）
+    # 否则 probe 无法识别 "ID3" 标记，会在默认 1MB 扫描上限处报
+    # "reached probe limit" 而拒绝加载。
+    "id3v2",
 ] }
 bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
 parking_lot = "0.12.5"
